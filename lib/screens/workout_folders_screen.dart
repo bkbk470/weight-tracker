@@ -702,7 +702,8 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
               onWorkoutTap: (workout) {
                 widget.onNavigate('workout-detail', {'workout': workout});
               },
-              onMoveWorkout: _showMoveWorkoutDialog,
+              planId: null,
+              onRemoveWorkout: null, // Can't remove from unorganized
               colorScheme: colorScheme,
               textTheme: textTheme,
             ),
@@ -732,7 +733,12 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
                 onWorkoutTap: (workout) {
                   widget.onNavigate('workout-detail', {'workout': workout});
                 },
-                onMoveWorkout: _showMoveWorkoutDialog,
+                planId: folderId,
+                onRemoveWorkout: (workout) => _removeWorkoutFromPlan(
+                  workout,
+                  folderId,
+                  folder['name'] as String,
+                ),
                 isFavorite: folder['is_favorite'] == true,
                 onToggleFavorite: () async {
                   final currentFavorite = folder['is_favorite'] == true;
@@ -980,7 +986,7 @@ class _AddWorkoutDialogState extends State<_AddWorkoutDialog> {
                         fontSize: 12,
                       ),
                     ),
-                    if (_addedWorkoutIds.isNotEmpty) ..[
+                    if (_addedWorkoutIds.isNotEmpty) ...[
                       Text(
                         ' • ',
                         style: TextStyle(
@@ -1142,7 +1148,8 @@ class _PlanSection extends StatelessWidget {
   final bool isExpanded;
   final List<Map<String, dynamic>> workouts;
   final Function(Map<String, dynamic>) onWorkoutTap;
-  final Function(Map<String, dynamic>) onMoveWorkout;
+  final String? planId;
+  final Function(Map<String, dynamic>)? onRemoveWorkout;
   final VoidCallback? onEditPlan;
   final VoidCallback? onDeletePlan;
   final VoidCallback? onToggleFavorite;
@@ -1161,7 +1168,8 @@ class _PlanSection extends StatelessWidget {
     required this.isExpanded,
     required this.workouts,
     required this.onWorkoutTap,
-    required this.onMoveWorkout,
+    this.planId,
+    this.onRemoveWorkout,
     this.onEditPlan,
     this.onDeletePlan,
     this.onToggleFavorite,
@@ -1220,10 +1228,14 @@ class _PlanSection extends StatelessWidget {
                   subtitle: Text(
                     '${(workout['workout_exercises'] as List?)?.length ?? 0} exercises',
                   ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.drive_file_move),
-                    onPressed: () => onMoveWorkout(workout),
-                  ),
+                  trailing: onRemoveWorkout != null
+                      ? IconButton(
+                          icon: const Icon(Icons.remove_circle_outline),
+                          tooltip: 'Remove from plan',
+                          color: colorScheme.error,
+                          onPressed: () => onRemoveWorkout!(workout),
+                        )
+                      : null,
                   onTap: () => onWorkoutTap(workout),
                 )),
             if (onAddWorkout != null) ...[
