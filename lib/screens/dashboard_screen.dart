@@ -267,10 +267,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _showAddWorkoutToPlanDialog(String planId, String planName) async {
-    // Get all workouts that are not in this plan
+    // Get all workouts
     final allWorkouts = await _supabaseService.getWorkouts();
+    
+    // Get workouts already in this plan
+    final workoutsInPlan = await _supabaseService.getWorkoutsByFolder(planId);
+    final workoutIdsInPlan = workoutsInPlan.map((w) => w['id'] as String).toSet();
+    
+    // Filter to show only workouts not yet in this plan
     final availableWorkouts = allWorkouts.where((workout) => 
-      workout['plan_id'] != planId
+      !workoutIdsInPlan.contains(workout['id'] as String)
     ).toList();
 
     if (!mounted) return;
@@ -281,7 +287,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         builder: (context) => AlertDialog(
           title: const Text('No Workouts Available'),
           content: const Text(
-            'You don\'t have any workouts to add yet. Create a workout first, then add it to this plan.',
+            'All your workouts are already in this plan, or you don\'t have any workouts yet. Create a new workout to add it.',
           ),
           actions: [
             TextButton(
@@ -325,7 +331,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   icon: const Icon(Icons.add_circle_outline),
                   onPressed: () async {
                     try {
-                      await _supabaseService.moveWorkoutToFolder(
+                      await _supabaseService.addWorkoutToPlan(
                         workout['id'] as String,
                         planId,
                       );
