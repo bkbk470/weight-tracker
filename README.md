@@ -11,7 +11,7 @@ A complete Material Design 3 weightlifting tracking app built with Flutter, base
 - **Dashboard** - Quick overview of workout stats, streak, and recent activities
 - **Workout Tracking** - Active workout session with set tracking and rest timers
 - **Progress Tracking** - Visual charts and graphs to track your fitness journey
-- **Profile Management** - User profile with settings and preferences
+- **Profile Management** - User profile with settings and preferencess
 
 ### All Screens Included
 
