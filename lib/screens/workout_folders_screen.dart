@@ -1331,22 +1331,40 @@ class _PlanSection extends StatelessWidget {
           ),
           if (isExpanded && workouts.isNotEmpty) ...[
             const Divider(height: 1),
-            ...workouts.map((workout) => ListTile(
-                  contentPadding: const EdgeInsets.only(left: 72, right: 16),
-                  title: Text(workout['name'] as String),
-                  subtitle: Text(
-                    '${(workout['workout_exercises'] as List?)?.length ?? 0} exercises',
+            ...workouts.map((workout) {
+              final exercises = (workout['workout_exercises'] as List?)?.length ?? 0;
+              return ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withOpacity(0.8),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  trailing: onRemoveWorkout != null
-                      ? IconButton(
-                          icon: const Icon(Icons.remove_circle_outline),
-                          tooltip: 'Remove from plan',
-                          color: colorScheme.error,
-                          onPressed: () => onRemoveWorkout!(workout),
-                        )
-                      : null,
-                  onTap: () => onWorkoutTap(workout),
-                )),
+                  child: Icon(
+                    Icons.fitness_center,
+                    size: 20,
+                    color: colorScheme.onPrimaryContainer,
+                  ),
+                ),
+                title: Text(workout['name'] as String),
+                subtitle: Text(
+                  '$exercises exercise${exercises == 1 ? '' : 's'}',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                trailing: onRemoveWorkout != null
+                    ? IconButton(
+                        icon: const Icon(Icons.remove_circle_outline),
+                        tooltip: 'Remove from plan',
+                        color: colorScheme.error,
+                        onPressed: () => onRemoveWorkout!(workout),
+                      )
+                    : null,
+                onTap: () => onWorkoutTap(workout),
+              );
+            }),
             if (onAddWorkout != null) ...[
               const Divider(height: 1),
               Padding(
