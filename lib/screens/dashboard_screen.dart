@@ -42,25 +42,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
       // Load folders
       final folders = await _supabaseService.getWorkoutFolders();
       
-      // Load all workouts
-      final allWorkouts = await _supabaseService.getWorkouts();
-      
-      // Group workouts by folder
+      // Group workouts by folder using junction table
       final Map<String?, List<Map<String, dynamic>>> grouped = {};
-      grouped[null] = []; // Default "My Workouts" bucket for workouts without a folder
+      grouped[null] = []; // Default bucket for workouts without a folder
       
+      // Initialize empty lists for each folder
       for (var folder in folders) {
         grouped[folder['id'] as String] = [];
       }
       
-      for (var workout in allWorkouts) {
-        final folderId = workout['plan_id'] as String?;
-        if (grouped.containsKey(folderId)) {
-          grouped[folderId]!.add(workout);
-        } else {
-          grouped[null]!.add(workout);
-        }
+      // Load workouts for each folder using junction table
+      for (var folder in folders) {
+        final folderId = folder['id'] as String;
+        final workoutsInFolder = await _supabaseService.getWorkoutsByFolder(folderId);
+        grouped[folderId] = workoutsInFolder;
       }
+      
+      // Load unorganized workouts (not in any plan)
+      final unorganizedWorkouts = await _supabaseService.getWorkoutsByFolder(null);
+      grouped[null] = unorganizedWorkouts;
+      
+      // Get all workouts for last completed dates
+      final allWorkouts = await _supabaseService.getWorkouts();
 
       // Load last completed date for each workout
       final Map<String, DateTime?> lastDates = {};
@@ -1027,32 +1030,30 @@ class _MyWorkoutTile extends StatelessWidget {
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
-            TextSpan(
-              text: ' • ',
-              style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
+            if (hasBeenCompleted) ...[
+              TextSpan(
+                text: ' • ',
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
               ),
-            ),
-            WidgetSpan(
-              alignment: PlaceholderAlignment.middle,
-              child: Icon(
-                hasBeenCompleted ? Icons.check_circle : Icons.error_outline,
-                size: 12,
-                color: hasBeenCompleted 
-                  ? colorScheme.primary.withOpacity(0.7)
-                  : colorScheme.error.withOpacity(0.7),
+              WidgetSpan(
+                alignment: PlaceholderAlignment.middle,
+                child: Icon(
+                  Icons.check_circle,
+                  size: 12,
+                  color: colorScheme.primary.withOpacity(0.7),
+                ),
               ),
-            ),
-            TextSpan(
-              text: ' $lastCompleted',
-              style: textTheme.bodySmall?.copyWith(
-                color: hasBeenCompleted 
-                  ? colorScheme.primary.withOpacity(0.7)
-                  : colorScheme.error.withOpacity(0.7),
-                fontStyle: FontStyle.italic,
-                fontSize: 11,
+              TextSpan(
+                text: ' $lastCompleted',
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.primary.withOpacity(0.7),
+                  fontStyle: FontStyle.italic,
+                  fontSize: 11,
+                ),
               ),
-            ),
+            ],
           ],
         ),
         maxLines: 1,

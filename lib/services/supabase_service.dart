@@ -238,12 +238,29 @@ class SupabaseService {
           .select()
           .eq('user_id', currentUserId!)
           .order('is_favorite', ascending: false) // Favorites first
-          .order('order_index', ascending: true);
+          .order('order_index', ascending: true); // Then by order
       
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
       print('Error fetching plans: $e');
       return [];
+    }
+  }
+
+  // Update plan order
+  Future<void> updatePlanOrder(String planId, int newOrderIndex) async {
+    await client
+        .from('workout_plans')
+        .update({'order_index': newOrderIndex})
+        .eq('id', planId);
+  }
+
+  // Reorder plans - updates all plans with new order
+  Future<void> reorderPlans(List<Map<String, dynamic>> orderedPlans) async {
+    // Update each plan with its new order index
+    for (int i = 0; i < orderedPlans.length; i++) {
+      final planId = orderedPlans[i]['id'] as String;
+      await updatePlanOrder(planId, i);
     }
   }
 
@@ -438,9 +455,27 @@ class SupabaseService {
           )
         ''')
         .eq('user_id', currentUserId!)
+        .order('order_index', ascending: true)
         .order('created_at', ascending: false);
 
     return List<Map<String, dynamic>>.from(response);
+  }
+
+  // Update workout order
+  Future<void> updateWorkoutOrder(String workoutId, int newOrderIndex) async {
+    await client
+        .from('workouts')
+        .update({'order_index': newOrderIndex})
+        .eq('id', workoutId);
+  }
+
+  // Reorder workouts - updates all workouts with new order
+  Future<void> reorderWorkouts(List<Map<String, dynamic>> orderedWorkouts) async {
+    // Update each workout with its new order index
+    for (int i = 0; i < orderedWorkouts.length; i++) {
+      final workoutId = orderedWorkouts[i]['id'] as String;
+      await updateWorkoutOrder(workoutId, i);
+    }
   }
 
   // Get all workout templates (public templates available to all users)

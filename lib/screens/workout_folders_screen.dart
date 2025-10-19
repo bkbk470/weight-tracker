@@ -38,29 +38,31 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
     try {
       // Load plans, workouts, and example templates in parallel
       final foldersFuture = _supabaseService.getWorkoutFolders();
-      final workoutsFuture = _supabaseService.getWorkouts();
       final templatesFuture = _supabaseService.getWorkoutTemplates();
 
       final loadedFolders = await foldersFuture;
-      final allWorkouts = await workoutsFuture;
       final exampleTemplates = await templatesFuture;
       
-      // Group workouts by plan
+      // Group workouts by plan using junction table
       final Map<String?, List<Map<String, dynamic>>> grouped = {};
-      grouped[null] = []; // Default "Unorganized" bucket for workouts without a plan
+      grouped[null] = []; // Default "Unorganized" bucket
       
+      // Initialize empty lists for each folder
       for (var folder in loadedFolders) {
-        grouped[folder['id'] as String] = [];
+        final folderId = folder['id'] as String;
+        grouped[folderId] = [];
       }
       
-      for (var workout in allWorkouts) {
-        final folderId = workout['plan_id'] as String?;
-        if (grouped.containsKey(folderId)) {
-          grouped[folderId]!.add(workout);
-        } else {
-          grouped[null]!.add(workout);
-        }
+      // Load workouts for each plan using the junction table
+      for (var folder in loadedFolders) {
+        final folderId = folder['id'] as String;
+        final workoutsInPlan = await _supabaseService.getWorkoutsByFolder(folderId);
+        grouped[folderId] = workoutsInPlan;
       }
+      
+      // Load unorganized workouts (not in any plan)
+      final unorganizedWorkouts = await _supabaseService.getWorkoutsByFolder(null);
+      grouped[null] = unorganizedWorkouts;
 
       if (!mounted) return;
       setState(() {
@@ -335,6 +337,106 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
                 )),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showAddWorkoutDialog(String planId, String planName) async {
+    // Get all workouts
+    final allWorkouts = await _supabaseService.getWorkouts();
+    
+    // Get workouts already in this plan
+    final workoutsInPlan = await _supabaseService.getWorkoutsByFolder(planId);
+    final workoutIdsInPlan = workoutsInPlan.map((w) => w['id'] as String).toSet();
+    
+    // Filter to show only workouts not yet in this plan
+    final availableWorkouts = allWorkouts.where((workout) => 
+      !workoutIdsInPlan.contains(workout['id'] as String)
+    ).toList();
+
+    if (!mounted) return;
+
+    if (availableWorkouts.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('No Workouts Available'),
+          content: const Text(
+            'All your workouts are already in this plan, or you don\'t have any workouts yet.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Add Workout to $planName'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: availableWorkouts.length,
+            itemBuilder: (context, index) {
+              final workout = availableWorkouts[index];
+              final exercises = workout['workout_exercises'] as List? ?? [];
+              
+              return ListTile(
+                leading: Icon(
+                  Icons.fitness_center,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                title: Text(workout['name'] as String),
+                subtitle: Text('${exercises.length} exercises'),
+                trailing: IconButton(
+                  icon: const Icon(Icons.add_circle_outline),
+                  onPressed: () async {
+                    try {
+                      await _supabaseService.addWorkoutToPlan(
+                        workout['id'] as String,
+                        planId,
+                      );
+                      
+                      Navigator.pop(context);
+                      _loadFoldersAndWorkouts();
+                      
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Added "${workout['name']}" to plan'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Error: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
       ),
     );
   }
@@ -647,6 +749,9 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
                 onEditPlan: () {
                   _showEditPlanDialog(folder);
                 },
+                onAddWorkout: () {
+                  _showAddWorkoutDialog(folderId, folder['name'] as String);
+                },
                 onDeletePlan: () async {
                   final confirmed = await showDialog<bool>(
                     context: context,
@@ -742,6 +847,7 @@ class _PlanSection extends StatelessWidget {
   final VoidCallback? onEditPlan;
   final VoidCallback? onDeletePlan;
   final VoidCallback? onToggleFavorite;
+  final VoidCallback? onAddWorkout;
   final bool isFavorite;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
@@ -760,6 +866,7 @@ class _PlanSection extends StatelessWidget {
     this.onEditPlan,
     this.onDeletePlan,
     this.onToggleFavorite,
+    this.onAddWorkout,
     this.isFavorite = false,
     required this.colorScheme,
     required this.textTheme,
@@ -820,8 +927,21 @@ class _PlanSection extends StatelessWidget {
                   ),
                   onTap: () => onWorkoutTap(workout),
                 )),
+            if (onAddWorkout != null) ...[
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Center(
+                  child: OutlinedButton.icon(
+                    onPressed: onAddWorkout,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add Workout'),
+                  ),
+                ),
+              ),
+            ],
           ],
-          if (isExpanded && workouts.isEmpty)
+          if (isExpanded && workouts.isEmpty) ...[
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
@@ -829,8 +949,21 @@ class _PlanSection extends StatelessWidget {
                 style: textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
+                textAlign: TextAlign.center,
               ),
             ),
+            if (onAddWorkout != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Center(
+                  child: FilledButton.icon(
+                    onPressed: onAddWorkout,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add Workout'),
+                  ),
+                ),
+              ),
+          ],
         ],
       ),
     );
