@@ -48,12 +48,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
       
       // Initialize empty lists for each folder
       for (var folder in folders) {
-        grouped[folder['id'] as String] = [];
+        final dynamic rawFolderId = folder['id'];
+        final String? folderId = rawFolderId?.toString();
+        if (folderId != null) {
+          grouped[folderId] = [];
+        }
       }
       
       // Load workouts for each folder using junction table
       for (var folder in folders) {
-        final folderId = folder['id'] as String;
+        final dynamic rawFolderId = folder['id'];
+        final String? folderId = rawFolderId?.toString();
+        if (folderId == null) {
+          continue;
+        }
         final workoutsInFolder = await _supabaseService.getWorkoutsByFolder(folderId);
         grouped[folderId] = workoutsInFolder;
       }
@@ -384,6 +392,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _handlePlanReorder(int oldIndex, int newIndex) async {
+    if (_folders.length < 2 || oldIndex == newIndex) {
+      return;
+    }
+
+    if (oldIndex < 0 || oldIndex >= _folders.length) {
+      return;
+    }
+
+    if (newIndex > _folders.length) {
+      newIndex = _folders.length;
+    }
+
     if (newIndex > oldIndex) {
       newIndex -= 1;
     }
@@ -658,20 +678,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
             itemCount: _folders.length,
             itemBuilder: (context, index) {
               final folder = _folders[index];
-              final folderId = folder['id'] as String;
-              final workouts = _workoutsByFolder[folderId] ?? [];
-              final isExpanded = _expandedFolderId == folderId;
+              final dynamic rawFolderId = folder['id'];
+              final String? folderId = rawFolderId?.toString();
+              final workouts = folderId != null ? (_workoutsByFolder[folderId] ?? []) : const <Map<String, dynamic>>[];
+              final isExpanded = folderId != null && _expandedFolderId == folderId;
               final color = _getColorFromString(folder['color'] as String?);
 
               return Card(
-                key: ValueKey(folderId),
+                key: ValueKey(folderId ?? 'plan-$index'),
                 margin: const EdgeInsets.only(bottom: 12),
                 child: Column(
                   children: [
                     ListTile(
                       leading: Icon(Icons.folder, color: color, size: 28),
                       title: Text(
-                        folder['name'] as String,
+                        (folder['name'] as String?) ?? 'Workout Plan',
                         style: textTheme.titleMedium,
                       ),
                       subtitle: Text(
@@ -681,14 +702,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Tooltip(
-                            message: 'Drag to reorder',
-                            child: ReorderableDragStartListener(
-                              index: index,
-                              child: Icon(
-                                Icons.drag_indicator,
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            ),
+                            message: folderId == null ? 'Plan id missing' : 'Drag to reorder',
+                            child: folderId == null
+                                ? Icon(
+                                    Icons.drag_indicator,
+                                    color: colorScheme.onSurfaceVariant.withOpacity(0.3),
+                                  )
+                                : ReorderableDragStartListener(
+                                    index: index,
+                                    child: Icon(
+                                      Icons.drag_indicator,
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
                           ),
                           const SizedBox(width: 8),
                           Icon(
@@ -697,6 +723,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ],
                       ),
                       onTap: () {
+                        if (folderId == null) return;
                         setState(() {
                           _expandedFolderId = isExpanded ? null : folderId;
                         });
@@ -728,10 +755,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                               const SizedBox(height: 16),
                               FilledButton.icon(
-                                onPressed: () => _showAddWorkoutToPlanDialog(
-                                  folderId,
-                                  folder['name'] as String,
-                                ),
+                                onPressed: folderId == null
+                                    ? null
+                                    : () => _showAddWorkoutToPlanDialog(
+                                          folderId,
+                                          (folder['name'] as String?) ?? 'Workout Plan',
+                                        ),
                                 icon: const Icon(Icons.add),
                                 label: const Text('Add Workout'),
                               ),

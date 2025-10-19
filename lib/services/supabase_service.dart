@@ -259,8 +259,16 @@ class SupabaseService {
   Future<void> reorderPlans(List<Map<String, dynamic>> orderedPlans) async {
     // Update each plan with its new order index
     for (int i = 0; i < orderedPlans.length; i++) {
-      final planId = orderedPlans[i]['id'] as String;
-      await updatePlanOrder(planId, i);
+      final plan = orderedPlans[i];
+      final dynamic planId = plan['id'];
+
+      if (planId == null) {
+        // Skip if the plan does not have an identifier (shouldn't happen, but guards against crashes)
+        print('Skipping plan at index $i because its id is null');
+        continue;
+      }
+
+      await updatePlanOrder(planId.toString(), i);
     }
   }
 
