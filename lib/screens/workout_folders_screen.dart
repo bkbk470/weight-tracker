@@ -20,6 +20,7 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
   String? selectedFolderId;
   bool examplePlansExpanded = false;
   String? duplicatingTemplateId;
+  bool isReordering = false;
 
   @override
   void initState() {
@@ -640,6 +641,36 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
     );
   }
 
+  Future<void> _reorderPlans(int oldIndex, int newIndex) async {
+    setState(() {
+      // Adjust newIndex for list reordering
+      if (newIndex > oldIndex) {
+        newIndex -= 1;
+      }
+
+      // Reorder the list
+      final plan = folders.removeAt(oldIndex);
+      folders.insert(newIndex, plan);
+    });
+
+    try {
+      // Save the new order to the database
+      await _supabaseService.reorderPlans(folders);
+    } catch (e) {
+      print('Error saving plan order: $e');
+      // Reload on error to get correct order
+      _loadFoldersAndWorkouts();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving order: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Color _getColorFromString(String? colorName) {
     switch (colorName) {
       case 'blue':
@@ -677,6 +708,20 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
         ),
         title: const Text('Manage Workout Plans'),
         actions: [
+          if (folders.isNotEmpty)
+            IconButton(
+              icon: Icon(isReordering ? Icons.check : Icons.drag_handle),
+              onPressed: () {
+                setState(() {
+                  isReordering = !isReordering;
+                  if (!isReordering) {
+                    // Collapse all when exiting reorder mode
+                    selectedFolderId = null;
+                  }
+                });
+              },
+              tooltip: isReordering ? 'Done Reordering' : 'Reorder Plans',
+            ),
           IconButton(
             icon: const Icon(Icons.create_new_folder),
             onPressed: _showCreatePlanDialog,
@@ -711,7 +756,70 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
           ],
 
           // Workout Plans
-          ...folders.map((folder) {
+          if (isReordering) ...[
+            // Reordering hint
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: colorScheme.onPrimaryContainer,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Long press and drag plans to reorder them',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onPrimaryContainer,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Reorderable list
+            ...[
+              ReorderableListView(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                onReorder: _reorderPlans,
+                children: folders.map((folder) {
+                  final folderId = folder['id'] as String;
+                  final workouts = workoutsByFolder[folderId] ?? [];
+                  return Card(
+                    key: ValueKey(folderId),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    child: ListTile(
+                      leading: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.drag_handle,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.folder,
+                            color: _getColorFromString(folder['color'] as String?),
+                            size: 32,
+                          ),
+                        ],
+                      ),
+                      title: Text(folder['name'] as String, style: textTheme.titleMedium),
+                      subtitle: Text('${ workouts.length} workout${workouts.length != 1 ? 's' : ''}'),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ] else ...[
+            ...folders.map((folder) {
             final folderId = folder['id'] as String;
             final workouts = workoutsByFolder[folderId] ?? [];
 
@@ -788,6 +896,7 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
               ),
             );
           }),
+          ],
 
           Padding(
             padding: const EdgeInsets.only(bottom: 16),
