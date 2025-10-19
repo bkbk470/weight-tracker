@@ -1000,9 +1000,7 @@ class _MyWorkoutTile extends StatelessWidget {
     final subtitle = subtitleParts.isNotEmpty ? subtitleParts.join(' • ') : 'Custom workout';
 
     return ListTile(
-      contentPadding: isInFolder 
-          ? const EdgeInsets.only(left: 56, right: 16, top: 8, bottom: 8)
-          : const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       leading: Icon(
         Icons.fitness_center,
         size: 24,
