@@ -189,6 +189,115 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
     );
   }
 
+  void _showEditPlanDialog(Map<String, dynamic> folder) {
+    final nameController = TextEditingController(text: folder['name'] as String?);
+    final descriptionController = TextEditingController(text: folder['description'] as String?);
+    String selectedColor = folder['color'] as String? ?? 'blue';
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Edit Workout Plan'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Plan Name',
+                    hintText: 'e.g., Strength Training, Cardio Mix',
+                  ),
+                  autofocus: true,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Description (Optional)',
+                    hintText: 'Brief description of this plan',
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 16),
+                const Text('Plan Color'),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: ['blue', 'green', 'orange', 'purple', 'red']
+                      .map((color) => ChoiceChip(
+                            label: Text(color),
+                            selected: selectedColor == color,
+                            onSelected: (selected) {
+                              if (selected) {
+                                setDialogState(() {
+                                  selectedColor = color;
+                                });
+                              }
+                            },
+                          ))
+                      .toList(),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                if (nameController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a plan name')),
+                  );
+                  return;
+                }
+
+                try {
+                  await _supabaseService.updateFolder(
+                    folder['id'] as String,
+                    {
+                      'name': nameController.text.trim(),
+                      'description': descriptionController.text.trim().isEmpty
+                          ? null
+                          : descriptionController.text.trim(),
+                      'color': selectedColor,
+                    },
+                  );
+
+                  Navigator.pop(context);
+                  _loadFoldersAndWorkouts();
+                  
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Workout plan updated successfully!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showMoveWorkoutDialog(Map<String, dynamic> workout) {
     showDialog(
       context: context,
@@ -536,7 +645,7 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
                   _loadFoldersAndWorkouts();
                 },
                 onEditPlan: () {
-                  // TODO: Implement edit plan
+                  _showEditPlanDialog(folder);
                 },
                 onDeletePlan: () async {
                   final confirmed = await showDialog<bool>(

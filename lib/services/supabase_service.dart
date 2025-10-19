@@ -318,7 +318,7 @@ class SupabaseService {
         .eq('id', folderId);
   }
 
-  // Move workout to plan
+  // Move workout to plan (legacy - keeps plan_id for primary plan)
   Future<void> moveWorkoutToFolder(String workoutId, String? folderId) async {
     await client
         .from('workouts')
@@ -326,30 +326,96 @@ class SupabaseService {
         .eq('id', workoutId);
   }
 
-  // Get workouts by plan
+  // Add workout to plan (many-to-many)
+  Future<void> addWorkoutToPlan(String workoutId, String planId) async {
+    await client
+        .from('workout_plan_workouts')
+        .insert({
+          'workout_id': workoutId,
+          'workout_plan_id': planId,
+        });
+  }
+
+  // Remove workout from plan (many-to-many)
+  Future<void> removeWorkoutFromPlan(String workoutId, String planId) async {
+    await client
+        .from('workout_plan_workouts')
+        .delete()
+        .eq('workout_id', workoutId)
+        .eq('workout_plan_id', planId);
+  }
+
+  // Get all plans that contain a specific workout
+  Future<List<Map<String, dynamic>>> getPlansForWorkout(String workoutId) async {
+    try {
+      final response = await client
+          .from('workout_plan_workouts')
+          .select('workout_plan_id, workout_plans(*)')
+          .eq('workout_id', workoutId);
+      
+      return List<Map<String, dynamic>>.from(
+        response.map((item) => item['workout_plans'] as Map<String, dynamic>)
+      );
+    } catch (e) {
+      print('Error fetching plans for workout: $e');
+      return [];
+    }
+  }
+
+  // Get workouts by plan (using many-to-many relationship)
   Future<List<Map<String, dynamic>>> getWorkoutsByFolder(String? folderId) async {
     if (currentUserId == null) return [];
 
     try {
-      var query = client
-          .from('workouts')
-          .select('''
-            *,
-            workout_exercises (
-              *,
-              exercise:exercises (*)
-            )
-          ''')
-          .eq('user_id', currentUserId!);
-
       if (folderId != null) {
-        query = query.eq('plan_id', folderId);
+        // Get workouts in this plan via junction table
+        final response = await client
+            .from('workout_plan_workouts')
+            .select('''
+              workout_id,
+              workouts (
+                *,
+                workout_exercises (
+                  *,
+                  exercise:exercises (*)
+                )
+              )
+            ''')
+            .eq('workout_plan_id', folderId);
+        
+        return List<Map<String, dynamic>>.from(
+          response.map((item) => item['workouts'] as Map<String, dynamic>)
+        );
       } else {
-        query = query.isFilter('plan_id', null);
-      }
+        // Get workouts not in any plan (orphaned workouts)
+        final allWorkouts = await client
+            .from('workouts')
+            .select('''
+              *,
+              workout_exercises (
+                *,
+                exercise:exercises (*)
+              )
+            ''')
+            .eq('user_id', currentUserId!)
+            .order('created_at', ascending: false);
 
-      final response = await query.order('created_at', ascending: false);
-      return List<Map<String, dynamic>>.from(response);
+        // Get all workout IDs that are in plans
+        final workoutsInPlans = await client
+            .from('workout_plan_workouts')
+            .select('workout_id');
+        
+        final workoutIdsInPlans = workoutsInPlans
+            .map((item) => item['workout_id'] as String)
+            .toSet();
+
+        // Filter out workouts that are in plans
+        return List<Map<String, dynamic>>.from(
+          allWorkouts.where((workout) => 
+            !workoutIdsInPlans.contains(workout['id'] as String)
+          )
+        );
+      }
     } catch (e) {
       print('Error fetching workouts by plan: $e');
       return [];
