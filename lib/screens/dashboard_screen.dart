@@ -27,7 +27,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, DateTime?> _workoutLastCompletedDates = {}; // Track last completed dates
   List<Map<String, dynamic>> _recentWorkoutLogs = [];
   String? _expandedFolderId;
-  bool _isReorderingPlans = false;
 
   @override
   void initState() {
@@ -545,24 +544,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         Row(
                           children: [
                             TextButton.icon(
-                              onPressed: _folders.length < 2
-                                  ? null
-                                  : () {
-                                      setState(() {
-                                        _isReorderingPlans = !_isReorderingPlans;
-                                        if (_isReorderingPlans) {
-                                          _expandedFolderId = null;
-                                        }
-                                      });
-                                    },
-                              icon: Icon(
-                                _isReorderingPlans ? Icons.check : Icons.swap_vert,
-                                size: 18,
-                              ),
-                              label: Text(_isReorderingPlans ? 'Done' : 'Reorder'),
-                            ),
-                            const SizedBox(width: 8),
-                            TextButton.icon(
                               onPressed: _showCreatePlanDialog,
                               icon: const Icon(Icons.create_new_folder, size: 18),
                               label: const Text('New Plan'),
@@ -666,224 +647,152 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
 
-    if (_isReorderingPlans) {
-      if (_folders.isEmpty) {
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.folder_off,
-                  size: 32,
-                  color: colorScheme.onSurfaceVariant.withOpacity(0.6),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'No plans to reorder yet',
-                  style: textTheme.titleMedium,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Create a workout plan to get started.',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }
-
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withOpacity(0.4),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  color: colorScheme.onPrimaryContainer,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Drag plans using the handles to change their order, then tap Done.',
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ReorderableListView(
+    final plansList = _folders.isEmpty
+        ? const SizedBox.shrink()
+        : ReorderableListView.builder(
+            key: const PageStorageKey('dashboard-plan-order'),
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
+            buildDefaultDragHandles: false,
             onReorder: _handlePlanReorder,
-            children: _folders.map((folder) {
+            itemCount: _folders.length,
+            itemBuilder: (context, index) {
+              final folder = _folders[index];
               final folderId = folder['id'] as String;
               final workouts = _workoutsByFolder[folderId] ?? [];
+              final isExpanded = _expandedFolderId == folderId;
               final color = _getColorFromString(folder['color'] as String?);
 
               return Card(
                 key: ValueKey(folderId),
                 margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  leading: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.drag_handle,
-                        color: colorScheme.onSurfaceVariant,
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: Icon(Icons.folder, color: color, size: 28),
+                      title: Text(
+                        folder['name'] as String,
+                        style: textTheme.titleMedium,
                       ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.folder,
-                        color: color,
-                        size: 28,
+                      subtitle: Text(
+                        '${workouts.length} workout${workouts.length != 1 ? 's' : ''}',
                       ),
-                    ],
-                  ),
-                  title: Text(
-                    folder['name'] as String,
-                    style: textTheme.titleMedium,
-                  ),
-                  subtitle: Text(
-                    '${workouts.length} workout${workouts.length == 1 ? '' : 's'}',
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ],
-      );
-    }
-
-    return Column(
-      children: [
-        // Folders
-        ..._folders.map((folder) {
-          final folderId = folder['id'] as String;
-          final workouts = _workoutsByFolder[folderId] ?? [];
-          
-          // Show all plans, even if empty
-          final isExpanded = _expandedFolderId == folderId;
-          final color = _getColorFromString(folder['color'] as String?);
-
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Card(
-              child: Column(
-                children: [
-                  ListTile(
-                    leading: Icon(Icons.folder, color: color, size: 28),
-                    title: Text(
-                      folder['name'] as String,
-                      style: textTheme.titleMedium,
-                    ),
-                    subtitle: Text('${workouts.length} workout${workouts.length != 1 ? 's' : ''}'),
-                    trailing: Icon(
-                      isExpanded ? Icons.expand_less : Icons.expand_more,
-                    ),
-                    onTap: () {
-                      setState(() {
-                        _expandedFolderId = isExpanded ? null : folderId;
-                      });
-                    },
-                  ),
-                  if (isExpanded) ...[
-                    const Divider(height: 1),
-                    if (workouts.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.fitness_center_outlined,
-                              size: 48,
-                              color: colorScheme.onSurfaceVariant.withOpacity(0.5),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              'No workouts in this plan yet',
-                              style: textTheme.titleMedium,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Add workouts to get started',
-                              style: textTheme.bodySmall?.copyWith(
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Tooltip(
+                            message: 'Drag to reorder',
+                            child: ReorderableDragStartListener(
+                              index: index,
+                              child: Icon(
+                                Icons.drag_indicator,
                                 color: colorScheme.onSurfaceVariant,
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            FilledButton.icon(
-                              onPressed: () => _showAddWorkoutToPlanDialog(
-                                folderId,
-                                folder['name'] as String,
-                              ),
-                              icon: const Icon(Icons.add),
-                              label: const Text('Add Workout'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (workouts.isNotEmpty)
-                      ...workouts.take(5).map((workout) {
-                      final workoutId = workout['id'] as String;
-                      final lastDate = _workoutLastCompletedDates[workoutId];
-                      final isLastItem = workouts.take(5).toList().last == workout;
-                      
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _MyWorkoutTile(
-                            workout: workout,
-                            lastCompleted: _formatLastCompleted(lastDate),
-                            hasBeenCompleted: lastDate != null,
-                            colorScheme: colorScheme,
-                            textTheme: textTheme,
-                            isInFolder: true,
-                            onTap: () => widget.onNavigate('workout-detail', {
-                              'workout': workout,
-                            }),
                           ),
-                          if (!isLastItem)
-                            Divider(
-                              height: 1,
-                              thickness: 1,
-                              indent: 56,
-                              endIndent: 16,
-                              color: colorScheme.outlineVariant.withOpacity(0.5),
-                            ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            isExpanded ? Icons.expand_less : Icons.expand_more,
+                          ),
                         ],
-                      );
-                    }),
-                    if (workouts.length > 5)
-                      ListTile(
-                        contentPadding: const EdgeInsets.only(left: 72, right: 16),
-                        title: Text(
-                          '+ ${workouts.length - 5} more',
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.primary,
+                      ),
+                      onTap: () {
+                        setState(() {
+                          _expandedFolderId = isExpanded ? null : folderId;
+                        });
+                      },
+                    ),
+                    if (isExpanded) ...[
+                      const Divider(height: 1),
+                      if (workouts.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.fitness_center_outlined,
+                                size: 48,
+                                color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'No workouts in this plan yet',
+                                style: textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Add workouts to get started',
+                                style: textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              FilledButton.icon(
+                                onPressed: () => _showAddWorkoutToPlanDialog(
+                                  folderId,
+                                  folder['name'] as String,
+                                ),
+                                icon: const Icon(Icons.add),
+                                label: const Text('Add Workout'),
+                              ),
+                            ],
                           ),
                         ),
-                        onTap: () => widget.onNavigate('workout-folders'),
-                      ),
+                      if (workouts.isNotEmpty)
+                        ...workouts.take(5).map((workout) {
+                          final workoutId = workout['id'] as String;
+                          final lastDate = _workoutLastCompletedDates[workoutId];
+                          final isLastItem = workouts.take(5).toList().last == workout;
+
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _MyWorkoutTile(
+                                workout: workout,
+                                lastCompleted: _formatLastCompleted(lastDate),
+                                hasBeenCompleted: lastDate != null,
+                                colorScheme: colorScheme,
+                                textTheme: textTheme,
+                                isInFolder: true,
+                                onTap: () => widget.onNavigate('workout-detail', {
+                                  'workout': workout,
+                                }),
+                              ),
+                              if (!isLastItem)
+                                Divider(
+                                  height: 1,
+                                  thickness: 1,
+                                  indent: 56,
+                                  endIndent: 16,
+                                  color: colorScheme.outlineVariant.withOpacity(0.5),
+                                ),
+                            ],
+                          );
+                        }),
+                      if (workouts.length > 5)
+                        ListTile(
+                          contentPadding: const EdgeInsets.only(left: 72, right: 16),
+                          title: Text(
+                            '+ ${workouts.length - 5} more',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.primary,
+                            ),
+                          ),
+                          onTap: () => widget.onNavigate('workout-folders'),
+                        ),
+                    ],
                   ],
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           );
-        }),
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (_folders.isNotEmpty) plansList,
+        if (_folders.isNotEmpty && (_workoutsByFolder[null]?.isNotEmpty ?? false))
+          const SizedBox(height: 16),
 
         // My Workouts default section
         if (_workoutsByFolder[null]?.isNotEmpty ?? false) ...[
