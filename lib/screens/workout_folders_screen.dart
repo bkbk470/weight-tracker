@@ -14,8 +14,12 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
   final SupabaseService _supabaseService = SupabaseService.instance;
   List<Map<String, dynamic>> folders = [];
   Map<String?, List<Map<String, dynamic>>> workoutsByFolder = {};
+  List<Map<String, dynamic>> examplePlans = [];
   bool isLoading = true;
+  bool isLoadingExamplePlans = false;
   String? selectedFolderId;
+  bool examplePlansExpanded = false;
+  String? duplicatingTemplateId;
 
   @override
   void initState() {
@@ -24,14 +28,22 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
   }
 
   Future<void> _loadFoldersAndWorkouts() async {
-    setState(() => isLoading = true);
+    if (mounted) {
+      setState(() {
+        isLoading = true;
+        isLoadingExamplePlans = true;
+      });
+    }
 
     try {
-      // Load plans
-      final loadedFolders = await _supabaseService.getWorkoutFolders();
-      
-      // Load all workouts
-      final allWorkouts = await _supabaseService.getWorkouts();
+      // Load plans, workouts, and example templates in parallel
+      final foldersFuture = _supabaseService.getWorkoutFolders();
+      final workoutsFuture = _supabaseService.getWorkouts();
+      final templatesFuture = _supabaseService.getWorkoutTemplates();
+
+      final loadedFolders = await foldersFuture;
+      final allWorkouts = await workoutsFuture;
+      final exampleTemplates = await templatesFuture;
       
       // Group workouts by plan
       final Map<String?, List<Map<String, dynamic>>> grouped = {};
@@ -50,14 +62,21 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
         }
       }
 
+      if (!mounted) return;
       setState(() {
         folders = loadedFolders;
         workoutsByFolder = grouped;
+        examplePlans = exampleTemplates;
         isLoading = false;
+        isLoadingExamplePlans = false;
       });
     } catch (e) {
       print('Error loading plans: $e');
-      setState(() => isLoading = false);
+      if (!mounted) return;
+      setState(() {
+        isLoading = false;
+        isLoadingExamplePlans = false;
+      });
     }
   }
 
@@ -211,6 +230,209 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
     );
   }
 
+  Future<void> _duplicateTemplate(Map<String, dynamic> template) async {
+    final templateId = template['id']?.toString();
+    if (templateId == null || templateId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Template is missing required information.')),
+      );
+      return;
+    }
+
+    setState(() {
+      duplicatingTemplateId = templateId;
+    });
+
+    try {
+      final newWorkout = await _supabaseService.duplicateTemplateToWorkout(templateId);
+      await _loadFoldersAndWorkouts();
+
+      if (!mounted) return;
+      final colorScheme = Theme.of(context).colorScheme;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Workout "${newWorkout['name'] ?? 'Workout'}" added to My Workouts'),
+          backgroundColor: colorScheme.primary,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final colorScheme = Theme.of(context).colorScheme;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to add template: $e'),
+          backgroundColor: colorScheme.error,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          duplicatingTemplateId = null;
+        });
+      }
+    }
+  }
+
+  String _templateSummary(Map<String, dynamic> template) {
+    final exercises =
+        (template['workout_template_exercises'] as List?)?.length ?? 0;
+    final dynamic durationValue = template['estimated_duration_minutes'];
+    int? durationMinutes;
+    if (durationValue is int) {
+      durationMinutes = durationValue;
+    } else if (durationValue is double) {
+      durationMinutes = durationValue.round();
+    } else if (durationValue != null) {
+      durationMinutes = int.tryParse(durationValue.toString());
+    }
+    final difficulty = (template['difficulty'] as String?)?.trim();
+    final category = (template['category'] as String?)?.trim();
+
+    final parts = <String>[];
+    if (exercises > 0) {
+      parts.add('$exercises exercise${exercises == 1 ? '' : 's'}');
+    }
+    if (durationMinutes != null && durationMinutes > 0) {
+      parts.add('$durationMinutes min');
+    }
+    if (difficulty != null && difficulty.isNotEmpty) {
+      parts.add(difficulty);
+    }
+    if (category != null && category.isNotEmpty) {
+      parts.add(category);
+    }
+
+    return parts.isEmpty ? 'Template workout' : parts.join(' • ');
+  }
+
+  Widget _buildExamplePlansCard(
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    if (isLoadingExamplePlans) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Loading example plans...',
+                style: textTheme.bodyMedium,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final hasTemplates = examplePlans.isNotEmpty;
+    final templatesToShow = examplePlans.take(5).toList();
+
+    return Card(
+      child: Column(
+        children: [
+          ListTile(
+            leading: Icon(
+              Icons.folder_special,
+              color: colorScheme.primary,
+              size: 32,
+            ),
+            title: Text(
+              'Example Plans',
+              style: textTheme.titleMedium,
+            ),
+            subtitle: Text(
+              hasTemplates
+                  ? '${examplePlans.length} template${examplePlans.length == 1 ? '' : 's'} to explore'
+                  : 'No example plans available yet',
+            ),
+            trailing: hasTemplates
+                ? Icon(
+                    examplePlansExpanded ? Icons.expand_less : Icons.expand_more,
+                  )
+                : null,
+            onTap: hasTemplates
+                ? () {
+                    setState(() {
+                      examplePlansExpanded = !examplePlansExpanded;
+                    });
+                  }
+                : null,
+          ),
+          if (hasTemplates && examplePlansExpanded) ...[
+            const Divider(height: 1),
+            ...templatesToShow.map((template) {
+              final templateId = template['id']?.toString() ?? '';
+              return ListTile(
+                contentPadding:
+                    const EdgeInsets.only(left: 72, right: 16, top: 8, bottom: 8),
+                title: Text(template['name'] as String? ?? 'Template'),
+                subtitle: Text(
+                  _templateSummary(template),
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: templateId.isEmpty
+                    ? null
+                    : duplicatingTemplateId == templateId
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: colorScheme.primary,
+                            ),
+                          )
+                        : IconButton(
+                            icon: const Icon(Icons.file_copy_outlined),
+                            tooltip: 'Add to My Workouts',
+                            onPressed: () => _duplicateTemplate(template),
+                          ),
+                onTap: () => widget.onNavigate(
+                  'workout-detail',
+                  {
+                    'workout': template,
+                  },
+                ),
+              );
+            }),
+            if (examplePlans.length > templatesToShow.length)
+              ListTile(
+                contentPadding: const EdgeInsets.only(left: 72, right: 16),
+                title: Text(
+                  'See all example plans',
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.primary,
+                  ),
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => widget.onNavigate(
+                  'workout-library',
+                  {
+                    'initialTab': 'Templates',
+                  },
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Color _getColorFromString(String? colorName) {
     switch (colorName) {
       case 'blue':
@@ -350,6 +572,11 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
               ),
             );
           }),
+
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: _buildExamplePlansCard(colorScheme, textTheme),
+          ),
 
           // Empty state
           if (folders.isEmpty && (workoutsByFolder[null]?.isEmpty ?? true))
