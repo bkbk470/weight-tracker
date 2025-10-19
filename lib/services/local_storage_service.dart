@@ -1,6 +1,8 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../constants/exercise_assets.dart';
+
 class LocalStorageService {
   static const String _workoutsBox = 'workouts';
   static const String _exercisesBox = 'exercises';
@@ -20,7 +22,7 @@ class LocalStorageService {
   // Initialize Hive
   Future<void> init() async {
     await Hive.initFlutter();
-    
+
     // Open boxes
     await Hive.openBox(_workoutsBox);
     await Hive.openBox(_exercisesBox);
@@ -31,11 +33,12 @@ class LocalStorageService {
   }
 
   // ==================== WORKOUTS ====================
-  
+
   // Save workout
   Future<void> saveWorkout(Map<String, dynamic> workout) async {
     final box = Hive.box(_workoutsBox);
-    final id = workout['id'] ?? DateTime.now().millisecondsSinceEpoch.toString();
+    final id =
+        workout['id'] ?? DateTime.now().millisecondsSinceEpoch.toString();
     workout['id'] = id;
     workout['lastModified'] = DateTime.now().toIso8601String();
     workout['syncStatus'] = 'pending'; // pending, synced, failed
@@ -45,9 +48,7 @@ class LocalStorageService {
   // Get all workouts
   List<Map<String, dynamic>> getAllWorkouts() {
     final box = Hive.box(_workoutsBox);
-    return box.values
-        .map((e) => Map<String, dynamic>.from(e as Map))
-        .toList();
+    return box.values.map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 
   // Get workout by ID
@@ -85,12 +86,21 @@ class LocalStorageService {
   }
 
   // ==================== EXERCISES ====================
-  
+
   // Save exercise
   Future<void> saveExercise(Map<String, dynamic> exercise) async {
     final box = Hive.box(_exercisesBox);
-    final id = exercise['id'] ?? DateTime.now().millisecondsSinceEpoch.toString();
+    final id =
+        exercise['id'] ?? DateTime.now().millisecondsSinceEpoch.toString();
     exercise['id'] = id;
+    if (exercise['imageUrl'] == null && exercise['image_url'] != null) {
+      exercise['imageUrl'] = exercise['image_url'];
+    }
+    if (exercise['image_url'] == null && exercise['imageUrl'] != null) {
+      exercise['image_url'] = exercise['imageUrl'];
+    }
+    exercise['imageUrl'] ??= kExercisePlaceholderImage;
+    exercise['image_url'] ??= kExercisePlaceholderImage;
     exercise['lastModified'] = DateTime.now().toIso8601String();
     exercise['syncStatus'] = 'pending';
     await box.put(id, exercise);
@@ -99,9 +109,7 @@ class LocalStorageService {
   // Get all exercises
   List<Map<String, dynamic>> getAllExercises() {
     final box = Hive.box(_exercisesBox);
-    return box.values
-        .map((e) => Map<String, dynamic>.from(e as Map))
-        .toList();
+    return box.values.map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 
   // Get exercise by ID
@@ -118,13 +126,15 @@ class LocalStorageService {
   }
 
   // ==================== MEASUREMENTS ====================
-  
+
   // Save measurement
   Future<void> saveMeasurement(Map<String, dynamic> measurement) async {
     final box = Hive.box(_measurementsBox);
-    final id = measurement['id'] ?? DateTime.now().millisecondsSinceEpoch.toString();
+    final id =
+        measurement['id'] ?? DateTime.now().millisecondsSinceEpoch.toString();
     measurement['id'] = id;
-    measurement['date'] = measurement['date'] ?? DateTime.now().toIso8601String();
+    measurement['date'] =
+        measurement['date'] ?? DateTime.now().toIso8601String();
     measurement['lastModified'] = DateTime.now().toIso8601String();
     measurement['syncStatus'] = measurement['syncStatus'] ?? 'pending';
     await box.put(id, measurement);
@@ -133,9 +143,7 @@ class LocalStorageService {
   // Get all measurements
   List<Map<String, dynamic>> getAllMeasurements() {
     final box = Hive.box(_measurementsBox);
-    return box.values
-        .map((e) => Map<String, dynamic>.from(e as Map))
-        .toList();
+    return box.values.map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 
   // Get measurements by type
@@ -161,7 +169,7 @@ class LocalStorageService {
   }
 
   // ==================== USER DATA ====================
-  
+
   // Save user profile
   Future<void> saveUserProfile(Map<String, dynamic> profile) async {
     final box = Hive.box(_userBox);
@@ -177,7 +185,7 @@ class LocalStorageService {
   }
 
   // ==================== SETTINGS ====================
-  
+
   // Save setting
   Future<void> saveSetting(String key, dynamic value) async {
     final box = Hive.box(_settingsBox);
@@ -210,7 +218,8 @@ class LocalStorageService {
     if (key.trim().isEmpty) return;
     final box = Hive.box(_exerciseHistoryBox);
     final clonedEntry = Map<String, dynamic>.from(entry);
-    clonedEntry['date'] = clonedEntry['date'] ?? DateTime.now().toIso8601String();
+    clonedEntry['date'] =
+        clonedEntry['date'] ?? DateTime.now().toIso8601String();
     final setsRaw = clonedEntry['sets'];
     if (setsRaw is List) {
       clonedEntry['sets'] = setsRaw
@@ -223,7 +232,8 @@ class LocalStorageService {
             .toList() ??
         <Map<String, dynamic>>[];
 
-    final existingIndex = history.indexWhere((item) => item['date'] == clonedEntry['date']);
+    final existingIndex =
+        history.indexWhere((item) => item['date'] == clonedEntry['date']);
     if (existingIndex >= 0) {
       history[existingIndex] = clonedEntry;
     } else {
@@ -242,9 +252,7 @@ class LocalStorageService {
     final box = Hive.box(_exerciseHistoryBox);
     final raw = box.get(key);
     if (raw is List) {
-      return raw
-          .map((item) => Map<String, dynamic>.from(item as Map))
-          .toList();
+      return raw.map((item) => Map<String, dynamic>.from(item as Map)).toList();
     }
     return [];
   }
@@ -255,7 +263,7 @@ class LocalStorageService {
   }
 
   // ==================== SYNC STATUS ====================
-  
+
   // Get last sync time
   DateTime? getLastSyncTime() {
     final timestamp = getSetting('lastSyncTime');
@@ -271,14 +279,14 @@ class LocalStorageService {
   bool needsSync() {
     final lastSync = getLastSyncTime();
     if (lastSync == null) return true;
-    
+
     // Check if there's any pending data
     final pendingWorkouts = getPendingSyncWorkouts();
     return pendingWorkouts.isNotEmpty;
   }
 
   // ==================== CLEAR DATA ====================
-  
+
   // Clear all local data
   Future<void> clearAllData() async {
     await Hive.box(_workoutsBox).clear();
@@ -291,7 +299,7 @@ class LocalStorageService {
   Future<void> clearSyncedData() async {
     final workoutsBox = Hive.box(_workoutsBox);
     final keysToDelete = <String>[];
-    
+
     for (var key in workoutsBox.keys) {
       final workout = workoutsBox.get(key);
       if (workout != null) {
@@ -301,14 +309,14 @@ class LocalStorageService {
         }
       }
     }
-    
+
     for (var key in keysToDelete) {
       await workoutsBox.delete(key);
     }
   }
 
   // ==================== STATISTICS ====================
-  
+
   // Get storage stats
   Map<String, int> getStorageStats() {
     return {

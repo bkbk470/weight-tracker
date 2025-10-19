@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/exercise_assets.dart';
 import '../services/local_storage_service.dart';
 import '../services/supabase_service.dart';
 
@@ -14,13 +15,23 @@ class CreateExerciseScreen extends StatefulWidget {
 class _CreateExerciseScreenState extends State<CreateExerciseScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _gifUrlController = TextEditingController();
   final _notesController = TextEditingController();
-  
+
   String _selectedCategory = 'Chest';
   String _selectedDifficulty = 'Beginner';
   String _selectedEquipment = 'Barbell';
-  
-  final _categories = ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Cardio', 'Other'];
+
+  final _categories = [
+    'Chest',
+    'Back',
+    'Legs',
+    'Shoulders',
+    'Arms',
+    'Core',
+    'Cardio',
+    'Other'
+  ];
   final _difficulties = ['Beginner', 'Intermediate', 'Advanced'];
   final _equipment = [
     'Barbell',
@@ -38,6 +49,7 @@ class _CreateExerciseScreenState extends State<CreateExerciseScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _gifUrlController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -50,6 +62,10 @@ class _CreateExerciseScreenState extends State<CreateExerciseScreen> {
     setState(() => _isSaving = true);
 
     try {
+      final gifUrl = _gifUrlController.text.trim();
+      final resolvedGifUrl =
+          gifUrl.isNotEmpty ? gifUrl : kExercisePlaceholderImage;
+
       final exercise = {
         'name': _nameController.text.trim(),
         'category': _selectedCategory,
@@ -59,6 +75,9 @@ class _CreateExerciseScreenState extends State<CreateExerciseScreen> {
         'isCustom': true,
         'createdAt': DateTime.now().toIso8601String(),
       };
+
+      exercise['imageUrl'] = resolvedGifUrl;
+      exercise['image_url'] = resolvedGifUrl;
 
       // Save to local storage first (for offline support)
       await LocalStorageService.instance.saveExercise(exercise);
@@ -71,6 +90,7 @@ class _CreateExerciseScreenState extends State<CreateExerciseScreen> {
           difficulty: _selectedDifficulty,
           equipment: _selectedEquipment,
           notes: _notesController.text.trim(),
+          imageUrl: resolvedGifUrl,
         );
       } catch (e) {
         // If Supabase fails (offline), it's ok - local storage has it
@@ -176,6 +196,40 @@ class _CreateExerciseScreenState extends State<CreateExerciseScreen> {
                 }
                 if (value.trim().length < 3) {
                   return 'Name must be at least 3 characters';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 24),
+
+            // Demo GIF URL
+            Text(
+              'Demo GIF URL (optional)',
+              style: textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _gifUrlController,
+              decoration: InputDecoration(
+                hintText: 'https://your-storage.exercises/demo.gif',
+                prefixIcon: const Icon(Icons.link),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              keyboardType: TextInputType.url,
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return null;
+                }
+                final trimmed = value.trim();
+                final isHttp = trimmed.startsWith('http');
+                final isStoragePath = trimmed.contains('/');
+                if (!isHttp && !isStoragePath) {
+                  return 'Enter a web URL or storage path (bucket/object.gif)';
+                }
+                if (!trimmed.toLowerCase().endsWith('.gif')) {
+                  return 'URL should point to a .gif file';
                 }
                 return null;
               },

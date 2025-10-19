@@ -354,7 +354,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 150),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 150),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // Profile Info

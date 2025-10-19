@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:async';
 import '../services/local_storage_service.dart';
 import '../services/workout_timer_service.dart';
 import '../services/supabase_service.dart';
+import '../widgets/editable_number_field.dart';
 
 class WorkoutScreen extends StatefulWidget {
   final Function(String) onNavigate;
@@ -47,7 +49,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     
     // Load preloaded exercises if provided
     if (widget.preloadedExercises != null) {
-      exercises = widget.preloadedExercises!.map((ex) {
+      exercises = widget.preloadedExercises!.asMap().entries.map((entry) {
+        final index = entry.key;
+        final ex = entry.value;
         final dynamicSetDetails = ex['setDetails'];
         List<ExerciseSet> plannedSets;
         if (dynamicSetDetails is List && dynamicSetDetails.isNotEmpty) {
@@ -86,7 +90,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         }
 
         return Exercise(
-          id: DateTime.now().toString() + ex['name'],
+          id: '${DateTime.now().millisecondsSinceEpoch}_${ex['name']}_$index',  // Unique ID with index
           name: ex['name'],
           sets: plannedSets,
           restTime: plannedSets.isNotEmpty
@@ -347,6 +351,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 },
                 icon: const Icon(Icons.play_arrow),
                 label: const Text('Keep Working'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Theme.of(dialogContext).colorScheme.primaryContainer,
+                  foregroundColor: Theme.of(dialogContext).colorScheme.onPrimaryContainer,
+                ),
               ),
             ),
             const SizedBox(height: 8),
@@ -382,7 +390,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 icon: const Icon(Icons.check),
                 label: const Text('Finish Anyway'),
                 style: FilledButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                  backgroundColor: Theme.of(dialogContext).colorScheme.secondaryContainer,
+                  foregroundColor: Theme.of(dialogContext).colorScheme.onSecondaryContainer,
                 ),
               ),
             ),
@@ -985,6 +994,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
             restTimerInstance?.cancel();
           }
         } else {
+          // Add haptic feedback when completing a set
+          HapticFeedback.mediumImpact();
+          
           // Stop and reset any previous rest timer
           if (isResting) {
             restTimerInstance?.cancel();
@@ -1297,7 +1309,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         children: [
           if ((sessionName ?? '').isNotEmpty)
             Padding(
@@ -1588,7 +1600,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                         ),
                                       ),
                                 const SizedBox(width: 2),
-                                // Weight (tappable + previous)
+                                // Weight (always editable + previous)
                                 Expanded(
                                   flex: 2,
                                   child: Padding(
@@ -1596,164 +1608,83 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.center,
                                       children: [
-                                        InkWell(
-                                          onTap: () => _showNumberPicker(
-                                            context,
-                                            'Weight',
-                                            set.weight,
-                                            0,
-                                            500,
-                                            5,
-                                            (value) => updateSet(exercise.id, setIndex, 'weight', value),
-                                          ),
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                            decoration: BoxDecoration(
-                                              color: colorScheme.surface,
-                                              borderRadius: BorderRadius.circular(6),
-                                              border: Border.all(
-                                                color: colorScheme.outline.withOpacity(0.3),
-                                              ),
-                                            ),
-                                        child: Center(
-                                          child: FittedBox(
-                                            fit: BoxFit.scaleDown,
-                                            child: Text(
-                                              '${set.weight}',
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: textTheme.bodyMedium?.copyWith(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
+                                        EditableNumberField(
+                                          value: set.weight,
+                                          onChanged: (value) => updateSet(exercise.id, setIndex, 'weight', value),
+                                          isHighlighted: set.isResting,
+                                          textStyle: textTheme.bodyMedium?.copyWith(
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                          ),
-                                        ),
-                                        if (set.previousWeight != null)
-                                          Padding(
-                                            padding: const EdgeInsets.only(top: 4),
-                                            child: Text(
-                                              'Prev: ${_formatWeightValue(set.previousWeight)}'
-                                              '${set.previousReps != null ? ' x ${set.previousReps}' : ''}',
-                                              style: textTheme.bodySmall?.copyWith(
-                                                color: colorScheme.onSurfaceVariant,
-                                                fontSize: 11,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                          ),
                                       ],
                                     ),
                                   ),
                                 ),
-                                // Reps (tappable + previous)
+                                // Reps (always editable)
                                 Expanded(
                                   flex: 2,
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(horizontal: 4),
-                                    child: InkWell(
-                                      onTap: () => _showNumberPicker(
-                                        context,
-                                        'Reps',
-                                        set.reps,
-                                        0,
-                                        100,
-                                        1,
-                                        (value) => updateSet(exercise.id, setIndex, 'reps', value),
-                                      ),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                        decoration: BoxDecoration(
-                                          color: colorScheme.surface,
-                                          borderRadius: BorderRadius.circular(6),
-                                          border: Border.all(
-                                            color: colorScheme.outline.withOpacity(0.3),
-                                          ),
-                                        ),
-                                        child: Center(
-                                          child: FittedBox(
-                                            fit: BoxFit.scaleDown,
-                                            child: Text(
-                                              '${set.reps}',
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: textTheme.bodyMedium?.copyWith(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                          ),
-                                        ),
+                                    child: EditableNumberField(
+                                      value: set.reps,
+                                      onChanged: (value) => updateSet(exercise.id, setIndex, 'reps', value),
+                                      isHighlighted: set.isResting,
+                                      textStyle: textTheme.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ),
                                 ),
-                                // Rest timer display (tappable)
+                                // Rest time (editable when not resting, countdown when resting)
                                 Expanded(
                                   flex: 2,
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(horizontal: 4),
-                                    child: InkWell(
-                                      onTap: () => _showNumberPicker(
-                                        context,
-                                        'Rest',
-                                        exercise.restTime,
-                                        0,
-                                        600,
-                                        1,
-                                        (value) {
-                                          setState(() {
-                                            exercise.restTime = value;
-                                            for (final exerciseSet in exercise.sets) {
-                                              exerciseSet.plannedRestSeconds = value;
-                                              if (!exerciseSet.isResting) {
-                                                exerciseSet.restStartTime = value;
-                                                exerciseSet.currentRestTime = value;
-                                              }
-                                            }
-                                          });
-                                          if (widget.workoutId != null) {
-                                            final exerciseIndex = exercises.indexWhere((e) => e.id == exercise.id);
-                                            if (exerciseIndex != -1) {
-                                              unawaited(_syncWorkoutExerciseTemplate(exercise, exerciseIndex));
-                                            }
-                                          }
-                                        },
-                                      ),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                        decoration: BoxDecoration(
-                                          color: set.isResting 
-                                              ? colorScheme.secondaryContainer.withOpacity(0.5)
-                                              : colorScheme.surface,
-                                          borderRadius: BorderRadius.circular(6),
-                                          border: Border.all(
-                                            color: set.isResting
-                                                ? colorScheme.secondary.withOpacity(0.5)
-                                                : colorScheme.outline.withOpacity(0.3),
-                                          ),
-                                        ),
-                                        child: Center(
-                                          child: FittedBox(
-                                            fit: BoxFit.scaleDown,
-                                            child: Text(
-                                              set.isResting 
-                                                  ? formatTime(set.currentRestTime)
-                                                  : formatTime(set.plannedRestSeconds > 0
-                                                      ? set.plannedRestSeconds
-                                                      : exercise.restTime),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: textTheme.bodySmall?.copyWith(
-                                                fontWeight: set.isResting ? FontWeight.bold : FontWeight.bold,
-                                                color: set.isResting ? colorScheme.secondary : colorScheme.onSurface,
+                                    child: set.isResting
+                                        ? Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                            decoration: BoxDecoration(
+                                              color: colorScheme.secondaryContainer.withOpacity(0.5),
+                                              borderRadius: BorderRadius.circular(6),
+                                              border: Border.all(
+                                                color: colorScheme.secondary.withOpacity(0.5),
+                                                width: 2,
                                               ),
                                             ),
+                                            child: Center(
+                                              child: FittedBox(
+                                                fit: BoxFit.scaleDown,
+                                                child: Text(
+                                                  formatTime(set.currentRestTime),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: textTheme.bodySmall?.copyWith(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: colorScheme.secondary,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                        : EditableNumberField(
+                                            value: set.plannedRestSeconds > 0 ? set.plannedRestSeconds : exercise.restTime,
+                                            onChanged: (value) {
+                                              setState(() {
+                                                set.plannedRestSeconds = value;
+                                                set.restStartTime = value;
+                                                set.currentRestTime = value;
+                                              });
+                                              if (widget.workoutId != null) {
+                                                final exerciseIndex = exercises.indexWhere((e) => e.id == exercise.id);
+                                                if (exerciseIndex != -1) {
+                                                  unawaited(_syncWorkoutExerciseTemplate(exercise, exerciseIndex));
+                                                }
+                                              }
+                                            },
+                                            textStyle: textTheme.bodySmall?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
-                                        ),
-                                      ),
-                                    ),
                                   ),
                                 ),
                                 const Spacer(),

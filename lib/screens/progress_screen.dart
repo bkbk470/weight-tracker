@@ -47,7 +47,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
 
           // Content
           SliverPadding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(16),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // Period selector

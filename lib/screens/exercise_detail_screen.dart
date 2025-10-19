@@ -1,5 +1,12 @@
+import 'dart:async';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:fl_chart/fl_chart.dart';
+import 'package:http/http.dart' as http;
+import '../constants/exercise_assets.dart';
+import '../services/supabase_service.dart';
 
 class ExerciseDetailScreen extends StatefulWidget {
   final Function(String) onNavigate;
@@ -16,16 +23,168 @@ class ExerciseDetailScreen extends StatefulWidget {
 }
 
 class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
+  bool _showGif = false;
   String selectedPeriod = '3M';
   final periods = ['1M', '3M', '6M', '1Y', 'All'];
 
   final exerciseName = 'Bench Press';
-  final exerciseImageUrl =
-      'https://images.unsplash.com/photo-1517964106626-460c5db42163?auto=format&fit=crop&w=1200&q=80';
+  final exerciseImageUrl = kExercisePlaceholderImage;
   final personalRecord = '225 lbs';
   final lastPerformed = '2 days ago';
   final totalVolume = '12,450 lbs';
   final totalSets = 156;
+
+  bool get _isGif {
+    final lower = exerciseImageUrl.toLowerCase();
+    return lower.endsWith('.gif');
+  }
+
+  static final Map<String, Future<Uint8List>> _gifBytesCache = {};
+  static final Map<String, Future<ui.Image>> _firstFrameCache = {};
+  static final Map<String, Future<Duration>> _gifLoopDurationCache = {};
+  Timer? _gifTimer;
+  Duration? _gifSingleLoopDuration;
+
+  bool _needsSignedUrl(String path) {
+    return path.isNotEmpty &&
+        !path.startsWith('http') &&
+        !path.startsWith('assets/');
+  }
+
+  Future<Uint8List> _loadGifBytes(String assetPath) {
+    return _gifBytesCache.putIfAbsent(assetPath, () async {
+      if (assetPath.startsWith('http')) {
+        final response = await http.get(Uri.parse(assetPath));
+        if (response.statusCode == 200) {
+          return response.bodyBytes;
+        }
+        throw Exception('Failed to download GIF (${response.statusCode})');
+      }
+      if (_needsSignedUrl(assetPath)) {
+        final signedUrl = await SupabaseService.instance
+            .getSignedUrlForStoragePath(assetPath);
+        final response = await http.get(Uri.parse(signedUrl));
+        if (response.statusCode == 200) {
+          return response.bodyBytes;
+        }
+        throw Exception(
+            'Failed to download GIF from signed URL (${response.statusCode})');
+      }
+      final data = await rootBundle.load(assetPath);
+      return data.buffer.asUint8List();
+    });
+  }
+
+  Future<ui.Image> _loadFirstFrame(String assetPath) {
+    return _firstFrameCache.putIfAbsent(assetPath, () async {
+      final bytes = await _loadGifBytes(assetPath);
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      return frame.image;
+    });
+  }
+
+  Future<Duration> _getGifLoopDuration(String assetPath) {
+    return _gifLoopDurationCache.putIfAbsent(assetPath, () async {
+      final bytes = await _loadGifBytes(assetPath);
+      final codec = await ui.instantiateImageCodec(bytes);
+      Duration total = Duration.zero;
+      for (int i = 0; i < codec.frameCount; i++) {
+        final frame = await codec.getNextFrame();
+        total += frame.duration;
+      }
+      if (total == Duration.zero) {
+        total = const Duration(seconds: 2);
+      }
+      return total;
+    });
+  }
+
+  Widget _buildFullHeaderImage(String path, Widget Function() fallbackBuilder) {
+    if (path.startsWith('http')) {
+      return Image.network(
+        path,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        errorBuilder: (context, error, stackTrace) => fallbackBuilder(),
+      );
+    }
+    if (_needsSignedUrl(path)) {
+      return FutureBuilder<String>(
+        future: SupabaseService.instance.getSignedUrlForStoragePath(path),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return Image.network(
+              snapshot.data!,
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+              errorBuilder: (context, error, stackTrace) => fallbackBuilder(),
+            );
+          }
+          if (snapshot.hasError) {
+            return fallbackBuilder();
+          }
+          return const Center(
+              child: CircularProgressIndicator(strokeWidth: 1.5));
+        },
+      );
+    }
+    return Image.asset(
+      path,
+      fit: BoxFit.cover,
+      gaplessPlayback: true,
+      errorBuilder: (context, error, stackTrace) => fallbackBuilder(),
+    );
+  }
+
+  Widget _buildStaticHeaderImage(
+      String path, Widget Function() fallbackBuilder) {
+    if (!path.toLowerCase().endsWith('.gif')) {
+      return _buildFullHeaderImage(path, fallbackBuilder);
+    }
+
+    return FutureBuilder<ui.Image>(
+      future: _loadFirstFrame(path),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return RawImage(
+            image: snapshot.data,
+            fit: BoxFit.cover,
+          );
+        }
+        return fallbackBuilder();
+      },
+    );
+  }
+
+  Future<void> _handlePlayPressed() async {
+    if (!_isGif) return;
+
+    setState(() => _showGif = true);
+    _gifTimer?.cancel();
+
+    try {
+      _gifSingleLoopDuration ??= await _getGifLoopDuration(exerciseImageUrl);
+      final totalDuration =
+          (_gifSingleLoopDuration ?? const Duration(seconds: 2)) * 2;
+      _gifTimer = Timer(totalDuration, () {
+        if (!mounted) return;
+        setState(() => _showGif = false);
+      });
+    } catch (e) {
+      // Fallback to a steady timeout if decoding fails.
+      _gifTimer = Timer(const Duration(seconds: 4), () {
+        if (!mounted) return;
+        setState(() => _showGif = false);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _gifTimer?.cancel();
+    super.dispose();
+  }
 
   Widget _buildHeaderBackground(BuildContext context) {
     final gradient = BoxDecoration(
@@ -52,36 +211,71 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
       );
     }
 
+    Widget _buildErrorFallback() {
+      return Container(
+        decoration: gradient,
+        child: Center(
+          child: Icon(
+            Icons.fitness_center,
+            size: 80,
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+          ),
+        ),
+      );
+    }
+
+    final firstFrame = exerciseImageUrl.endsWith('.gif')
+        ? _buildStaticHeaderImage(exerciseImageUrl, _buildErrorFallback)
+        : _buildFullHeaderImage(exerciseImageUrl, _buildErrorFallback);
+
     return Stack(
       fit: StackFit.expand,
       children: [
-        Image.network(
-          exerciseImageUrl,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              decoration: gradient,
-              child: Center(
-                child: Icon(
-                  Icons.fitness_center,
-                  size: 80,
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+        firstFrame,
+        if (_isGif && !_showGif)
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: GestureDetector(
+              onTap: _handlePlayPressed,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.black87,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Icon(
+                    Icons.play_arrow,
+                    size: 28,
+                    color: Colors.white,
+                  ),
                 ),
               ),
-            );
-          },
-        ),
-        Container(
-            decoration: gradient.copyWith(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.black.withOpacity(0.35),
-              Theme.of(context).colorScheme.surface.withOpacity(0.7),
-            ],
+            ),
           ),
-        )),
+        if (_isGif && _showGif)
+          _buildFullHeaderImage(exerciseImageUrl, _buildErrorFallback),
+        IgnorePointer(
+          child: Container(
+              decoration: gradient.copyWith(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.black.withOpacity(0.35),
+                Theme.of(context).colorScheme.surface.withOpacity(0.7),
+              ],
+            ),
+          )),
+        ),
       ],
     );
   }

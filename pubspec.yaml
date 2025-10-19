@@ -17,6 +17,8 @@ dependencies:
   path_provider: ^2.1.1
   supabase_flutter: ^2.0.0
   connectivity_plus: ^5.0.0
+  http: ^1.2.0
+  intl: ^0.18.0
 
 dev_dependencies:
   flutter_test:
@@ -25,3 +27,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/gifs/

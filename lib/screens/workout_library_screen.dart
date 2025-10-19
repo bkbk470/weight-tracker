@@ -3,8 +3,13 @@ import '../services/supabase_service.dart';
 
 class WorkoutLibraryScreen extends StatefulWidget {
   final void Function(String, [Map<String, dynamic>?]) onNavigate;
+  final String? initialTab;
 
-  const WorkoutLibraryScreen({super.key, required this.onNavigate});
+  const WorkoutLibraryScreen({
+    super.key,
+    required this.onNavigate,
+    this.initialTab,
+  });
 
   @override
   State<WorkoutLibraryScreen> createState() => _WorkoutLibraryScreenState();
@@ -22,6 +27,14 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
   @override
   void initState() {
     super.initState();
+    // Set initial tab if provided
+    if (widget.initialTab != null) {
+      selectedTab = widget.initialTab!;
+      // Load templates if starting on Templates tab
+      if (selectedTab == 'Templates') {
+        _loadTemplates();
+      }
+    }
     _loadWorkouts();
   }
 
@@ -90,6 +103,13 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
                 ),
               ),
             ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.folder),
+                onPressed: () => widget.onNavigate('workout-folders'),
+                tooltip: 'Organize Folders',
+              ),
+            ],
           ),
 
           // Search Bar

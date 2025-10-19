@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../constants/exercise_assets.dart';
+
 class SupabaseService {
   static SupabaseService? _instance;
   static SupabaseService get instance {
@@ -9,15 +11,17 @@ class SupabaseService {
 
   SupabaseService._();
 
+  final Map<String, _SignedUrlCacheEntry> _signedUrlCache = {};
+
   // Get Supabase client
   SupabaseClient get client => Supabase.instance.client;
-  
+
   // Get current user
   User? get currentUser => client.auth.currentUser;
   String? get currentUserId => currentUser?.id;
 
   // ==================== AUTHENTICATION ====================
-  
+
   // Sign up with email and password
   Future<AuthResponse> signUp({
     required String email,
@@ -65,56 +69,54 @@ class SupabaseService {
   Stream<AuthState> get authStateChanges => client.auth.onAuthStateChange;
 
   // ==================== PROFILE ====================
-  
+
   // Get user profile
   Future<Map<String, dynamic>?> getProfile() async {
     if (currentUserId == null) return null;
-    
+
     final response = await client
         .from('profiles')
         .select()
         .eq('id', currentUserId!)
         .single();
-    
+
     return response;
   }
 
   // Update user profile
   Future<void> updateProfile(Map<String, dynamic> updates) async {
     if (currentUserId == null) throw Exception('Not authenticated');
-    
-    await client
-        .from('profiles')
-        .update(updates)
-        .eq('id', currentUserId!);
+
+    await client.from('profiles').update(updates).eq('id', currentUserId!);
   }
 
   // ==================== EXERCISES ====================
-  
+
   // Get all exercises (default + custom)
   Future<List<Map<String, dynamic>>> getExercises() async {
     if (currentUserId == null) return [];
-    
+
     final response = await client
         .from('exercises')
         .select()
         .or('is_default.eq.true,user_id.eq.$currentUserId')
         .order('name');
-    
+
     return List<Map<String, dynamic>>.from(response);
   }
 
   // Get exercises by category
-  Future<List<Map<String, dynamic>>> getExercisesByCategory(String category) async {
+  Future<List<Map<String, dynamic>>> getExercisesByCategory(
+      String category) async {
     if (currentUserId == null) return [];
-    
+
     final response = await client
         .from('exercises')
         .select()
         .eq('category', category)
         .or('is_default.eq.true,user_id.eq.$currentUserId')
         .order('name');
-    
+
     return List<Map<String, dynamic>>.from(response);
   }
 
@@ -125,25 +127,58 @@ class SupabaseService {
     required String difficulty,
     required String equipment,
     String? notes,
+    String? imageUrl,
+    bool isDefault = false, // Add this parameter
   }) async {
-    if (currentUserId == null) throw Exception('Not authenticated');
-    
+    if (currentUserId == null && !isDefault) throw Exception('Not authenticated');
+
     final response = await client
         .from('exercises')
         .insert({
-          'user_id': currentUserId,
+          // Only add user_id if NOT a default exercise
+          if (!isDefault) 'user_id': currentUserId,
           'name': name,
           'category': category,
           'difficulty': difficulty,
           'equipment': equipment,
           'notes': notes,
-          'is_custom': true,
-          'is_default': false,
+          'is_custom': !isDefault,
+          'is_default': isDefault,
+          'image_url': (imageUrl != null && imageUrl.isNotEmpty)
+              ? imageUrl
+              : kExercisePlaceholderImage,
         })
         .select()
         .single();
-    
+
     return response;
+  }
+
+  Future<String> getSignedUrlForStoragePath(
+    String storagePath, {
+    Duration validFor = const Duration(minutes: 55),
+  }) async {
+    final now = DateTime.now();
+    final cached = _signedUrlCache[storagePath];
+    if (cached != null && now.isBefore(cached.expiresAt)) {
+      return cached.url;
+    }
+
+    final firstSlash = storagePath.indexOf('/');
+    if (firstSlash <= 0 || firstSlash >= storagePath.length - 1) {
+      throw ArgumentError(
+          'Storage path must be in the format "bucket/object". Received: $storagePath');
+    }
+
+    final bucket = storagePath.substring(0, firstSlash);
+    final objectPath = storagePath.substring(firstSlash + 1);
+    final signedUrl = await client.storage
+        .from(bucket)
+        .createSignedUrl(objectPath, validFor.inSeconds);
+
+    final expiresAt = now.add(validFor);
+    _signedUrlCache[storagePath] = _SignedUrlCacheEntry(signedUrl, expiresAt);
+    return signedUrl;
   }
 
   /// Find an exercise ID by name or create one if it does not exist.
@@ -181,27 +216,152 @@ class SupabaseService {
   }
 
   // Update custom exercise
-  Future<void> updateExercise(String exerciseId, Map<String, dynamic> updates) async {
-    await client
-        .from('exercises')
-        .update(updates)
-        .eq('id', exerciseId);
+  Future<void> updateExercise(
+      String exerciseId, Map<String, dynamic> updates) async {
+    await client.from('exercises').update(updates).eq('id', exerciseId);
   }
 
   // Delete custom exercise
   Future<void> deleteExercise(String exerciseId) async {
+    await client.from('exercises').delete().eq('id', exerciseId);
+  }
+
+  // ==================== WORKOUT PLANS ====================
+
+  // Get all plans for the current user
+  Future<List<Map<String, dynamic>>> getWorkoutFolders() async {
+    if (currentUserId == null) return [];
+
+    try {
+      final response = await client
+          .from('workout_plans')
+          .select()
+          .eq('user_id', currentUserId!)
+          .order('is_favorite', ascending: false) // Favorites first
+          .order('order_index', ascending: true);
+      
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      print('Error fetching plans: $e');
+      return [];
+    }
+  }
+
+  // Get only favorite plans
+  Future<List<Map<String, dynamic>>> getFavoritePlans() async {
+    if (currentUserId == null) return [];
+
+    try {
+      final response = await client
+          .from('workout_plans')
+          .select()
+          .eq('user_id', currentUserId!)
+          .eq('is_favorite', true)
+          .order('order_index', ascending: true);
+      
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      print('Error fetching favorite plans: $e');
+      return [];
+    }
+  }
+
+  // Create a new plan
+  Future<Map<String, dynamic>> createFolder({
+    required String name,
+    String? description,
+    String? color,
+    String? icon,
+    String? parentFolderId,
+  }) async {
+    if (currentUserId == null) throw Exception('Not authenticated');
+
+    final data = {
+      'user_id': currentUserId,
+      'name': name,
+      'description': description,
+      'color': color,
+      'icon': icon,
+      'parent_plan_id': parentFolderId,
+    };
+
+    final response = await client
+        .from('workout_plans')
+        .insert(data)
+        .select()
+        .single();
+
+    return response;
+  }
+
+  // Update plan
+  Future<void> updateFolder(String folderId, Map<String, dynamic> updates) async {
     await client
-        .from('exercises')
+        .from('workout_plans')
+        .update(updates)
+        .eq('id', folderId);
+  }
+
+  // Toggle plan favorite status
+  Future<void> togglePlanFavorite(String planId, bool isFavorite) async {
+    await client
+        .from('workout_plans')
+        .update({'is_favorite': isFavorite})
+        .eq('id', planId);
+  }
+
+  // Delete plan
+  Future<void> deleteFolder(String folderId) async {
+    await client
+        .from('workout_plans')
         .delete()
-        .eq('id', exerciseId);
+        .eq('id', folderId);
+  }
+
+  // Move workout to plan
+  Future<void> moveWorkoutToFolder(String workoutId, String? folderId) async {
+    await client
+        .from('workouts')
+        .update({'plan_id': folderId})
+        .eq('id', workoutId);
+  }
+
+  // Get workouts by plan
+  Future<List<Map<String, dynamic>>> getWorkoutsByFolder(String? folderId) async {
+    if (currentUserId == null) return [];
+
+    try {
+      var query = client
+          .from('workouts')
+          .select('''
+            *,
+            workout_exercises (
+              *,
+              exercise:exercises (*)
+            )
+          ''')
+          .eq('user_id', currentUserId!);
+
+      if (folderId != null) {
+        query = query.eq('plan_id', folderId);
+      } else {
+        query = query.isFilter('plan_id', null);
+      }
+
+      final response = await query.order('created_at', ascending: false);
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      print('Error fetching workouts by plan: $e');
+      return [];
+    }
   }
 
   // ==================== WORKOUTS (TEMPLATES) ====================
-  
+
   // Get all workouts
   Future<List<Map<String, dynamic>>> getWorkouts() async {
     if (currentUserId == null) return [];
-    
+
     final response = await client
         .from('workouts')
         .select('''
@@ -213,7 +373,7 @@ class SupabaseService {
         ''')
         .eq('user_id', currentUserId!)
         .order('created_at', ascending: false);
-    
+
     return List<Map<String, dynamic>>.from(response);
   }
 
@@ -230,76 +390,62 @@ class SupabaseService {
         ''')
         .order('is_featured', ascending: false)
         .order('name', ascending: true);
-    
+
     return List<Map<String, dynamic>>.from(response);
   }
 
   // Get featured workout templates
   Future<List<Map<String, dynamic>>> getFeaturedWorkoutTemplates() async {
-    final response = await client
-        .from('workout_templates')
-        .select('''
+    final response = await client.from('workout_templates').select('''
           *,
           workout_template_exercises (
             *,
             exercise:exercises (*)
           )
-        ''')
-        .eq('is_featured', true)
-        .order('name', ascending: true);
-    
+        ''').eq('is_featured', true).order('name', ascending: true);
+
     return List<Map<String, dynamic>>.from(response);
   }
 
   // Get workout templates by category
-  Future<List<Map<String, dynamic>>> getWorkoutTemplatesByCategory(String category) async {
-    final response = await client
-        .from('workout_templates')
-        .select('''
+  Future<List<Map<String, dynamic>>> getWorkoutTemplatesByCategory(
+      String category) async {
+    final response = await client.from('workout_templates').select('''
           *,
           workout_template_exercises (
             *,
             exercise:exercises (*)
           )
-        ''')
-        .eq('category', category)
-        .order('difficulty', ascending: true);
-    
+        ''').eq('category', category).order('difficulty', ascending: true);
+
     return List<Map<String, dynamic>>.from(response);
   }
 
   // Get workout templates by difficulty
-  Future<List<Map<String, dynamic>>> getWorkoutTemplatesByDifficulty(String difficulty) async {
-    final response = await client
-        .from('workout_templates')
-        .select('''
+  Future<List<Map<String, dynamic>>> getWorkoutTemplatesByDifficulty(
+      String difficulty) async {
+    final response = await client.from('workout_templates').select('''
           *,
           workout_template_exercises (
             *,
             exercise:exercises (*)
           )
-        ''')
-        .eq('difficulty', difficulty)
-        .order('name', ascending: true);
-    
+        ''').eq('difficulty', difficulty).order('name', ascending: true);
+
     return List<Map<String, dynamic>>.from(response);
   }
 
   // Get single workout template
   Future<Map<String, dynamic>?> getWorkoutTemplate(String templateId) async {
     try {
-      final response = await client
-          .from('workout_templates')
-          .select('''
+      final response = await client.from('workout_templates').select('''
             *,
             workout_template_exercises (
               *,
               exercise:exercises (*)
             )
-          ''')
-          .eq('id', templateId)
-          .maybeSingle();
-      
+          ''').eq('id', templateId).maybeSingle();
+
       return response;
     } catch (e) {
       print('Error fetching workout template: $e');
@@ -308,7 +454,8 @@ class SupabaseService {
   }
 
   // Duplicate a workout template as a user workout
-  Future<Map<String, dynamic>> duplicateTemplateToWorkout(String templateId) async {
+  Future<Map<String, dynamic>> duplicateTemplateToWorkout(
+      String templateId) async {
     if (currentUserId == null) throw Exception('Not authenticated');
 
     // Fetch the template
@@ -329,12 +476,14 @@ class SupabaseService {
     );
 
     // Copy all exercises from the template
-    final templateExercises = template['workout_template_exercises'] as List? ?? [];
+    final templateExercises =
+        template['workout_template_exercises'] as List? ?? [];
     for (var i = 0; i < templateExercises.length; i++) {
       final exercise = templateExercises[i] as Map<String, dynamic>;
       final exerciseData = exercise['exercise'] as Map<String, dynamic>?;
-      final exerciseId = exercise['exercise_id'] as String? ?? exerciseData?['id'] as String?;
-      
+      final exerciseId =
+          exercise['exercise_id'] as String? ?? exerciseData?['id'] as String?;
+
       if (exerciseId != null) {
         await addExerciseToWorkout(
           workoutId: newWorkout['id'] as String,
@@ -356,18 +505,14 @@ class SupabaseService {
   // Get single workout
   Future<Map<String, dynamic>?> getWorkout(String workoutId) async {
     try {
-      final response = await client
-          .from('workouts')
-          .select('''
+      final response = await client.from('workouts').select('''
             *,
             workout_exercises (
               *,
               exercise:exercises (*)
             )
-          ''')
-          .eq('id', workoutId)
-          .maybeSingle();
-      
+          ''').eq('id', workoutId).maybeSingle();
+
       return response;
     } catch (e) {
       print('Error fetching workout: $e');
@@ -383,7 +528,7 @@ class SupabaseService {
     int? estimatedDurationMinutes,
   }) async {
     if (currentUserId == null) throw Exception('Not authenticated');
-    
+
     final response = await client
         .from('workouts')
         .insert({
@@ -395,22 +540,20 @@ class SupabaseService {
         })
         .select()
         .single();
-    
+
     return response;
   }
 
   // Update workout
-  Future<void> updateWorkout(String workoutId, Map<String, dynamic> updates) async {
-    await client
-        .from('workouts')
-        .update(updates)
-        .eq('id', workoutId);
+  Future<void> updateWorkout(
+      String workoutId, Map<String, dynamic> updates) async {
+    await client.from('workouts').update(updates).eq('id', workoutId);
   }
 
   // Delete workout
   Future<void> deleteWorkout(String workoutId) async {
     if (currentUserId == null) throw Exception('Not authenticated');
-    
+
     await client
         .from('workouts')
         .delete()
@@ -447,10 +590,7 @@ class SupabaseService {
 
   // Remove exercise from workout
   Future<void> removeExerciseFromWorkout(String workoutExerciseId) async {
-    await client
-        .from('workout_exercises')
-        .delete()
-        .eq('id', workoutExerciseId);
+    await client.from('workout_exercises').delete().eq('id', workoutExerciseId);
   }
 
   Future<Map<String, dynamic>?> getWorkoutExerciseRow({
@@ -483,7 +623,7 @@ class SupabaseService {
   }
 
   // ==================== WORKOUT LOGS ====================
-  
+
   // Get workout logs
   Future<List<Map<String, dynamic>>> getWorkoutLogs({
     DateTime? startDate,
@@ -491,27 +631,23 @@ class SupabaseService {
     int limit = 50,
   }) async {
     if (currentUserId == null) return [];
-    
-    var query = client
-        .from('workout_logs')
-        .select('''
+
+    var query = client.from('workout_logs').select('''
           *,
           exercise_sets (*)
-        ''')
-        .eq('user_id', currentUserId!);
-    
+        ''').eq('user_id', currentUserId!);
+
     if (startDate != null) {
       query = query.gte('start_time', startDate.toIso8601String());
     }
-    
+
     if (endDate != null) {
       query = query.lte('start_time', endDate.toIso8601String());
     }
-    
-    final response = await query
-        .order('start_time', ascending: false)
-        .limit(limit);
-        
+
+    final response =
+        await query.order('start_time', ascending: false).limit(limit);
+
     return List<Map<String, dynamic>>.from(response);
   }
 
@@ -525,7 +661,7 @@ class SupabaseService {
     String? notes,
   }) async {
     if (currentUserId == null) throw Exception('Not authenticated');
-    
+
     final response = await client
         .from('workout_logs')
         .insert({
@@ -539,27 +675,23 @@ class SupabaseService {
         })
         .select()
         .single();
-    
+
     return response;
   }
 
   // Update workout log
-  Future<void> updateWorkoutLog(String logId, Map<String, dynamic> updates) async {
-    await client
-        .from('workout_logs')
-        .update(updates)
-        .eq('id', logId);
+  Future<void> updateWorkoutLog(
+      String logId, Map<String, dynamic> updates) async {
+    await client.from('workout_logs').update(updates).eq('id', logId);
   }
 
   // Delete workout log
   Future<void> deleteWorkoutLog(String logId) async {
-    await client
-        .from('workout_logs')
-        .delete()
-        .eq('id', logId);
+    await client.from('workout_logs').delete().eq('id', logId);
   }
 
-  Future<void> updateWorkoutExercise(String workoutExerciseId, Map<String, dynamic> updates) async {
+  Future<void> updateWorkoutExercise(
+      String workoutExerciseId, Map<String, dynamic> updates) async {
     await client
         .from('workout_exercises')
         .update(updates)
@@ -567,43 +699,43 @@ class SupabaseService {
   }
 
   // Add exercise set to workout log
-Future<void> addExerciseSet({
-  required String workoutLogId,
-  required String exerciseId,
-  required String exerciseName,
-  required int setNumber,
-  double? weightLbs,
-  int? reps,
-  bool completed = true,
-  int? restTimeSeconds,
-  String? notes,
-}) async {
-  if (currentUserId == null) throw Exception('Not authenticated');
+  Future<void> addExerciseSet({
+    required String workoutLogId,
+    required String exerciseId,
+    required String exerciseName,
+    required int setNumber,
+    double? weightLbs,
+    int? reps,
+    bool completed = true,
+    int? restTimeSeconds,
+    String? notes,
+  }) async {
+    if (currentUserId == null) throw Exception('Not authenticated');
 
-  await client
-      .from('exercise_sets')
-      .insert({
-        'workout_log_id': workoutLogId,
-        'exercise_id': exerciseId,
-        'exercise_name': exerciseName,
-        'set_number': setNumber,
-        'weight_lbs': weightLbs,
-        'reps': reps,
-        'completed': completed,
-        'rest_time_seconds': restTimeSeconds,
-        'notes': notes,
-      })
-      .select()
-      .single(); // ✅ optional, confirm success
-}
-
+    await client
+        .from('exercise_sets')
+        .insert({
+          'workout_log_id': workoutLogId,
+          'exercise_id': exerciseId,
+          'exercise_name': exerciseName,
+          'set_number': setNumber,
+          'weight_lbs': weightLbs,
+          'reps': reps,
+          'completed': completed,
+          'rest_time_seconds': restTimeSeconds,
+          'notes': notes,
+        })
+        .select()
+        .single(); // ✅ optional, confirm success
+  }
 
   // ==================== MEASUREMENTS ====================
-  
+
   // Get measurements by type
-  Future<List<Map<String, dynamic>>> getMeasurements(String type, {String? notes}) async {
+  Future<List<Map<String, dynamic>>> getMeasurements(String type,
+      {String? notes}) async {
     if (currentUserId == null) return [];
-    
+
     var query = client
         .from('measurements')
         .select()
@@ -612,27 +744,27 @@ Future<void> addExerciseSet({
     if (notes != null) {
       query = query.eq('notes', notes);
     }
-    final response = await query
-        .order('measurement_date', ascending: false);
-    
+    final response = await query.order('measurement_date', ascending: false);
+
     return List<Map<String, dynamic>>.from(response);
   }
 
   // Get all measurements
   Future<List<Map<String, dynamic>>> getAllMeasurements() async {
     if (currentUserId == null) return [];
-    
+
     final response = await client
         .from('measurements')
         .select()
         .eq('user_id', currentUserId!)
         .order('measurement_date', ascending: false);
-    
+
     return List<Map<String, dynamic>>.from(response);
   }
 
   // Get latest measurement by type
-  Future<Map<String, dynamic>?> getLatestMeasurement(String type, {String? notes}) async {
+  Future<Map<String, dynamic>?> getLatestMeasurement(String type,
+      {String? notes}) async {
     if (currentUserId == null) return null;
 
     var query = client
@@ -647,7 +779,7 @@ Future<void> addExerciseSet({
         .order('measurement_date', ascending: false)
         .limit(1)
         .maybeSingle();
-    
+
     return response;
   }
 
@@ -660,7 +792,7 @@ Future<void> addExerciseSet({
     String? notes,
   }) async {
     if (currentUserId == null) throw Exception('Not authenticated');
-    
+
     final response = await client
         .from('measurements')
         .insert({
@@ -673,7 +805,7 @@ Future<void> addExerciseSet({
         })
         .select()
         .single();
-    
+
     return response;
   }
 
@@ -684,69 +816,68 @@ Future<void> addExerciseSet({
 
     final response = await client
         .from('exercise_sets')
-        .select('id, workout_log_id, set_number, weight_lbs, reps, created_at, workout_logs!inner(user_id)')
+        .select(
+            'id, workout_log_id, set_number, weight_lbs, reps, created_at, workout_logs!inner(user_id)')
         .eq('exercise_id', exerciseId)
         .eq('workout_logs.user_id', currentUserId!)
         .order('created_at', ascending: false)
         .limit(historyLimit);
 
-    final List<Map<String, dynamic>> data = List<Map<String, dynamic>>.from(response);
+    final List<Map<String, dynamic>> data =
+        List<Map<String, dynamic>>.from(response);
     if (data.isEmpty) return data;
 
     final latestLogId = data.first['workout_log_id'];
-    final filtered = data.where((record) => record['workout_log_id'] == latestLogId).toList();
+    final filtered = data
+        .where((record) => record['workout_log_id'] == latestLogId)
+        .toList();
     filtered.sort((a, b) {
       final aSet = a['set_number'];
       final bSet = b['set_number'];
-      final aVal = aSet is int ? aSet : int.tryParse(aSet?.toString() ?? '') ?? 0;
-      final bVal = bSet is int ? bSet : int.tryParse(bSet?.toString() ?? '') ?? 0;
+      final aVal =
+          aSet is int ? aSet : int.tryParse(aSet?.toString() ?? '') ?? 0;
+      final bVal =
+          bSet is int ? bSet : int.tryParse(bSet?.toString() ?? '') ?? 0;
       return aVal.compareTo(bVal);
     });
 
-    return filtered
-        .map((record) {
-          final map = Map<String, dynamic>.from(record);
-          map.remove('workout_logs');
-          return map;
-        })
-        .toList();
+    return filtered.map((record) {
+      final map = Map<String, dynamic>.from(record);
+      map.remove('workout_logs');
+      return map;
+    }).toList();
   }
 
   // Update measurement
-  Future<void> updateMeasurement(String measurementId, Map<String, dynamic> updates) async {
-    await client
-        .from('measurements')
-        .update(updates)
-        .eq('id', measurementId);
+  Future<void> updateMeasurement(
+      String measurementId, Map<String, dynamic> updates) async {
+    await client.from('measurements').update(updates).eq('id', measurementId);
   }
 
   // Delete measurement
   Future<void> deleteMeasurement(String measurementId) async {
-    await client
-        .from('measurements')
-        .delete()
-        .eq('id', measurementId);
+    await client.from('measurements').delete().eq('id', measurementId);
   }
 
   // ==================== USER SETTINGS ====================
-  
+
   // Get user settings
   Future<Map<String, dynamic>?> getUserSettings() async {
     if (currentUserId == null) return null;
-    
+
     final response = await client
         .from('user_settings')
         .select()
         .eq('user_id', currentUserId!)
         .maybeSingle();
-    
+
     return response;
   }
 
   // Update user settings
   Future<void> updateUserSettings(Map<String, dynamic> updates) async {
     if (currentUserId == null) throw Exception('Not authenticated');
-    
+
     await client
         .from('user_settings')
         .update(updates)
@@ -758,22 +889,20 @@ Future<void> addExerciseSet({
 
     final payload = Map<String, dynamic>.from(updates);
     payload['user_id'] = currentUserId!;
-    await client
-        .from('user_settings')
-        .upsert(payload, onConflict: 'user_id');
+    await client.from('user_settings').upsert(payload, onConflict: 'user_id');
   }
 
   // ==================== STATISTICS ====================
-  
+
   // Get total workouts count
   Future<int> getTotalWorkoutsCount() async {
     if (currentUserId == null) return 0;
-    
+
     final response = await client
         .from('workout_logs')
         .select('id')
         .eq('user_id', currentUserId!);
-    
+
     return (response as List).length;
   }
 
@@ -783,7 +912,7 @@ Future<void> addExerciseSet({
     required DateTime endDate,
   }) async {
     if (currentUserId == null) return [];
-    
+
     final response = await client
         .from('workout_logs')
         .select()
@@ -791,7 +920,14 @@ Future<void> addExerciseSet({
         .gte('start_time', startDate.toIso8601String())
         .lte('start_time', endDate.toIso8601String())
         .order('start_time', ascending: true);
-    
+
     return List<Map<String, dynamic>>.from(response);
   }
+}
+
+class _SignedUrlCacheEntry {
+  _SignedUrlCacheEntry(this.url, this.expiresAt);
+
+  final String url;
+  final DateTime expiresAt;
 }

@@ -2,7 +2,7 @@
 
 A complete Material Design 3 weightlifting tracking app built with Flutter, based on Figma design files.
 
-## 🎯 Features
+## 🎯 Features v1.0.0
 
 ### Core Features
 - **Beautiful Material Design 3 UI** - Modern, clean interface following Material 3 guidelines

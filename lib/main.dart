@@ -30,6 +30,10 @@ import 'screens/supabase_test_screen.dart';
 import 'screens/simple_test_screen.dart';
 import 'screens/database_debug_screen.dart';
 import 'screens/workout_history_screen.dart';
+import 'screens/test_image_screen.dart';
+import 'screens/storage_browser_screen.dart';
+import 'screens/workout_folders_screen.dart';
+import 'screens/comprehensive_debug_screen.dart';
 import 'services/workout_timer_service.dart';
 
 void main() async {
@@ -313,6 +317,7 @@ class _AppNavigatorState extends State<AppNavigator> {
   List<Map<String, dynamic>>? _lastWorkoutExercises;
   String? _lastWorkoutId;
   String? _lastWorkoutName;
+  String? _workoutLibraryTab; // Add this to track which tab to show
 
   @override
   void dispose() {
@@ -331,6 +336,10 @@ class _AppNavigatorState extends State<AppNavigator> {
     
     setState(() {
       if (data != null) {
+        // Check for selectedTab in data
+        if (data.containsKey('selectedTab')) {
+          _workoutLibraryTab = data['selectedTab'] as String?;
+        }
         if (data.containsKey('exercises')) {
           final exercisesList = List<Map<String, dynamic>>.from(data['exercises']);
           _workoutExercises = exercisesList;
@@ -381,6 +390,10 @@ class _AppNavigatorState extends State<AppNavigator> {
         selectedBottomNavIndex = 1;
       } else if (screen == 'workout') {
         selectedBottomNavIndex = 2;
+        // Reset tab selection when navigating to workout normally (not from Templates button)
+        if (data == null || !data.containsKey('selectedTab')) {
+          _workoutLibraryTab = null;
+        }
       } else if (screen == 'progress') {
         selectedBottomNavIndex = 3;
       } else if (screen == 'profile') {
@@ -507,7 +520,12 @@ class _AppNavigatorState extends State<AppNavigator> {
           activeWorkoutTime: activeWorkoutTime,
         );
       case 'workout':
-        return WorkoutLibraryScreen(onNavigate: (screen, [data]) => navigate(screen, context, data));
+        final initialTab = _workoutLibraryTab;
+        _workoutLibraryTab = null; // Reset after using
+        return WorkoutLibraryScreen(
+          onNavigate: (screen, [data]) => navigate(screen, context, data),
+          initialTab: initialTab,
+        );
       case 'active-workout':
         // Return existing workout screen if it exists, otherwise create new one
         if (_activeWorkoutScreen != null && hasActiveWorkout) {
@@ -583,10 +601,20 @@ class _AppNavigatorState extends State<AppNavigator> {
         return const SimpleTestScreen();
       case 'database-debug':
         return const DatabaseDebugScreen();
+      case 'workout-folders':
+        return WorkoutFoldersScreen(
+          onNavigate: (screen, [data]) => navigate(screen, context, data),
+        );
       case 'workout-history':
         return WorkoutHistoryScreen(
           onNavigate: (screen, [data]) => navigate(screen, context, data),
         );
+      case 'test-image':
+        return const TestImageScreen();
+      case 'storage-browser':
+        return const StorageBrowserScreen();
+      case 'comprehensive-debug':
+        return const ComprehensiveImageDebugScreen();
       default:
         return LoginScreen(onNavigate: (screen) => navigate(screen, context));
     }

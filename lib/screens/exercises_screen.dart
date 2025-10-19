@@ -1,4 +1,9 @@
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:http/http.dart' as http;
+import '../constants/exercise_assets.dart';
 import '../services/local_storage_service.dart';
 import '../services/supabase_service.dart';
 
@@ -11,72 +16,8 @@ class ExercisesScreen extends StatefulWidget {
   State<ExercisesScreen> createState() => _ExercisesScreenState();
 }
 
-const Map<String, String> kDefaultExerciseImages = {
-  // Chest
-  'Bench Press': 'https://images.unsplash.com/photo-1517964106626-460c5db42163?auto=format&fit=crop&w=1200&q=80',
-  'Incline Bench Press': 'https://images.unsplash.com/photo-1541532713592-79a0317b6b77?auto=format&fit=crop&w=1200&q=80',
-  'Decline Bench Press': 'https://images.unsplash.com/photo-1598971639058-114c5db42163?auto=format&fit=crop&w=1200&q=80',
-  'Dumbbell Flyes': 'https://images.unsplash.com/photo-1561212044-bac5ef688a07?auto=format&fit=crop&w=1200&q=80',
-  'Cable Crossover': 'https://images.unsplash.com/photo-1571732083810-7da1afcfdee0?auto=format&fit=crop&w=1200&q=80',
-  'Push-ups': 'https://images.unsplash.com/photo-1579758629413-2f66c04778d4?auto=format&fit=crop&w=1200&q=80',
-  'Dips': 'https://images.unsplash.com/photo-1613769044938-45cebbd0f4af?auto=format&fit=crop&w=1200&q=80',
+const Map<String, String> kDefaultExerciseImages = {};
 
-  // Back
-  'Deadlifts': 'https://images.unsplash.com/photo-1508672019048-805c876b67e2?auto=format&fit=crop&w=1200&q=80',
-  'Pull-ups': 'https://images.unsplash.com/photo-1583454110551-21f2fa2a6e1d?auto=format&fit=crop&w=1200&q=80',
-  'Barbell Rows': 'https://images.unsplash.com/photo-1615810615820-0dda8d733925?auto=format&fit=crop&w=1200&q=80',
-  'Lat Pulldown': 'https://images.unsplash.com/photo-1556817411-31ae72fa3ea0?auto=format&fit=crop&w=1200&q=80',
-  'Seated Cable Rows': 'https://images.unsplash.com/photo-1579758629938-03607ccdbaba?auto=format&fit=crop&w=1200&q=80',
-  'T-Bar Rows': 'https://images.unsplash.com/photo-1534367610401-9f5ed68180aa?auto=format&fit=crop&w=1200&q=80',
-  'Face Pulls': 'https://images.unsplash.com/photo-1597176098514-1f70c9f3d3ef?auto=format&fit=crop&w=1200&q=80',
-
-  // Legs
-  'Squats': 'https://images.unsplash.com/photo-1483721310020-03333e577078?auto=format&fit=crop&w=1200&q=80',
-  'Front Squats': 'https://images.unsplash.com/photo-1614090972494-3431bb0e0dfe?auto=format&fit=crop&w=1200&q=80',
-  'Leg Press': 'https://images.unsplash.com/photo-1583454110551-21f2fa2a6e1d?auto=format&fit=crop&w=1200&q=80',
-  'Lunges': 'https://images.unsplash.com/photo-1530210124550-912dc1381cb8?auto=format&fit=crop&w=1200&q=80',
-  'Romanian Deadlifts': 'https://images.unsplash.com/photo-1594737626072-90dc20311f10?auto=format&fit=crop&w=1200&q=80',
-  'Leg Curls': 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=1200&q=80',
-  'Leg Extensions': 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=1200&q=80',
-  'Calf Raises': 'https://images.unsplash.com/photo-1526403225721-94bcd2fbfd06?auto=format&fit=crop&w=1200&q=80',
-
-  // Shoulders
-  'Overhead Press': 'https://images.unsplash.com/photo-1527356926124-9c7593dba9a1?auto=format&fit=crop&w=1200&q=80',
-  'Dumbbell Shoulder Press': 'https://images.unsplash.com/photo-1571019610964-3bd01d038e72?auto=format&fit=crop&w=1200&q=80',
-  'Lateral Raises': 'https://images.unsplash.com/photo-1615810615820-0dda8d733925?auto=format&fit=crop&w=1200&q=80',
-  'Front Raises': 'https://images.unsplash.com/photo-1613769044938-45cebbd0f4af?auto=format&fit=crop&w=1200&q=80',
-  'Rear Delt Flyes': 'https://images.unsplash.com/photo-1571731956672-b2f6a0dd9c15?auto=format&fit=crop&w=1200&q=80',
-  'Arnold Press': 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=80',
-  'Upright Rows': 'https://images.unsplash.com/photo-1534367610401-9f5ed68180aa?auto=format&fit=crop&w=1200&q=80',
-
-  // Arms
-  'Bicep Curls': 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80',
-  'Hammer Curls': 'https://images.unsplash.com/photo-1526401485004-46910ecc8e51?auto=format&fit=crop&w=1200&q=80',
-  'Preacher Curls': 'https://images.unsplash.com/photo-1526401281623-37939bbacd81?auto=format&fit=crop&w=1200&q=80',
-  'Tricep Dips': 'https://images.unsplash.com/photo-1605296867304-46d5465a13f1?auto=format&fit=crop&w=1200&q=80',
-  'Tricep Pushdowns': 'https://images.unsplash.com/photo-1518611012118-f07fcbfc03e2?auto=format&fit=crop&w=1200&q=80',
-  'Skull Crushers': 'https://images.unsplash.com/photo-1594737626072-90dc20311f10?auto=format&fit=crop&w=1200&q=80',
-  'Cable Curls': 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=80',
-  'Close-Grip Bench Press': 'https://images.unsplash.com/photo-1517964106626-460c5db42163?auto=format&fit=crop&w=1200&q=80',
-
-  // Core
-  'Planks': 'https://images.unsplash.com/photo-1579758629413-2f66c04778d4?auto=format&fit=crop&w=1200&q=80',
-  'Crunches': 'https://images.unsplash.com/photo-1541534401786-2077eed87a74?auto=format&fit=crop&w=1200&q=80',
-  'Russian Twists': 'https://images.unsplash.com/photo-1540202404-8ab83db238b8?auto=format&fit=crop&w=1200&q=80',
-  'Leg Raises': 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=1200&q=80',
-  'Cable Crunches': 'https://images.unsplash.com/photo-1620403724051-ce7c43f1f9cb?auto=format&fit=crop&w=1200&q=80',
-  'Ab Wheel Rollouts': 'https://images.unsplash.com/photo-1556817411-31ae72fa3ea0?auto=format&fit=crop&w=1200&q=80',
-  'Hanging Leg Raises': 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=1200&q=80',
-  'Mountain Climbers': 'https://images.unsplash.com/photo-1597176098514-1f70c9f3d3ef?auto=format&fit=crop&w=1200&q=80',
-
-  // Cardio
-  'Running': 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=1200&q=80',
-  'Cycling': 'https://images.unsplash.com/photo-1471295253337-3ceaaedca402?auto=format&fit=crop&w=1200&q=80',
-  'Jump Rope': 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=1200&q=80',
-  'Burpees': 'https://images.unsplash.com/photo-1546484959-f0d9f3c7adb7?auto=format&fit=crop&w=1200&q=80',
-  'Rowing': 'https://images.unsplash.com/photo-1526401281623-37939bbacd81?auto=format&fit=crop&w=1200&q=80',
-  'Stair Climbing': 'https://images.unsplash.com/photo-1562777717-dc6984f65d3f?auto=format&fit=crop&w=1200&q=80',
-};
 class _ExercisesScreenState extends State<ExercisesScreen> {
   final TextEditingController searchController = TextEditingController();
   String selectedCategory = 'All';
@@ -94,72 +35,101 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
     'Other',
   ];
 
-  final List<Exercise> allExercises = [
-    // Chest
-    Exercise(name: 'Bench Press', category: 'Chest', difficulty: 'Intermediate', equipment: 'Barbell', imageUrl: kDefaultExerciseImages['Bench Press']),
-    Exercise(name: 'Incline Bench Press', category: 'Chest', difficulty: 'Intermediate', equipment: 'Barbell', imageUrl: kDefaultExerciseImages['Incline Bench Press']),
-    Exercise(name: 'Decline Bench Press', category: 'Chest', difficulty: 'Intermediate', equipment: 'Barbell', imageUrl: kDefaultExerciseImages['Decline Bench Press']),
-    Exercise(name: 'Dumbbell Flyes', category: 'Chest', difficulty: 'Beginner', equipment: 'Dumbbell', imageUrl: kDefaultExerciseImages['Dumbbell Flyes']),
-    Exercise(name: 'Cable Crossover', category: 'Chest', difficulty: 'Intermediate', equipment: 'Cable', imageUrl: kDefaultExerciseImages['Cable Crossover']),
-    Exercise(name: 'Push-ups', category: 'Chest', difficulty: 'Beginner', equipment: 'Bodyweight', imageUrl: kDefaultExerciseImages['Push-ups']),
-    Exercise(name: 'Dips', category: 'Chest', difficulty: 'Intermediate', equipment: 'Bodyweight', imageUrl: kDefaultExerciseImages['Dips']),
-    
-    // Back
-    Exercise(name: 'Deadlifts', category: 'Back', difficulty: 'Advanced', equipment: 'Barbell', imageUrl: kDefaultExerciseImages['Deadlifts']),
-    Exercise(name: 'Pull-ups', category: 'Back', difficulty: 'Intermediate', equipment: 'Bodyweight', imageUrl: kDefaultExerciseImages['Pull-ups']),
-    Exercise(name: 'Barbell Rows', category: 'Back', difficulty: 'Intermediate', equipment: 'Barbell', imageUrl: kDefaultExerciseImages['Barbell Rows']),
-    Exercise(name: 'Lat Pulldown', category: 'Back', difficulty: 'Beginner', equipment: 'Cable', imageUrl: kDefaultExerciseImages['Lat Pulldown']),
-    Exercise(name: 'Seated Cable Rows', category: 'Back', difficulty: 'Beginner', equipment: 'Cable', imageUrl: kDefaultExerciseImages['Seated Cable Rows']),
-    Exercise(name: 'T-Bar Rows', category: 'Back', difficulty: 'Intermediate', equipment: 'Barbell', imageUrl: kDefaultExerciseImages['T-Bar Rows']),
-    Exercise(name: 'Face Pulls', category: 'Back', difficulty: 'Beginner', equipment: 'Cable', imageUrl: kDefaultExerciseImages['Face Pulls']),
-    
-    // Legs
-    Exercise(name: 'Squats', category: 'Legs', difficulty: 'Intermediate', equipment: 'Barbell', imageUrl: kDefaultExerciseImages['Squats']),
-    Exercise(name: 'Front Squats', category: 'Legs', difficulty: 'Advanced', equipment: 'Barbell', imageUrl: kDefaultExerciseImages['Front Squats']),
-    Exercise(name: 'Leg Press', category: 'Legs', difficulty: 'Beginner', equipment: 'Machine', imageUrl: kDefaultExerciseImages['Leg Press']),
-    Exercise(name: 'Lunges', category: 'Legs', difficulty: 'Beginner', equipment: 'Dumbbell', imageUrl: kDefaultExerciseImages['Lunges']),
-    Exercise(name: 'Romanian Deadlifts', category: 'Legs', difficulty: 'Intermediate', equipment: 'Barbell', imageUrl: kDefaultExerciseImages['Romanian Deadlifts']),
-    Exercise(name: 'Leg Curls', category: 'Legs', difficulty: 'Beginner', equipment: 'Machine', imageUrl: kDefaultExerciseImages['Leg Curls']),
-    Exercise(name: 'Leg Extensions', category: 'Legs', difficulty: 'Beginner', equipment: 'Machine', imageUrl: kDefaultExerciseImages['Leg Extensions']),
-    Exercise(name: 'Calf Raises', category: 'Legs', difficulty: 'Beginner', equipment: 'Machine', imageUrl: kDefaultExerciseImages['Calf Raises']),
-    
-    // Shoulders
-    Exercise(name: 'Overhead Press', category: 'Shoulders', difficulty: 'Intermediate', equipment: 'Barbell', imageUrl: kDefaultExerciseImages['Overhead Press']),
-    Exercise(name: 'Dumbbell Shoulder Press', category: 'Shoulders', difficulty: 'Beginner', equipment: 'Dumbbell', imageUrl: kDefaultExerciseImages['Dumbbell Shoulder Press']),
-    Exercise(name: 'Lateral Raises', category: 'Shoulders', difficulty: 'Beginner', equipment: 'Dumbbell', imageUrl: kDefaultExerciseImages['Lateral Raises']),
-    Exercise(name: 'Front Raises', category: 'Shoulders', difficulty: 'Beginner', equipment: 'Dumbbell', imageUrl: kDefaultExerciseImages['Front Raises']),
-    Exercise(name: 'Rear Delt Flyes', category: 'Shoulders', difficulty: 'Beginner', equipment: 'Dumbbell', imageUrl: kDefaultExerciseImages['Rear Delt Flyes']),
-    Exercise(name: 'Arnold Press', category: 'Shoulders', difficulty: 'Intermediate', equipment: 'Dumbbell', imageUrl: kDefaultExerciseImages['Arnold Press']),
-    Exercise(name: 'Upright Rows', category: 'Shoulders', difficulty: 'Intermediate', equipment: 'Barbell', imageUrl: kDefaultExerciseImages['Upright Rows']),
-    
-    // Arms
-    Exercise(name: 'Bicep Curls', category: 'Arms', difficulty: 'Beginner', equipment: 'Dumbbell', imageUrl: kDefaultExerciseImages['Bicep Curls']),
-    Exercise(name: 'Hammer Curls', category: 'Arms', difficulty: 'Beginner', equipment: 'Dumbbell', imageUrl: kDefaultExerciseImages['Hammer Curls']),
-    Exercise(name: 'Preacher Curls', category: 'Arms', difficulty: 'Beginner', equipment: 'Barbell', imageUrl: kDefaultExerciseImages['Preacher Curls']),
-    Exercise(name: 'Tricep Dips', category: 'Arms', difficulty: 'Intermediate', equipment: 'Bodyweight', imageUrl: kDefaultExerciseImages['Tricep Dips']),
-    Exercise(name: 'Tricep Pushdowns', category: 'Arms', difficulty: 'Beginner', equipment: 'Cable', imageUrl: kDefaultExerciseImages['Tricep Pushdowns']),
-    Exercise(name: 'Skull Crushers', category: 'Arms', difficulty: 'Intermediate', equipment: 'Barbell', imageUrl: kDefaultExerciseImages['Skull Crushers']),
-    Exercise(name: 'Cable Curls', category: 'Arms', difficulty: 'Beginner', equipment: 'Cable', imageUrl: kDefaultExerciseImages['Cable Curls']),
-    Exercise(name: 'Close-Grip Bench Press', category: 'Arms', difficulty: 'Intermediate', equipment: 'Barbell', imageUrl: kDefaultExerciseImages['Close-Grip Bench Press']),
-    
-    // Core
-    Exercise(name: 'Planks', category: 'Core', difficulty: 'Beginner', equipment: 'Bodyweight', imageUrl: kDefaultExerciseImages['Planks']),
-    Exercise(name: 'Crunches', category: 'Core', difficulty: 'Beginner', equipment: 'Bodyweight', imageUrl: kDefaultExerciseImages['Crunches']),
-    Exercise(name: 'Russian Twists', category: 'Core', difficulty: 'Beginner', equipment: 'Bodyweight', imageUrl: kDefaultExerciseImages['Russian Twists']),
-    Exercise(name: 'Leg Raises', category: 'Core', difficulty: 'Intermediate', equipment: 'Bodyweight', imageUrl: kDefaultExerciseImages['Leg Raises']),
-    Exercise(name: 'Cable Crunches', category: 'Core', difficulty: 'Beginner', equipment: 'Cable', imageUrl: kDefaultExerciseImages['Cable Crunches']),
-    Exercise(name: 'Ab Wheel Rollouts', category: 'Core', difficulty: 'Advanced', equipment: 'Ab Wheel', imageUrl: kDefaultExerciseImages['Ab Wheel Rollouts']),
-    Exercise(name: 'Hanging Leg Raises', category: 'Core', difficulty: 'Advanced', equipment: 'Bodyweight', imageUrl: kDefaultExerciseImages['Hanging Leg Raises']),
-    Exercise(name: 'Mountain Climbers', category: 'Core', difficulty: 'Intermediate', equipment: 'Bodyweight', imageUrl: kDefaultExerciseImages['Mountain Climbers']),
-    
-    // Cardio
-    Exercise(name: 'Running', category: 'Cardio', difficulty: 'Beginner', equipment: 'None', imageUrl: kDefaultExerciseImages['Running']),
-    Exercise(name: 'Cycling', category: 'Cardio', difficulty: 'Beginner', equipment: 'Bike', imageUrl: kDefaultExerciseImages['Cycling']),
-    Exercise(name: 'Jump Rope', category: 'Cardio', difficulty: 'Intermediate', equipment: 'Jump Rope', imageUrl: kDefaultExerciseImages['Jump Rope']),
-    Exercise(name: 'Burpees', category: 'Cardio', difficulty: 'Intermediate', equipment: 'Bodyweight', imageUrl: kDefaultExerciseImages['Burpees']),
-    Exercise(name: 'Rowing', category: 'Cardio', difficulty: 'Beginner', equipment: 'Machine', imageUrl: kDefaultExerciseImages['Rowing']),
-    Exercise(name: 'Stair Climbing', category: 'Cardio', difficulty: 'Beginner', equipment: 'Machine', imageUrl: kDefaultExerciseImages['Stair Climbing']),
-  ];
+  List<Exercise> allExercises = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCustomExercises();
+  }
+
+  Future<void> _loadCustomExercises() async {
+    try {
+      final supabaseExercises = await SupabaseService.instance.getExercises();
+      final defaultOnly = supabaseExercises
+          .where((e) => (e['is_default'] ?? false) == true)
+          .toList();
+      final customOnly = supabaseExercises
+          .where((e) => (e['is_custom'] ?? false) == true)
+          .toList();
+
+      for (final exercise in supabaseExercises) {
+        await LocalStorageService.instance.saveExercise(exercise);
+      }
+
+      setState(() {
+        allExercises = defaultOnly
+            .map((e) => Exercise(
+                  name: e['name'],
+                  category: e['category'],
+                  difficulty: e['difficulty'],
+                  equipment: e['equipment'],
+                  imageUrl: e['image_url'] as String? ??
+                      e['imageUrl'] as String? ??
+                      kDefaultExerciseImages[e['name']] ??
+                      kExercisePlaceholderImage,
+                  isCustom: e['is_custom'] ?? false,
+                ))
+            .toList();
+
+        customExercises = customOnly
+            .map((e) => Exercise(
+                  name: e['name'],
+                  category: e['category'],
+                  difficulty: e['difficulty'],
+                  equipment: e['equipment'],
+                  imageUrl: e['image_url'] as String? ??
+                      e['imageUrl'] as String? ??
+                      kDefaultExerciseImages[e['name']] ??
+                      kExercisePlaceholderImage,
+                  isCustom: true,
+                ))
+            .toList();
+      });
+    } catch (e) {
+      print('Failed to load from Supabase (offline?): $e');
+
+      final localStorage = LocalStorageService.instance;
+      final saved = localStorage.getAllExercises();
+
+      setState(() {
+        final defaultSaved = saved.where((e) {
+          final isCustom = e['isCustom'] ?? e['is_custom'] ?? false;
+          return !isCustom;
+        }).toList();
+        final customSaved = saved.where((e) {
+          final isCustom = e['isCustom'] ?? e['is_custom'] ?? false;
+          return isCustom;
+        }).toList();
+
+        allExercises = defaultSaved
+            .map((e) => Exercise(
+                  name: e['name'],
+                  category: e['category'],
+                  difficulty: e['difficulty'],
+                  equipment: e['equipment'],
+                  imageUrl: (e['imageUrl'] ?? e['image_url']) as String? ??
+                      kDefaultExerciseImages[e['name']] ??
+                      kExercisePlaceholderImage,
+                  isCustom: e['isCustom'] ?? e['is_custom'] ?? false,
+                ))
+            .toList();
+
+        customExercises = customSaved
+            .map((e) => Exercise(
+                  name: e['name'],
+                  category: e['category'],
+                  difficulty: e['difficulty'],
+                  equipment: e['equipment'],
+                  imageUrl: (e['imageUrl'] ?? e['image_url']) as String? ??
+                      kDefaultExerciseImages[e['name']] ??
+                      kExercisePlaceholderImage,
+                  isCustom: true,
+                ))
+            .toList();
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -170,10 +140,11 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
   List<Exercise> get filteredExercises {
     // Combine default exercises with custom exercises
     final allExercisesList = [...allExercises, ...customExercises];
-    
+
     return allExercisesList.where((exercise) {
-      final matchesCategory = selectedCategory == 'All' || exercise.category == selectedCategory;
-      final matchesSearch = searchQuery.isEmpty || 
+      final matchesCategory =
+          selectedCategory == 'All' || exercise.category == selectedCategory;
+      final matchesSearch = searchQuery.isEmpty ||
           exercise.name.toLowerCase().contains(searchQuery.toLowerCase()) ||
           exercise.category.toLowerCase().contains(searchQuery.toLowerCase()) ||
           exercise.equipment.toLowerCase().contains(searchQuery.toLowerCase());
@@ -215,33 +186,34 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: TextField(
-                  controller: searchController,
-                  onChanged: (value) {
-                    setState(() => searchQuery = value);
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'Search exercises...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              searchController.clear();
-                              setState(() => searchQuery = '');
-                            },
-                          )
-                        : null,
-                    filled: true,
-                    fillColor: colorScheme.surfaceVariant,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                controller: searchController,
+                onChanged: (value) {
+                  setState(() => searchQuery = value);
+                },
+                decoration: InputDecoration(
+                  hintText: 'Search exercises...',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            searchController.clear();
+                            setState(() => searchQuery = '');
+                          },
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: colorScheme.surfaceVariant,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
                   ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
               ),
             ),
+          ),
 
           // Category Filter
           SliverToBoxAdapter(
@@ -355,7 +327,9 @@ class Exercise {
     required this.equipment,
     String? imageUrl,
     this.isCustom = false,
-  }) : imageUrl = imageUrl ?? kDefaultExerciseImages[name] ?? '';
+  }) : imageUrl = imageUrl ??
+            kDefaultExerciseImages[name] ??
+            kExercisePlaceholderImage;
 }
 
 class _ExerciseCard extends StatelessWidget {
@@ -405,6 +379,115 @@ class _ExerciseCard extends StatelessWidget {
     }
   }
 
+  static final Map<String, Future<ui.Image>> _firstFrameCache = {};
+  static final Map<String, Future<Uint8List>> _gifBytesCache = {};
+
+  bool get _isGif => exercise.imageUrl.toLowerCase().endsWith('.gif');
+
+  bool _needsSignedUrl(String path) {
+    return path.isNotEmpty &&
+        !path.startsWith('http') &&
+        !path.startsWith('assets/');
+  }
+
+  Future<Uint8List> _loadGifBytes(String path) {
+    return _gifBytesCache.putIfAbsent(path, () async {
+      try {
+        if (path.startsWith('http')) {
+          final response = await http.get(Uri.parse(path));
+          if (response.statusCode == 200) {
+            return response.bodyBytes;
+          }
+          throw Exception('Failed to download GIF: ${response.statusCode}');
+        } else if (_needsSignedUrl(path)) {
+          final signedUrl =
+              await SupabaseService.instance.getSignedUrlForStoragePath(path);
+          final response = await http.get(Uri.parse(signedUrl));
+          if (response.statusCode == 200) {
+            return response.bodyBytes;
+          }
+          throw Exception(
+              'Failed to download GIF from signed URL: ${response.statusCode}');
+        } else {
+          final data = await rootBundle.load(path);
+          return data.buffer.asUint8List();
+        }
+      } catch (e) {
+        throw Exception('Failed to load GIF bytes: $e');
+      }
+    });
+  }
+
+  Future<ui.Image> _loadFirstFrame(String path) {
+    return _firstFrameCache.putIfAbsent(path, () async {
+      final bytes = await _loadGifBytes(path);
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      return frame.image;
+    });
+  }
+
+  Widget _buildImage(BuildContext context) {
+    if (exercise.imageUrl.isEmpty) {
+      return _fallbackIcon(colorScheme, _getCategoryIcon());
+    }
+
+    if (_isGif) {
+      return FutureBuilder<ui.Image>(
+        future: _loadFirstFrame(exercise.imageUrl),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return RawImage(
+              image: snapshot.data,
+              fit: BoxFit.cover,
+            );
+          }
+          return _fallbackIcon(colorScheme, _getCategoryIcon());
+        },
+      );
+    }
+
+    if (exercise.imageUrl.startsWith('assets/')) {
+      return Image.asset(
+        exercise.imageUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) =>
+            _fallbackIcon(colorScheme, _getCategoryIcon()),
+      );
+    }
+
+    if (_needsSignedUrl(exercise.imageUrl)) {
+      return FutureBuilder<String>(
+        future: SupabaseService.instance
+            .getSignedUrlForStoragePath(exercise.imageUrl),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return Image.network(
+              snapshot.data!,
+              gaplessPlayback: true,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) =>
+                  _fallbackIcon(colorScheme, _getCategoryIcon()),
+            );
+          }
+          if (snapshot.hasError) {
+            return _fallbackIcon(colorScheme, _getCategoryIcon());
+          }
+          return const Center(
+              child: CircularProgressIndicator(strokeWidth: 1.5));
+        },
+      );
+    }
+
+    return Image.network(
+      exercise.imageUrl,
+      gaplessPlayback: true,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) =>
+          _fallbackIcon(colorScheme, _getCategoryIcon()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -416,13 +499,15 @@ class _ExerciseCard extends StatelessWidget {
           height: 60,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: exercise.imageUrl.isNotEmpty
-                ? Image.network(
-                    exercise.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => _fallbackIcon(colorScheme, _getCategoryIcon()),
-                  )
-                : _fallbackIcon(colorScheme, _getCategoryIcon()),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (exercise.imageUrl.isNotEmpty)
+                  _buildImage(context)
+                else
+                  _fallbackIcon(colorScheme, _getCategoryIcon()),
+              ],
+            ),
           ),
         ),
         title: Text(
@@ -437,7 +522,8 @@ class _ExerciseCard extends StatelessWidget {
               children: [
                 if (exercise.isCustom)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     margin: const EdgeInsets.only(right: 8),
                     decoration: BoxDecoration(
                       color: colorScheme.secondary,
@@ -453,7 +539,8 @@ class _ExerciseCard extends StatelessWidget {
                     ),
                   ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: _getDifficultyColor().withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
