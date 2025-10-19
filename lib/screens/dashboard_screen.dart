@@ -449,7 +449,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               // Header with greeting and stats
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                  padding: const EdgeInsets.fromLTRB(16, 32, 16, 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -501,7 +501,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               // Content
               SliverPadding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     // Workout Plans Header
