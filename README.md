@@ -1,4 +1,5 @@
 # FitTrack - Weight Tracker Flutter App
+# FitTrack - Weight Tracker Flutter App
 
 A complete Material Design 3 weightlifting tracking app built with Flutter, based on Figma design files.
 
