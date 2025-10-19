@@ -35,12 +35,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _loadRecentWorkouts();
   }
 
+  String? _normalizeId(dynamic value) {
+    if (value == null) return null;
+    final idStr = value.toString();
+    if (idStr.isEmpty) return null;
+    return idStr;
+  }
+
   Future<void> _loadFoldersAndWorkouts() async {
     setState(() => _isLoadingWorkouts = true);
 
     try {
       // Load folders
-      final folders = await _supabaseService.getWorkoutFolders();
+      final rawFolders = await _supabaseService.getWorkoutFolders();
+      final folders = rawFolders
+          .where((folder) => folder['id'] != null)
+          .map((folder) {
+            final normalized = Map<String, dynamic>.from(folder);
+            normalized['id'] = folder['id'].toString();
+            return normalized;
+          })
+          .toList();
       
       // Group workouts by folder using junction table
       final Map<String?, List<Map<String, dynamic>>> grouped = {};
@@ -76,7 +91,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       // Load last completed date for each workout
       final Map<String, DateTime?> lastDates = {};
       for (var workout in allWorkouts) {
-        final workoutId = workout['id'] as String;
+        final workoutId = _normalizeId(workout['id']);
+        if (workoutId == null) continue;
         final lastDate = await _getLastWorkoutDate(workoutId);
         lastDates[workoutId] = lastDate;
       }
@@ -283,12 +299,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     
     // Get workouts already in this plan
     final workoutsInPlan = await _supabaseService.getWorkoutsByFolder(planId);
-    final workoutIdsInPlan = workoutsInPlan.map((w) => w['id'] as String).toSet();
+    final workoutIdsInPlan = workoutsInPlan
+        .map((w) => _normalizeId(w['id']))
+        .whereType<String>()
+        .toSet();
     
     // Filter to show only workouts not yet in this plan
-    final availableWorkouts = allWorkouts.where((workout) => 
-      !workoutIdsInPlan.contains(workout['id'] as String)
-    ).toList();
+    final availableWorkouts = allWorkouts.where((workout) {
+      final workoutId = _normalizeId(workout['id']);
+      if (workoutId == null) {
+        return false;
+      }
+      return !workoutIdsInPlan.contains(workoutId);
+    }).toList();
 
     if (!mounted) return;
 
@@ -328,22 +351,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
             shrinkWrap: true,
             itemCount: availableWorkouts.length,
             itemBuilder: (context, index) {
-              final workout = availableWorkouts[index];
-              final exercises = workout['workout_exercises'] as List? ?? [];
+                  final workout = availableWorkouts[index];
+                  final workoutId = _normalizeId(workout['id']);
+                  final exercises = workout['workout_exercises'] as List? ?? [];
               
               return ListTile(
                 leading: Icon(
                   Icons.fitness_center,
                   color: Theme.of(context).colorScheme.primary,
                 ),
-                title: Text(workout['name'] as String),
+                title: Text((workout['name'] as String?) ?? 'Workout'),
                 subtitle: Text('${exercises.length} exercises'),
                 trailing: IconButton(
                   icon: const Icon(Icons.add_circle_outline),
-                  onPressed: () async {
+                  onPressed: workoutId == null
+                      ? null
+                      : () async {
                     try {
                       await _supabaseService.addWorkoutToPlan(
-                        workout['id'] as String,
+                        workoutId,
                         planId,
                       );
                       
@@ -416,7 +442,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
 
     try {
-      await _supabaseService.reorderPlans(_folders);
+      final reorderablePlans = _folders.where((plan) => plan['id'] != null).toList();
+      await _supabaseService.reorderPlans(reorderablePlans);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -769,8 +796,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       if (workouts.isNotEmpty)
                         ...workouts.take(5).map((workout) {
-                          final workoutId = workout['id'] as String;
-                          final lastDate = _workoutLastCompletedDates[workoutId];
+                          final workoutId = _normalizeId(workout['id']);
+                          final lastDate = workoutId != null ? _workoutLastCompletedDates[workoutId] : null;
                           final isLastItem = workouts.take(5).toList().last == workout;
 
                           return Column(
@@ -825,72 +852,75 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
         // My Workouts default section
         if (_workoutsByFolder[null]?.isNotEmpty ?? false) ...[
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.folder_open, size: 28),
-                  title: Text(
-                    'My Workouts',
-                    style: textTheme.titleMedium,
-                  ),
-                  subtitle: Text('${_workoutsByFolder[null]!.length} workout${_workoutsByFolder[null]!.length != 1 ? 's' : ''}'),
-                  trailing: Icon(
-                    _expandedFolderId == null ? Icons.expand_less : Icons.expand_more,
-                  ),
-                  onTap: () {
-                    setState(() {
-                      _expandedFolderId = _expandedFolderId == null ? 'expanded' : null;
-                    });
-                  },
-                ),
-                if (_expandedFolderId == null) ...[
-                  const Divider(height: 1),
-                  ..._workoutsByFolder[null]!.take(5).map((workout) {
-                    final workoutId = workout['id'] as String;
-                    final lastDate = _workoutLastCompletedDates[workoutId];
-                    final isLastItem = _workoutsByFolder[null]!.take(5).toList().last == workout;
-                    
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _MyWorkoutTile(
-                          workout: workout,
-                          lastCompleted: _formatLastCompleted(lastDate),
-                          hasBeenCompleted: lastDate != null,
-                          colorScheme: colorScheme,
-                          textTheme: textTheme,
-                          isInFolder: true,
-                          onTap: () => widget.onNavigate('workout-detail', {
-                            'workout': workout,
-                          }),
-                        ),
-                        if (!isLastItem)
-                          Divider(
-                            height: 1,
-                            thickness: 1,
-                            indent: 56,
-                            endIndent: 16,
-                            color: colorScheme.outlineVariant.withOpacity(0.5),
-                          ),
-                      ],
-                    );
-                  }),
-                  if (_workoutsByFolder[null]!.length > 5)
-                    ListTile(
-                      contentPadding: const EdgeInsets.only(left: 72, right: 16),
-                      title: Text(
-                        '+ ${_workoutsByFolder[null]!.length - 5} more',
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.primary,
-                        ),
-                      ),
-                      onTap: () => widget.onNavigate('workout-folders'),
+          () {
+            final unorganizedWorkouts = _workoutsByFolder[null] ?? const <Map<String, dynamic>>[];
+            return Card(
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.folder_open, size: 28),
+                    title: Text(
+                      'My Workouts',
+                      style: textTheme.titleMedium,
                     ),
+                    subtitle: Text('${unorganizedWorkouts.length} workout${unorganizedWorkouts.length != 1 ? 's' : ''}'),
+                    trailing: Icon(
+                      _expandedFolderId == null ? Icons.expand_less : Icons.expand_more,
+                    ),
+                    onTap: () {
+                      setState(() {
+                        _expandedFolderId = _expandedFolderId == null ? 'expanded' : null;
+                      });
+                    },
+                  ),
+                  if (_expandedFolderId == null) ...[
+                    const Divider(height: 1),
+                    ...unorganizedWorkouts.take(5).map((workout) {
+                      final workoutId = _normalizeId(workout['id']);
+                      final lastDate = workoutId != null ? _workoutLastCompletedDates[workoutId] : null;
+                      final isLastItem = unorganizedWorkouts.take(5).toList().last == workout;
+                      
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _MyWorkoutTile(
+                            workout: workout,
+                            lastCompleted: _formatLastCompleted(lastDate),
+                            hasBeenCompleted: lastDate != null,
+                            colorScheme: colorScheme,
+                            textTheme: textTheme,
+                            isInFolder: true,
+                            onTap: () => widget.onNavigate('workout-detail', {
+                              'workout': workout,
+                            }),
+                          ),
+                          if (!isLastItem)
+                            Divider(
+                              height: 1,
+                              thickness: 1,
+                              indent: 56,
+                              endIndent: 16,
+                              color: colorScheme.outlineVariant.withOpacity(0.5),
+                            ),
+                        ],
+                      );
+                    }),
+                    if (unorganizedWorkouts.length > 5)
+                      ListTile(
+                        contentPadding: const EdgeInsets.only(left: 72, right: 16),
+                        title: Text(
+                          '+ ${unorganizedWorkouts.length - 5} more',
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.primary,
+                          ),
+                        ),
+                        onTap: () => widget.onNavigate('workout-folders'),
+                      ),
+                  ],
                 ],
-              ],
-            ),
-          ),
+              ),
+            );
+          }(),
         ],
       ],
     );
