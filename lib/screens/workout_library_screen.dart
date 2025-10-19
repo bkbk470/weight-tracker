@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../services/supabase_service.dart';
 
 class WorkoutLibraryScreen extends StatefulWidget {
@@ -24,6 +25,8 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
   bool isLoading = true;
   bool isLoadingTemplates = false;
   bool isReordering = false;
+  int? draggedIndex;
+  int? hoveredIndex;
 
   @override
   void initState() {
@@ -101,6 +104,30 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
     }
   }
 
+  void _onDragStart(int index) {
+    setState(() {
+      draggedIndex = index;
+    });
+  }
+
+  void _onDragEnd() {
+    if (draggedIndex != null && hoveredIndex != null && draggedIndex != hoveredIndex) {
+      _reorderWorkouts(draggedIndex!, hoveredIndex!);
+    }
+    setState(() {
+      draggedIndex = null;
+      hoveredIndex = null;
+    });
+  }
+
+  void _onDragEnter(int index) {
+    if (draggedIndex != null && draggedIndex != index) {
+      setState(() {
+        hoveredIndex = index;
+      });
+    }
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -141,6 +168,10 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
                   onPressed: () {
                     setState(() {
                       isReordering = !isReordering;
+                      if (!isReordering) {
+                        draggedIndex = null;
+                        hoveredIndex = null;
+                      }
                     });
                   },
                   tooltip: isReordering ? 'Done Reordering' : 'Reorder Workouts',
@@ -246,7 +277,9 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Long press and drag workouts to reorder them',
+                        kIsWeb 
+                          ? 'Click and drag workouts to reorder them'
+                          : 'Long press and drag workouts to reorder them',
                         style: textTheme.bodyMedium?.copyWith(
                           color: colorScheme.onPrimaryContainer,
                         ),
@@ -420,31 +453,124 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
   }
 
   Widget _buildReorderableWorkoutList(ColorScheme colorScheme, TextTheme textTheme) {
-    return SliverToBoxAdapter(
-      child: Padding(
+    if (kIsWeb) {
+      // Use custom drag and drop for web
+      return SliverPadding(
         padding: const EdgeInsets.all(16),
-        child: ReorderableListView(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          onReorder: _reorderWorkouts,
-          children: myWorkouts.map((workout) {
-            final exercises = workout['workout_exercises'] as List? ?? [];
-            return _WorkoutCard(
-              key: ValueKey(workout['id']),
-              name: workout['name'] ?? 'Unnamed Workout',
-              description: workout['description'] ?? 'No description',
-              exercises: exercises.length,
-              duration: '${workout['estimated_duration_minutes'] ?? 45} min',
-              difficulty: workout['difficulty'] ?? 'Intermediate',
-              colorScheme: colorScheme,
-              textTheme: textTheme,
-              showDragHandle: true,
-              onTap: () {}, // Disable tap during reordering
-            );
-          }).toList(),
+        sliver: SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final workout = myWorkouts[index];
+              final exercises = workout['workout_exercises'] as List? ?? [];
+              final isDragging = draggedIndex == index;
+              final isHovered = hoveredIndex == index;
+
+              return Draggable<int>(
+                data: index,
+                onDragStarted: () => _onDragStart(index),
+                onDragEnd: (_) => _onDragEnd(),
+                feedback: Material(
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width - 32,
+                    child: Opacity(
+                      opacity: 0.8,
+                      child: _WorkoutCard(
+                        name: workout['name'] ?? 'Unnamed Workout',
+                        description: workout['description'] ?? 'No description',
+                        exercises: exercises.length,
+                        duration: '${workout['estimated_duration_minutes'] ?? 45} min',
+                        difficulty: workout['difficulty'] ?? 'Intermediate',
+                        colorScheme: colorScheme,
+                        textTheme: textTheme,
+                        showDragHandle: true,
+                        onTap: () {},
+                      ),
+                    ),
+                  ),
+                ),
+                childWhenDragging: Opacity(
+                  opacity: 0.3,
+                  child: _WorkoutCard(
+                    name: workout['name'] ?? 'Unnamed Workout',
+                    description: workout['description'] ?? 'No description',
+                    exercises: exercises.length,
+                    duration: '${workout['estimated_duration_minutes'] ?? 45} min',
+                    difficulty: workout['difficulty'] ?? 'Intermediate',
+                    colorScheme: colorScheme,
+                    textTheme: textTheme,
+                    showDragHandle: true,
+                    onTap: () {},
+                  ),
+                ),
+                child: DragTarget<int>(
+                  onWillAccept: (data) => data != null && data != index,
+                  onAccept: (data) {
+                    _reorderWorkouts(data, index);
+                  },
+                  onMove: (_) => _onDragEnter(index),
+                  builder: (context, candidateData, rejectedData) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        border: isHovered ? Border.all(
+                          color: colorScheme.primary,
+                          width: 2,
+                        ) : null,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: AnimatedOpacity(
+                        opacity: isDragging ? 0.3 : 1.0,
+                        duration: const Duration(milliseconds: 200),
+                        child: _WorkoutCard(
+                          name: workout['name'] ?? 'Unnamed Workout',
+                          description: workout['description'] ?? 'No description',
+                          exercises: exercises.length,
+                          duration: '${workout['estimated_duration_minutes'] ?? 45} min',
+                          difficulty: workout['difficulty'] ?? 'Intermediate',
+                          colorScheme: colorScheme,
+                          textTheme: textTheme,
+                          showDragHandle: true,
+                          onTap: () {},
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+            childCount: myWorkouts.length,
+          ),
         ),
-      ),
-    );
+      );
+    } else {
+      // Use ReorderableListView for mobile
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: ReorderableListView(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            onReorder: _reorderWorkouts,
+            children: myWorkouts.map((workout) {
+              final exercises = workout['workout_exercises'] as List? ?? [];
+              return _WorkoutCard(
+                key: ValueKey(workout['id']),
+                name: workout['name'] ?? 'Unnamed Workout',
+                description: workout['description'] ?? 'No description',
+                exercises: exercises.length,
+                duration: '${workout['estimated_duration_minutes'] ?? 45} min',
+                difficulty: workout['difficulty'] ?? 'Intermediate',
+                colorScheme: colorScheme,
+                textTheme: textTheme,
+                showDragHandle: true,
+                onTap: () {}, // Disable tap during reordering
+              );
+            }).toList(),
+          ),
+        ),
+      );
+    }
   }
 
   Widget _buildNormalWorkoutList(ColorScheme colorScheme, TextTheme textTheme) {
@@ -649,9 +775,12 @@ class _WorkoutCard extends StatelessWidget {
               if (showDragHandle)
                 Padding(
                   padding: const EdgeInsets.only(right: 12),
-                  child: Icon(
-                    Icons.drag_handle,
-                    color: colorScheme.onSurfaceVariant,
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.grab,
+                    child: Icon(
+                      Icons.drag_handle,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               Container(

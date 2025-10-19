@@ -300,6 +300,59 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
     );
   }
 
+  Future<void> _removeWorkoutFromPlan(Map<String, dynamic> workout, String planId, String planName) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove from Plan'),
+        content: Text(
+          'Remove "${workout['name']}" from $planName?\n\nThe workout will still be available in your library.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await _supabaseService.removeWorkoutFromPlan(
+          workout['id'] as String,
+          planId,
+        );
+        _loadFoldersAndWorkouts();
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Removed "${workout['name']}" from $planName'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   void _showMoveWorkoutDialog(Map<String, dynamic> workout) {
     showDialog(
       context: context,
@@ -348,21 +401,16 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
     // Get workouts already in this plan
     final workoutsInPlan = await _supabaseService.getWorkoutsByFolder(planId);
     final workoutIdsInPlan = workoutsInPlan.map((w) => w['id'] as String).toSet();
-    
-    // Filter to show only workouts not yet in this plan
-    final availableWorkouts = allWorkouts.where((workout) => 
-      !workoutIdsInPlan.contains(workout['id'] as String)
-    ).toList();
 
     if (!mounted) return;
 
-    if (availableWorkouts.isEmpty) {
+    if (allWorkouts.isEmpty) {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('No Workouts Available'),
           content: const Text(
-            'All your workouts are already in this plan, or you don\'t have any workouts yet.',
+            'You don\'t have any workouts yet. Create some workouts first!',
           ),
           actions: [
             TextButton(
@@ -377,66 +425,14 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Add Workout to $planName'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: availableWorkouts.length,
-            itemBuilder: (context, index) {
-              final workout = availableWorkouts[index];
-              final exercises = workout['workout_exercises'] as List? ?? [];
-              
-              return ListTile(
-                leading: Icon(
-                  Icons.fitness_center,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                title: Text(workout['name'] as String),
-                subtitle: Text('${exercises.length} exercises'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.add_circle_outline),
-                  onPressed: () async {
-                    try {
-                      await _supabaseService.addWorkoutToPlan(
-                        workout['id'] as String,
-                        planId,
-                      );
-                      
-                      Navigator.pop(context);
-                      _loadFoldersAndWorkouts();
-                      
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Added "${workout['name']}" to plan'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      }
-                    } catch (e) {
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Error: $e'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    }
-                  },
-                ),
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-        ],
+      builder: (context) => _AddWorkoutDialog(
+        planId: planId,
+        planName: planName,
+        allWorkouts: allWorkouts,
+        initialAddedWorkoutIds: workoutIdsInPlan,
+        onWorkoutsAdded: () {
+          _loadFoldersAndWorkouts();
+        },
       ),
     );
   }
@@ -829,6 +825,309 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
             ),
         ],
       ),
+    );
+  }
+}
+
+class _AddWorkoutDialog extends StatefulWidget {
+  final String planId;
+  final String planName;
+  final List<Map<String, dynamic>> allWorkouts;
+  final Set<String> initialAddedWorkoutIds;
+  final VoidCallback onWorkoutsAdded;
+
+  const _AddWorkoutDialog({
+    required this.planId,
+    required this.planName,
+    required this.allWorkouts,
+    required this.initialAddedWorkoutIds,
+    required this.onWorkoutsAdded,
+  });
+
+  @override
+  State<_AddWorkoutDialog> createState() => _AddWorkoutDialogState();
+}
+
+class _AddWorkoutDialogState extends State<_AddWorkoutDialog> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  Set<String> _addedWorkoutIds = {};
+  Set<String> _addingWorkoutIds = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _addedWorkoutIds = Set.from(widget.initialAddedWorkoutIds);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Map<String, dynamic>> get _filteredWorkouts {
+    if (_searchQuery.isEmpty) {
+      return widget.allWorkouts;
+    }
+    return widget.allWorkouts.where((workout) {
+      final name = (workout['name'] as String? ?? '').toLowerCase();
+      final description = (workout['description'] as String? ?? '').toLowerCase();
+      final query = _searchQuery.toLowerCase();
+      return name.contains(query) || description.contains(query);
+    }).toList();
+  }
+
+  Future<void> _addWorkout(Map<String, dynamic> workout) async {
+    final workoutId = workout['id'] as String;
+    
+    setState(() {
+      _addingWorkoutIds.add(workoutId);
+    });
+
+    try {
+      await SupabaseService.instance.addWorkoutToPlan(
+        workoutId,
+        widget.planId,
+      );
+      
+      setState(() {
+        _addedWorkoutIds.add(workoutId);
+        _addingWorkoutIds.remove(workoutId);
+      });
+      
+      widget.onWorkoutsAdded();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Added "${workout['name']}" to ${widget.planName}'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _addingWorkoutIds.remove(workoutId);
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final filteredWorkouts = _filteredWorkouts;
+
+    return AlertDialog(
+      title: Text('Add Workout to ${widget.planName}'),
+      content: SizedBox(
+        width: double.maxFinite,
+        height: MediaQuery.of(context).size.height * 0.6,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Search bar
+            TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+              decoration: InputDecoration(
+                hintText: 'Search workouts...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Summary info
+            if (filteredWorkouts.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Text(
+                      '${filteredWorkouts.length} workout${filteredWorkouts.length != 1 ? 's' : ''}',
+                      style: TextStyle(
+                        color: colorScheme.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
+                    if (_addedWorkoutIds.isNotEmpty) ..[
+                      Text(
+                        ' • ',
+                        style: TextStyle(
+                          color: colorScheme.onSurfaceVariant,
+                          fontSize: 12,
+                        ),
+                      ),
+                      Text(
+                        '${_addedWorkoutIds.length} added to plan',
+                        style: TextStyle(
+                          color: colorScheme.primary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            const SizedBox(height: 4),
+            
+            // Workout list
+            Expanded(
+              child: filteredWorkouts.isEmpty
+                  ? Center(
+                      child: Text(
+                        _searchQuery.isEmpty
+                            ? 'No workouts available'
+                            : 'No workouts found',
+                        style: TextStyle(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: filteredWorkouts.length,
+                      itemBuilder: (context, index) {
+                        final workout = filteredWorkouts[index];
+                        final workoutId = workout['id'] as String;
+                        final exercises = workout['workout_exercises'] as List? ?? [];
+                        final isAdded = _addedWorkoutIds.contains(workoutId);
+                        final isAdding = _addingWorkoutIds.contains(workoutId);
+                        
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          elevation: isAdded ? 0 : 1,
+                          color: isAdded 
+                              ? colorScheme.surfaceVariant.withOpacity(0.5)
+                              : null,
+                          child: ListTile(
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: isAdded
+                                    ? colorScheme.primaryContainer.withOpacity(0.5)
+                                    : colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.fitness_center,
+                                size: 20,
+                                color: isAdded 
+                                    ? colorScheme.primary.withOpacity(0.7)
+                                    : colorScheme.primary,
+                              ),
+                            ),
+                            title: Text(
+                              workout['name'] as String,
+                              style: TextStyle(
+                                color: isAdded 
+                                    ? colorScheme.onSurfaceVariant
+                                    : null,
+                                fontWeight: isAdded ? FontWeight.normal : FontWeight.w500,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '${exercises.length} exercise${exercises.length != 1 ? 's' : ''}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            trailing: isAdding
+                                ? SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: colorScheme.primary,
+                                    ),
+                                  )
+                                : isAdded
+                                    ? Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: colorScheme.primaryContainer,
+                                          borderRadius: BorderRadius.circular(16),
+                                          border: Border.all(
+                                            color: colorScheme.primary.withOpacity(0.3),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.check_circle,
+                                              size: 16,
+                                              color: colorScheme.primary,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'Added',
+                                              style: TextStyle(
+                                                color: colorScheme.primary,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    : IconButton(
+                                        icon: Icon(
+                                          Icons.add_circle_outline,
+                                          color: colorScheme.primary,
+                                        ),
+                                        tooltip: 'Add to plan',
+                                        onPressed: () => _addWorkout(workout),
+                                      ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Close'),
+        ),
+      ],
     );
   }
 }
