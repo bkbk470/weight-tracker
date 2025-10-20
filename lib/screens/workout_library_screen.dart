@@ -88,35 +88,40 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 32, 16, 16),
-              child: Row(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
                           'Workouts',
                           style: textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                             letterSpacing: -0.5,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Organize your workouts and templates.',
-                          style: textTheme.bodyLarge?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 8),
+                      OutlinedButton.icon(
+                        onPressed: () => widget.onNavigate('workout-builder'),
+                        icon: const Icon(Icons.add),
+                        label: const Text('New Workout'),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton.icon(
+                        onPressed: () => widget.onNavigate('workout-folders'),
+                        icon: const Icon(Icons.folder),
+                        label: const Text('Manage'),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.folder),
-                    onPressed: () => widget.onNavigate('workout-folders'),
-                    tooltip: 'Organize Folders',
+                  const SizedBox(height: 8),
+                  Text(
+                    'Browse your workouts, templates, and organize them into folders.',
+                    style: textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
