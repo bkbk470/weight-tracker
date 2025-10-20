@@ -89,269 +89,269 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
           slivers: [
             // Header
             SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 32, 16, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Workouts',
-                          style: textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: -0.5,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 32, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Workouts',
+                            style: textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: -0.5,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      OutlinedButton.icon(
-                        onPressed: () => widget.onNavigate('workout-builder'),
-                        icon: const Icon(Icons.add),
-                        label: const Text('New Workout'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Browse your workouts, templates, and organize them into folders.',
-                    style: textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+                        const SizedBox(width: 8),
+                        OutlinedButton.icon(
+                          onPressed: () => widget.onNavigate('workout-builder'),
+                          icon: const Icon(Icons.add),
+                          label: const Text('New Workout'),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Search Bar
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: TextField(
-                controller: _searchController,
-                onChanged: (value) {
-                  setState(() {
-                    searchQuery = value;
-                  });
-                },
-                decoration: InputDecoration(
-                  hintText: 'Search workouts...',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() {
-                              searchQuery = '';
-                            });
-                          },
-                        )
-                      : null,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Browse your workouts, templates, and organize them into folders.',
+                      style: textTheme.bodyLarge?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ),
 
-          // Tab Selection
-          SliverToBoxAdapter(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: SegmentedButton<String>(
-                      segments: const [
-                        ButtonSegment(
-                          value: 'My Workouts',
-                          label: Text('My Workouts'),
-                          icon: Icon(Icons.bookmark),
-                        ),
-                        ButtonSegment(
-                          value: 'Templates',
-                          label: Text('Templates'),
-                          icon: Icon(Icons.library_books),
-                        ),
-                      ],
-                      selected: {selectedTab},
-                      onSelectionChanged: (Set<String> newSelection) {
-                        setState(() {
-                          selectedTab = newSelection.first;
-                        });
-                        // Load templates when Templates tab is selected
-                        if (selectedTab == 'Templates') {
-                          _loadTemplates();
-                        }
-                      },
+            // Search Bar
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (value) {
+                    setState(() {
+                      searchQuery = value;
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Search workouts...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() {
+                                searchQuery = '';
+                              });
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    filled: true,
+                    fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
                   ),
-                ],
+                ),
               ),
             ),
-          ),
 
-          // Content based on selected tab
-          if (selectedTab == 'My Workouts')
-            isLoading
-                ? SliverFillRemaining(
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                : myWorkouts.isEmpty
-                    ? SliverFillRemaining(
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.fitness_center_outlined,
-                                size: 80,
-                                color: colorScheme.primary.withOpacity(0.3),
-                              ),
-                              const SizedBox(height: 24),
-                              Text(
-                                'No Workouts Yet',
-                                style: textTheme.headlineSmall,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Create your first workout template!',
-                                style: textTheme.bodyMedium?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                              const SizedBox(height: 32),
-                              FilledButton.icon(
-                                onPressed: () => widget.onNavigate('workout-builder'),
-                                icon: const Icon(Icons.add),
-                                label: const Text('Create Workout'),
-                              ),
-                            ],
+            // Tab Selection
+            SliverToBoxAdapter(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: SegmentedButton<String>(
+                        segments: const [
+                          ButtonSegment(
+                            value: 'My Workouts',
+                            label: Text('My Workouts'),
+                            icon: Icon(Icons.bookmark),
                           ),
-                        ),
-                      )
-                    : _buildNormalWorkoutList(colorScheme, textTheme)
-          else
-            SliverPadding(
-              padding: const EdgeInsets.all(16),
-              sliver: isLoadingTemplates
+                          ButtonSegment(
+                            value: 'Templates',
+                            label: Text('Templates'),
+                            icon: Icon(Icons.library_books),
+                          ),
+                        ],
+                        selected: {selectedTab},
+                        onSelectionChanged: (Set<String> newSelection) {
+                          setState(() {
+                            selectedTab = newSelection.first;
+                          });
+                          // Load templates when Templates tab is selected
+                          if (selectedTab == 'Templates') {
+                            _loadTemplates();
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Content based on selected tab
+            if (selectedTab == 'My Workouts')
+              isLoading
                   ? SliverFillRemaining(
                       child: Center(child: CircularProgressIndicator()),
                     )
-                  : workoutTemplates.isEmpty
+                  : myWorkouts.isEmpty
                       ? SliverFillRemaining(
                           child: Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(
-                                  Icons.library_books_outlined,
+                                  Icons.fitness_center_outlined,
                                   size: 80,
                                   color: colorScheme.primary.withOpacity(0.3),
                                 ),
                                 const SizedBox(height: 24),
                                 Text(
-                                  'No Templates Available',
+                                  'No Workouts Yet',
                                   style: textTheme.headlineSmall,
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Check back later for workout templates',
+                                  'Create your first workout template!',
                                   style: textTheme.bodyMedium?.copyWith(
                                     color: colorScheme.onSurfaceVariant,
                                   ),
+                                ),
+                                const SizedBox(height: 32),
+                                FilledButton.icon(
+                                  onPressed: () => widget.onNavigate('workout-builder'),
+                                  icon: const Icon(Icons.add),
+                                  label: const Text('Create Workout'),
                                 ),
                               ],
                             ),
                           ),
                         )
-                      : SliverList(
-                          delegate: SliverChildListDelegate([
-                            Text(
-                              'Workout Templates',
-                              style: textTheme.titleMedium?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
+                      : _buildNormalWorkoutList(colorScheme, textTheme)
+            else
+              SliverPadding(
+                padding: const EdgeInsets.all(16),
+                sliver: isLoadingTemplates
+                    ? SliverFillRemaining(
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    : workoutTemplates.isEmpty
+                        ? SliverFillRemaining(
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.library_books_outlined,
+                                    size: 80,
+                                    color: colorScheme.primary.withOpacity(0.3),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Text(
+                                    'No Templates Available',
+                                    style: textTheme.headlineSmall,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Check back later for workout templates',
+                                    style: textTheme.bodyMedium?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            ...workoutTemplates.map((template) {
-                              final exercises = template['workout_template_exercises'] as List? ?? [];
-                              return _WorkoutCard(
-                                name: template['name'] ?? 'Unnamed Template',
-                                description: template['description'] ?? 'No description',
-                                exercises: exercises.length,
-                                duration: '${template['estimated_duration_minutes'] ?? 45} min',
-                                difficulty: template['difficulty'] ?? 'Intermediate',
-                                colorScheme: colorScheme,
-                                textTheme: textTheme,
-                                onTap: () => widget.onNavigate(
-                                  'workout-detail',
-                                  {
-                                    'workout': template,
-                                  },
+                          )
+                        : SliverList(
+                            delegate: SliverChildListDelegate([
+                              Text(
+                                'Workout Templates',
+                                style: textTheme.titleMedium?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
                                 ),
-                                onDuplicate: () async {
-                                  try {
-                                    // Duplicate template to user's workouts
-                                    final newWorkout = await SupabaseService.instance.duplicateTemplateToWorkout(
-                                      template['id'] as String,
-                                    );
+                              ),
+                              const SizedBox(height: 16),
+                              ...workoutTemplates.map((template) {
+                                final exercises = template['workout_template_exercises'] as List? ?? [];
+                                return _WorkoutCard(
+                                  name: template['name'] ?? 'Unnamed Template',
+                                  description: template['description'] ?? 'No description',
+                                  exercises: exercises.length,
+                                  duration: '${template['estimated_duration_minutes'] ?? 45} min',
+                                  difficulty: template['difficulty'] ?? 'Intermediate',
+                                  colorScheme: colorScheme,
+                                  textTheme: textTheme,
+                                  onTap: () => widget.onNavigate(
+                                    'workout-detail',
+                                    {
+                                      'workout': template,
+                                    },
+                                  ),
+                                  onDuplicate: () async {
+                                    try {
+                                      // Duplicate template to user's workouts
+                                      final newWorkout = await SupabaseService.instance.duplicateTemplateToWorkout(
+                                        template['id'] as String,
+                                      );
 
-                                    // Reload user's workouts
-                                    await _loadWorkouts();
-                                    
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('Workout "${newWorkout['name']}" added to My Workouts'),
-                                          backgroundColor: Colors.green,
-                                          action: SnackBarAction(
-                                            label: 'View',
-                                            textColor: Colors.white,
-                                            onPressed: () {
-                                              setState(() {
-                                                selectedTab = 'My Workouts';
-                                              });
-                                            },
+                                      // Reload user's workouts
+                                      await _loadWorkouts();
+
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Workout "${newWorkout['name']}" added to My Workouts'),
+                                            backgroundColor: Colors.green,
+                                            action: SnackBarAction(
+                                              label: 'View',
+                                              textColor: Colors.white,
+                                              onPressed: () {
+                                                setState(() {
+                                                  selectedTab = 'My Workouts';
+                                                });
+                                              },
+                                            ),
                                           ),
-                                        ),
-                                      );
+                                        );
+                                      }
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Error adding workout: $e'),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
                                     }
-                                  } catch (e) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('Error adding workout: $e'),
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
-                                    }
-                                  }
-                                },
-                              );
-                            }).toList(),
-                            const SizedBox(height: 24),
-                            OutlinedButton.icon(
-                              onPressed: () => widget.onNavigate('workout-builder'),
-                              icon: const Icon(Icons.add),
-                              label: const Text('Create New Workout'),
-                            ),
-                            const SizedBox(height: 12),
-                            FilledButton.icon(
-                              onPressed: () => widget.onNavigate('active-workout-start'),
-                              icon: const Icon(Icons.play_arrow),
-                              label: const Text('Start Empty Workout'),
-                            ),
-                          ]),
-                        ),
+                                  },
+                                );
+                              }).toList(),
+                              const SizedBox(height: 24),
+                              OutlinedButton.icon(
+                                onPressed: () => widget.onNavigate('workout-builder'),
+                                icon: const Icon(Icons.add),
+                                label: const Text('Create New Workout'),
+                              ),
+                              const SizedBox(height: 12),
+                              FilledButton.icon(
+                                onPressed: () => widget.onNavigate('active-workout-start'),
+                                icon: const Icon(Icons.play_arrow),
+                                label: const Text('Start Empty Workout'),
+                              ),
+                            ]),
+                          ),
+              ),
           ],
-        ),
         ),
       ),
     );
