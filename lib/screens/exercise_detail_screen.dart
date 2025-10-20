@@ -30,7 +30,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
   String selectedPeriod = '3M';
   final periods = ['1M', '3M', '6M', '1Y', 'All'];
 
-  late final String __exerciseName;
+  late final String _exerciseName;
   late final String _exerciseImagePath;
   String? _exerciseVideoPath;
   final personalRecord = '225 lbs';
@@ -66,7 +66,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
         ? Map<String, dynamic>.from(widget.exercise!)
         : <String, dynamic>{};
 
-    __exerciseName = _firstNonEmptyString(data, ['name', 'title']) ?? 'Bench Press';
+    _exerciseName = _firstNonEmptyString(data, ['name', 'title']) ?? 'Bench Press';
     _exerciseImagePath = _firstNonEmptyString(
           data,
           ['image_url', 'imageUrl', 'thumbnail_url', 'media_url'],
@@ -269,6 +269,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
   @override
   void dispose() {
     _gifTimer?.cancel();
+    _videoController?.dispose();
     super.dispose();
   }
 

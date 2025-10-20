@@ -8,7 +8,7 @@ import '../services/local_storage_service.dart';
 import '../services/supabase_service.dart';
 
 class ExercisesScreen extends StatefulWidget {
-  final Function(String) onNavigate;
+  final void Function(String, [Map<String, dynamic>?]) onNavigate;
 
   const ExercisesScreen({super.key, required this.onNavigate});
 
@@ -59,31 +59,11 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
 
       setState(() {
         allExercises = defaultOnly
-            .map((e) => Exercise(
-                  name: e['name'],
-                  category: e['category'],
-                  difficulty: e['difficulty'],
-                  equipment: e['equipment'],
-                  imageUrl: e['image_url'] as String? ??
-                      e['imageUrl'] as String? ??
-                      kDefaultExerciseImages[e['name']] ??
-                      kExercisePlaceholderImage,
-                  isCustom: e['is_custom'] ?? false,
-                ))
+            .map((e) => _createExerciseFromMap(e, isCustomOverride: false))
             .toList();
 
         customExercises = customOnly
-            .map((e) => Exercise(
-                  name: e['name'],
-                  category: e['category'],
-                  difficulty: e['difficulty'],
-                  equipment: e['equipment'],
-                  imageUrl: e['image_url'] as String? ??
-                      e['imageUrl'] as String? ??
-                      kDefaultExerciseImages[e['name']] ??
-                      kExercisePlaceholderImage,
-                  isCustom: true,
-                ))
+            .map((e) => _createExerciseFromMap(e, isCustomOverride: true))
             .toList();
       });
     } catch (e) {
@@ -103,29 +83,11 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
         }).toList();
 
         allExercises = defaultSaved
-            .map((e) => Exercise(
-                  name: e['name'],
-                  category: e['category'],
-                  difficulty: e['difficulty'],
-                  equipment: e['equipment'],
-                  imageUrl: (e['imageUrl'] ?? e['image_url']) as String? ??
-                      kDefaultExerciseImages[e['name']] ??
-                      kExercisePlaceholderImage,
-                  isCustom: e['isCustom'] ?? e['is_custom'] ?? false,
-                ))
+            .map((e) => _createExerciseFromMap(Map<String, dynamic>.from(e), isCustomOverride: false))
             .toList();
 
         customExercises = customSaved
-            .map((e) => Exercise(
-                  name: e['name'],
-                  category: e['category'],
-                  difficulty: e['difficulty'],
-                  equipment: e['equipment'],
-                  imageUrl: (e['imageUrl'] ?? e['image_url']) as String? ??
-                      kDefaultExerciseImages[e['name']] ??
-                      kExercisePlaceholderImage,
-                  isCustom: true,
-                ))
+            .map((e) => _createExerciseFromMap(Map<String, dynamic>.from(e), isCustomOverride: true))
             .toList();
       });
     }
@@ -135,6 +97,47 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
   void dispose() {
     searchController.dispose();
     super.dispose();
+  }
+
+  String? _firstNonEmptyString(Map<String, dynamic> map, List<String> keys) {
+    for (final key in keys) {
+      final value = map[key];
+      if (value is String) {
+        final trimmed = value.trim();
+        if (trimmed.isNotEmpty) {
+          return trimmed;
+        }
+      }
+    }
+    return null;
+  }
+
+  Exercise _createExerciseFromMap(Map<String, dynamic> source,
+      {bool? isCustomOverride}) {
+    final data = Map<String, dynamic>.from(source);
+    final imageUrl = _firstNonEmptyString(
+          data,
+          ['image_url', 'imageUrl', 'thumbnail_url', 'media_url'],
+        ) ??
+        kDefaultExerciseImages[data['name']] ??
+        kExercisePlaceholderImage;
+    final videoUrl = _firstNonEmptyString(
+      data,
+      ['video_url', 'videoUrl', 'video', 'demo_video_url', 'tutorial_video', 'video_path', 'media_video'],
+    );
+    final isCustom = isCustomOverride ??
+        (data['is_custom'] == true || data['isCustom'] == true);
+
+    return Exercise(
+      name: (data['name'] as String?) ?? 'Exercise',
+      category: (data['category'] as String?) ?? 'Other',
+      difficulty: (data['difficulty'] as String?) ?? 'Intermediate',
+      equipment: (data['equipment'] as String?) ?? 'Bodyweight',
+      imageUrl: imageUrl,
+      videoUrl: videoUrl,
+      isCustom: isCustom,
+      rawData: data,
+    );
   }
 
   List<Exercise> get filteredExercises {
@@ -299,7 +302,10 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
                           exercise: exercise,
                           colorScheme: colorScheme,
                           textTheme: textTheme,
-                          onTap: () => widget.onNavigate('exercise-detail'),
+                          onTap: () => widget.onNavigate(
+                            'exercise-detail',
+                            {'exercise': exercise.toDetailPayload()},
+                          ),
                         );
                       },
                       childCount: filteredExercises.length,
