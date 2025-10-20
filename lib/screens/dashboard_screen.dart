@@ -237,6 +237,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return '$timeAgo at $timeStr';
   }
 
+  String _formatTimeOnlyFromLabel(String label) {
+    // label is produced by _formatLastCompleted (e.g., 'Today at 3:56 PM')
+    final parts = label.split(' at ');
+    if (parts.length == 2) {
+      return parts[1];
+    }
+    return label;
+  }
+
   Future<void> _loadRecentWorkouts() async {
     try {
       final logs = await _supabaseService.getWorkoutLogs(limit: 3);
@@ -1261,13 +1270,38 @@ class _CompactPlanWorkoutTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    (workout['name'] as String?) ?? 'Workout',
-                    style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          (workout['name'] as String?) ?? 'Workout',
+                          style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      if (hasBeenCompleted)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.access_time,
+                              size: 14,
+                              color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _formatTimeOnlyFromLabel(lastCompleted),
+                              style: textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant.withOpacity(0.75),
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Wrap(
                     spacing: 12,
                     runSpacing: 4,
