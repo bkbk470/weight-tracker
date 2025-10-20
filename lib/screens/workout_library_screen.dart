@@ -352,6 +352,7 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
                         ),
           ],
         ),
+        ),
       ),
     );
   }
