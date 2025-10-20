@@ -1576,7 +1576,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            flex: 2,
+                            flex: 3,
                             child: Center(
                               child: Text(
                                 'Weight',
@@ -1588,7 +1588,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                             ),
                           ),
                           Expanded(
-                            flex: 2,
+                            flex: 3,
                             child: Center(
                               child: Text(
                                 'Reps',
@@ -1693,9 +1693,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                 const SizedBox(width: 6),
                                 // Weight (always editable + previous)
                                 Expanded(
-                                  flex: 2,
+                                  flex: 3,
                                   child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                                    padding: const EdgeInsets.symmetric(horizontal: 2),
                                     child: EditableNumberField(
                                       value: set.weight,
                                       onChanged: (value) => updateSet(exercise.id, setIndex, 'weight', value),
@@ -1709,9 +1709,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                 ),
                                 // Reps (always editable)
                                 Expanded(
-                                  flex: 2,
+                                  flex: 3,
                                   child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                                    padding: const EdgeInsets.symmetric(horizontal: 2),
                                     child: EditableNumberField(
                                       value: set.reps,
                                       onChanged: (value) => updateSet(exercise.id, setIndex, 'reps', value),
@@ -1727,7 +1727,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                 Expanded(
                                   flex: 3,
                                   child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                                    padding: const EdgeInsets.symmetric(horizontal: 2),
                                     child: Container(
                                       height: 36,
                                       alignment: Alignment.center,
@@ -1753,7 +1753,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                 Expanded(
                                   flex: 2,
                                   child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                                    padding: const EdgeInsets.symmetric(horizontal: 2),
                                     child: set.isResting
                                         ? Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),

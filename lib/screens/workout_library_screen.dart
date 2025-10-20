@@ -108,12 +108,6 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
                         icon: const Icon(Icons.add),
                         label: const Text('New Workout'),
                       ),
-                      const SizedBox(width: 8),
-                      FilledButton.icon(
-                        onPressed: () => widget.onNavigate('workout-folders'),
-                        icon: const Icon(Icons.folder),
-                        label: const Text('Manage'),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
