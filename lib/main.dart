@@ -739,6 +739,11 @@ class _AppNavigatorState extends State<AppNavigator> {
             SafeArea(
               top: false,
               child: NavigationBar(
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                surfaceTintColor: Colors.transparent,
+                elevation: 0,
+                height: 72,
+                labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
                 selectedIndex: selectedBottomNavIndex,
                 onDestinationSelected: (index) {
                   setState(() {
