@@ -1695,17 +1695,23 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                        if (set.previousWeight != null && set.previousWeight! > 0)
-                                          Padding(
-                                            padding: const EdgeInsets.only(top: 2),
-                                            child: Text(
-                                              _formatWeightValue(set.previousWeight),
-                                              style: textTheme.bodySmall?.copyWith(
-                                                color: colorScheme.onSurfaceVariant.withOpacity(0.6),
-                                                fontSize: 10,
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 2),
+                                          child: Text(
+                                            (set.previousWeight != null && set.previousWeight! > 0)
+                                                ? _formatWeightValue(set.previousWeight)
+                                                : '—',
+                                            style: textTheme.bodySmall?.copyWith(
+                                              color: colorScheme.onSurfaceVariant.withOpacity(
+                                                (set.previousWeight != null && set.previousWeight! > 0) ? 0.6 : 0.3,
                                               ),
+                                              fontSize: 10,
+                                              fontStyle: (set.previousWeight != null && set.previousWeight! > 0)
+                                                  ? FontStyle.normal
+                                                  : FontStyle.italic,
                                             ),
                                           ),
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -1726,17 +1732,23 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                        if (set.previousReps != null && set.previousReps! > 0)
-                                          Padding(
-                                            padding: const EdgeInsets.only(top: 2),
-                                            child: Text(
-                                              '${set.previousReps}',
-                                              style: textTheme.bodySmall?.copyWith(
-                                                color: colorScheme.onSurfaceVariant.withOpacity(0.6),
-                                                fontSize: 10,
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 2),
+                                          child: Text(
+                                            (set.previousReps != null && set.previousReps! > 0)
+                                                ? '${set.previousReps}'
+                                                : '—',
+                                            style: textTheme.bodySmall?.copyWith(
+                                              color: colorScheme.onSurfaceVariant.withOpacity(
+                                                (set.previousReps != null && set.previousReps! > 0) ? 0.6 : 0.3,
                                               ),
+                                              fontSize: 10,
+                                              fontStyle: (set.previousReps != null && set.previousReps! > 0)
+                                                  ? FontStyle.normal
+                                                  : FontStyle.italic,
                                             ),
                                           ),
+                                        ),
                                       ],
                                     ),
                                   ),
