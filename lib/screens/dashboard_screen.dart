@@ -906,7 +906,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         }),
                                       ),
                                       if (!isLastItem)
-                                        const SizedBox(height: 8),
+                                        const SizedBox(height: 4),
                                     ],
                                   );
                                 }),
