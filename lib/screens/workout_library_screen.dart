@@ -83,10 +83,12 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
 
     return Scaffold(
       body: SafeArea(
+        top: true,
+        bottom: false,
         child: CustomScrollView(
           slivers: [
-          // Header
-          SliverToBoxAdapter(
+            // Header
+            SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 32, 16, 16),
               child: Column(

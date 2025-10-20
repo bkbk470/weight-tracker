@@ -23,6 +23,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
 
     return Scaffold(
       body: SafeArea(
+        top: true,
+        bottom: false,
         child: CustomScrollView(
           slivers: [
           // Header

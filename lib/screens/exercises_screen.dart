@@ -162,6 +162,8 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
 
     return Scaffold(
       body: SafeArea(
+        top: true,
+        bottom: false,
         child: CustomScrollView(
             slivers: [
           // Header
