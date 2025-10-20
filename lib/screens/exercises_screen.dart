@@ -161,8 +161,9 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
+      body: SafeArea(
+        child: CustomScrollView(
+            slivers: [
           // Header
           SliverToBoxAdapter(
             child: Padding(

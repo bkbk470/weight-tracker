@@ -82,8 +82,9 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
+      body: SafeArea(
+        child: CustomScrollView(
+          slivers: [
           // Header
           SliverToBoxAdapter(
             child: Padding(
@@ -350,6 +351,7 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
             ),
         ],
       ),
+    );
     );
   }
 
