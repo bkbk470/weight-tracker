@@ -1290,22 +1290,28 @@ class _CompactPlanWorkoutTile extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       if (hasBeenCompleted)
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.access_time,
-                              size: 14,
-                              color: colorScheme.onSurfaceVariant.withOpacity(0.6),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              _formatTimeOnlyFromLabel(lastCompleted),
-                              style: textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant.withOpacity(0.75),
-                              ),
-                            ),
-                          ],
+                        Builder(
+                          builder: (context) {
+                            final timeLabel =
+                                _formatTimeOnlyFromLabel(lastCompleted) ?? lastCompleted;
+                            return Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.access_time,
+                                  size: 14,
+                                  color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  timeLabel,
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant.withOpacity(0.75),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                     ],
                   ),
