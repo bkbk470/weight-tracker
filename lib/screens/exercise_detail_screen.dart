@@ -298,99 +298,21 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
         body: CustomScrollView(
           slivers: [
             SliverAppBar(
-              expandedHeight: 240,
-              collapsedHeight: 72,
+              expandedHeight: 200,
               pinned: true,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () => widget.onNavigate(_backDestination),
               ),
-              flexibleSpace: LayoutBuilder(
-                builder: (context, constraints) {
-                  final top = constraints.biggest.height;
-                  final isCollapsed = top <= kToolbarHeight + MediaQuery.of(context).padding.top + 16;
-
-                  return Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      _buildHeaderBackground(context),
-                      Positioned(
-                        left: 16,
-                        right: 16,
-                        bottom: isCollapsed ? 12 : -60,
-                        child: AnimatedOpacity(
-                          duration: const Duration(milliseconds: 200),
-                          opacity: isCollapsed ? 1 : 0,
-                          child: Text(
-                            exerciseName,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
+              flexibleSpace: FlexibleSpaceBar(
+                title: Text(exerciseName),
+                background: _buildHeaderBackground(context),
               ),
             ),
             SliverPadding(
               padding: const EdgeInsets.all(24),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  // Floating header section
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 20,
-                          offset: const Offset(0, 12),
-                        ),
-                      ],
-                    ),
-                    transform: Matrix4.translationValues(0, -72, 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          exerciseName,
-                          style: textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Master the form and track your progress.',
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            FilledButton.icon(
-                              onPressed: _handlePlayPressed,
-                              icon: Icon(_showGif ? Icons.stop : Icons.play_arrow),
-                              label: Text(_showGif ? 'Stop Demo' : 'Play Demo'),
-                            ),
-                            const SizedBox(width: 12),
-                            OutlinedButton.icon(
-                              onPressed: () => widget.onNavigate('active-workout-start'),
-                              icon: const Icon(Icons.fitness_center),
-                              label: const Text('Start Workout'),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
                   // Stats Grid
                   GridView.count(
                     shrinkWrap: true,
