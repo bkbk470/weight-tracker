@@ -77,20 +77,15 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final backgroundColor = isDark ? const Color(0xFF050505) : Colors.white;
+    final foregroundColor = isDark ? Colors.white : Colors.black;
+
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: backgroundColor,
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              colorScheme.primaryContainer.withOpacity(0.3),
-              colorScheme.surface,
-            ],
-          ),
-        ),
+        color: backgroundColor,
         child: Center(
           child: AnimatedBuilder(
             animation: _controller,
@@ -103,17 +98,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       // App Icon
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.fitness_center,
-                          size: 80,
-                          color: colorScheme.primary,
-                        ),
+                      Icon(
+                        Icons.fitness_center,
+                        size: 96,
+                        color: foregroundColor,
                       ),
                       const SizedBox(height: 32),
                       // App Name
@@ -122,7 +110,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         style: TextStyle(
                           fontSize: 48,
                           fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
+                          color: foregroundColor,
                           letterSpacing: 2,
                         ),
                       ),
@@ -132,7 +120,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         'Track Your Progress',
                         style: TextStyle(
                           fontSize: 18,
-                          color: colorScheme.onSurfaceVariant,
+                          color: foregroundColor.withOpacity(0.7),
                           letterSpacing: 1,
                         ),
                       ),
@@ -144,7 +132,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         child: CircularProgressIndicator(
                           strokeWidth: 3,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            colorScheme.primary,
+                            foregroundColor,
                           ),
                         ),
                       ),
