@@ -865,71 +865,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 const Divider(height: 1),
                                 if (workouts.isEmpty)
                                   Padding(
-                                    padding: const EdgeInsets.all(24),
-                                    child: Column(
-                                      children: [
-                                        Icon(
-                                          Icons.fitness_center_outlined,
-                                          size: 48,
-                                          color: colorScheme.onSurfaceVariant.withOpacity(0.5),
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Text(
-                                          'No workouts in this plan yet',
-                                          style: textTheme.titleMedium,
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          'Add workouts to get started',
-                                          style: textTheme.bodySmall?.copyWith(
-                                            color: colorScheme.onSurfaceVariant,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 16),
-                                        FilledButton.icon(
-                                          onPressed: folderId == null
-                                              ? null
-                                              : () => _showAddWorkoutToPlanDialog(
-                                                    folderId,
-                                                    (folder['name'] as String?) ?? 'Workout Plan',
-                                                  ),
-                                          icon: const Icon(Icons.add),
-                                          label: const Text('Add Workout'),
-                                        ),
-                                      ],
+                                    padding: const EdgeInsets.all(16),
+                                    child: _EmptyPlanIllustration(
+                                      colorScheme: colorScheme,
+                                      textTheme: textTheme,
+                                      onAddWorkout: folderId == null
+                                          ? null
+                                          : () => _showAddWorkoutToPlanDialog(
+                                                folderId,
+                                                (folder['name'] as String?) ?? 'Workout Plan',
+                                              ),
                                     ),
                                   ),
                                 if (workouts.isNotEmpty)
                                   ...workouts.take(5).map((workout) {
-                                    final workoutId = _normalizeId(workout['id']);
-                                    final lastDate = workoutId != null ? _workoutLastCompletedDates[workoutId] : null;
-                                    final isLastItem = workouts.take(5).toList().last == workout;
+                                  final workoutId = _normalizeId(workout['id']);
+                                  final lastDate = workoutId != null ? _workoutLastCompletedDates[workoutId] : null;
+                                  final isLastItem = workouts.take(5).toList().last == workout;
 
-                                    return Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        _MyWorkoutTile(
-                                          workout: workout,
-                                          lastCompleted: _formatLastCompleted(lastDate),
-                                          hasBeenCompleted: lastDate != null,
-                                          colorScheme: colorScheme,
-                                          textTheme: textTheme,
-                                          isInFolder: true,
-                                          onTap: () => widget.onNavigate('workout-detail', {
-                                            'workout': workout,
-                                          }),
+                                  return Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      _CompactPlanWorkoutTile(
+                                        workout: workout,
+                                        lastCompleted: _formatLastCompleted(lastDate),
+                                        hasBeenCompleted: lastDate != null,
+                                        colorScheme: colorScheme,
+                                        textTheme: textTheme,
+                                        onTap: () => widget.onNavigate('workout-detail', {
+                                          'workout': workout,
+                                        }),
+                                      ),
+                                      if (!isLastItem)
+                                        Divider(
+                                          height: 1,
+                                          thickness: 0.75,
+                                          indent: 60,
+                                          endIndent: 16,
+                                          color: colorScheme.outlineVariant.withOpacity(0.3),
                                         ),
-                                        if (!isLastItem)
-                                          Divider(
-                                            height: 1,
-                                            thickness: 1,
-                                            indent: 56,
-                                            endIndent: 16,
-                                            color: colorScheme.outlineVariant.withOpacity(0.5),
-                                          ),
-                                      ],
-                                    );
-                                  }),
+                                    ],
+                                  );
+                                }),
                                 if (workouts.length > 5)
                                   ListTile(
                                     contentPadding: const EdgeInsets.only(left: 72, right: 16),
@@ -1213,6 +1190,217 @@ class _ActionButton extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _CompactPlanWorkoutTile extends StatelessWidget {
+  final Map<String, dynamic> workout;
+  final String lastCompleted;
+  final bool hasBeenCompleted;
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+  final VoidCallback onTap;
+
+  const _CompactPlanWorkoutTile({
+    required this.workout,
+    required this.lastCompleted,
+    required this.hasBeenCompleted,
+    required this.colorScheme,
+    required this.textTheme,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final exercises = (workout['workout_exercises'] as List?) ?? const [];
+    final durationValue = workout['estimated_duration_minutes'];
+    final int? durationMinutes = durationValue is int
+        ? durationValue
+        : durationValue is double
+            ? durationValue.round()
+            : int.tryParse('$durationValue');
+
+    final details = <String>[];
+    details.add('${exercises.length} exercise${exercises.length == 1 ? '' : 's'}');
+    if (durationMinutes != null && durationMinutes > 0) {
+      details.add('$durationMinutes min');
+    }
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceVariant.withOpacity(0.28),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: colorScheme.outlineVariant.withOpacity(0.2),
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer.withOpacity(0.75),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.fitness_center,
+                size: 18,
+                color: colorScheme.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    (workout['name'] as String?) ?? 'Workout',
+                    style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 4,
+                    children: [
+                      _InfoChip(
+                        icon: Icons.view_list_outlined,
+                        label: details.join(' • '),
+                        colorScheme: colorScheme,
+                        textTheme: textTheme,
+                      ),
+                      _InfoChip(
+                        icon: hasBeenCompleted ? Icons.check_circle : Icons.schedule,
+                        label: hasBeenCompleted ? lastCompleted : 'Never completed',
+                        colorScheme: colorScheme,
+                        textTheme: textTheme,
+                        highlight: hasBeenCompleted,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.chevron_right,
+              color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+  final bool highlight;
+
+  const _InfoChip({
+    required this.icon,
+    required this.label,
+    required this.colorScheme,
+    required this.textTheme,
+    this.highlight = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: highlight
+            ? colorScheme.primary.withOpacity(0.14)
+            : colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 14,
+            color: highlight
+                ? colorScheme.primary
+                : colorScheme.onSurfaceVariant.withOpacity(0.7),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: textTheme.bodySmall?.copyWith(
+              color: highlight
+                  ? colorScheme.primary
+                  : colorScheme.onSurfaceVariant.withOpacity(0.75),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyPlanIllustration extends StatelessWidget {
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+  final VoidCallback? onAddWorkout;
+
+  const _EmptyPlanIllustration({
+    required this.colorScheme,
+    required this.textTheme,
+    this.onAddWorkout,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceVariant.withOpacity(0.25),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Icon(
+            Icons.fitness_center_outlined,
+            size: 42,
+            color: colorScheme.onSurfaceVariant.withOpacity(0.55),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'No workouts yet',
+          style: textTheme.titleMedium,
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Add workouts to fill this plan.',
+          style: textTheme.bodySmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+        if (onAddWorkout != null) ...[
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: onAddWorkout,
+            icon: const Icon(Icons.add),
+            label: const Text('Add Workout'),
+          ),
+        ],
+      ],
     );
   }
 }
