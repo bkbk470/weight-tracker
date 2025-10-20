@@ -84,32 +84,43 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // App Bar
-          SliverAppBar(
-            pinned: true,
-            expandedHeight: 120,
-            flexibleSpace: FlexibleSpaceBar(
-              title: const Text('Workouts'),
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      colorScheme.primaryContainer,
-                      colorScheme.surface,
-                    ],
+          // Header
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 32, 16, 16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Workouts',
+                          style: textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Organize your workouts and templates.',
+                          style: textTheme.bodyLarge?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.folder),
+                    onPressed: () => widget.onNavigate('workout-folders'),
+                    tooltip: 'Organize Folders',
+                  ),
+                ],
               ),
             ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.folder),
-                onPressed: () => widget.onNavigate('workout-folders'),
-                tooltip: 'Organize Folders',
-              ),
-            ],
           ),
 
           // Search Bar
