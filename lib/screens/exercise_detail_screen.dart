@@ -273,51 +273,79 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
   }
 
   Widget _buildHeaderBackground(BuildContext context) {
-    final gradient = BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Theme.of(context).colorScheme.primaryContainer,
-          Theme.of(context).colorScheme.surface,
+    Widget gradientOverlay() => IgnorePointer(
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withOpacity(0.35),
+                  Theme.of(context).colorScheme.surface.withOpacity(0.7),
+                ],
+              ),
+            ),
+          ),
+        );
+
+    Widget errorFallback() => Container(
+          color: Theme.of(context).colorScheme.surface,
+          child: Center(
+            child: Icon(
+              Icons.fitness_center,
+              size: 80,
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            ),
+          ),
+        );
+
+    if (_videoController != null && _videoController!.value.isInitialized) {
+      final size = _videoController!.value.size;
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          FittedBox(
+            fit: BoxFit.cover,
+            child: SizedBox(
+              width: size.width,
+              height: size.height,
+              child: VideoPlayer(_videoController!),
+            ),
+          ),
+          gradientOverlay(),
         ],
-      ),
-    );
+      );
+    }
+
+    if (_isVideoLoading) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          errorFallback(),
+          const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          gradientOverlay(),
+        ],
+      );
+    }
 
     if (_exerciseImagePath.isEmpty) {
-      return Container(
-        decoration: gradient,
-        child: Center(
-          child: Icon(
-            Icons.fitness_center,
-            size: 80,
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-          ),
-        ),
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          errorFallback(),
+          gradientOverlay(),
+        ],
       );
     }
 
-    Widget _buildErrorFallback() {
-      return Container(
-        decoration: gradient,
-        child: Center(
-          child: Icon(
-            Icons.fitness_center,
-            size: 80,
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-          ),
-        ),
-      );
-    }
-
-    final firstFrame = _exerciseImagePath.endsWith('.gif')
-        ? _buildStaticHeaderImage(_exerciseImagePath, _buildErrorFallback)
-        : _buildFullHeaderImage(_exerciseImagePath, _buildErrorFallback);
+    final baseImage = _isGif && !_showGif
+        ? _buildStaticHeaderImage(_exerciseImagePath, errorFallback)
+        : _buildFullHeaderImage(_exerciseImagePath, errorFallback);
 
     return Stack(
       fit: StackFit.expand,
       children: [
-        firstFrame,
+        baseImage,
         if (_isGif && !_showGif)
           Positioned(
             bottom: 16,
@@ -348,20 +376,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
             ),
           ),
         if (_isGif && _showGif)
-          _buildFullHeaderImage(_exerciseImagePath, _buildErrorFallback),
-        IgnorePointer(
-          child: Container(
-              decoration: gradient.copyWith(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.black.withOpacity(0.35),
-                Theme.of(context).colorScheme.surface.withOpacity(0.7),
-              ],
-            ),
-          )),
-        ),
+          _buildFullHeaderImage(_exerciseImagePath, errorFallback),
+        gradientOverlay(),
       ],
     );
   }
