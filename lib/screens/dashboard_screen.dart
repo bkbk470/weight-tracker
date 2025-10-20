@@ -770,6 +770,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             buildDefaultDragHandles: false,
+            proxyDecorator: (child, index, animation) {
+              return AnimatedBuilder(
+                animation: CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeInOut,
+                ),
+                builder: (context, childWidget) {
+                  return Transform.scale(
+                    scale: 1.02,
+                    child: childWidget,
+                  );
+                },
+                child: Material(
+                  color: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  child: child,
+                ),
+              );
+            },
             onReorder: _handlePlanReorder,
             itemCount: _folders.length,
             itemBuilder: (context, index) {
