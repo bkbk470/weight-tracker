@@ -1656,7 +1656,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                 ),
                               // Content container
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                                 decoration: BoxDecoration(
                                   color: set.completed
                                       ? colorScheme.secondaryContainer.withOpacity(0.3)
@@ -1667,7 +1667,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                   children: [
                                       // Set number
                                       SizedBox(
-                                  width: 32,
+                                  width: 28,
                                         child: Text(
                                           '${setIndex + 1}',
                                           style: textTheme.bodyMedium?.copyWith(
@@ -1678,38 +1678,38 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                           ),
                                         ),
                                       ),
-                                const SizedBox(width: 2),
+                                const SizedBox(width: 6),
                                 // Weight (always editable + previous)
                                 Expanded(
                                   flex: 2,
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(horizontal: 4),
                                     child: Column(
+                                      mainAxisSize: MainAxisSize.min,
                                       crossAxisAlignment: CrossAxisAlignment.center,
                                       children: [
                                         EditableNumberField(
                                           value: set.weight,
                                           onChanged: (value) => updateSet(exercise.id, setIndex, 'weight', value),
                                           isHighlighted: set.isResting,
+                                          height: 36,
                                           textStyle: textTheme.bodyMedium?.copyWith(
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                        Padding(
-                                          padding: const EdgeInsets.only(top: 2),
-                                          child: Text(
-                                            (set.previousWeight != null && set.previousWeight! > 0)
-                                                ? _formatWeightValue(set.previousWeight)
-                                                : '—',
-                                            style: textTheme.bodySmall?.copyWith(
-                                              color: colorScheme.onSurfaceVariant.withOpacity(
-                                                (set.previousWeight != null && set.previousWeight! > 0) ? 0.6 : 0.3,
-                                              ),
-                                              fontSize: 10,
-                                              fontStyle: (set.previousWeight != null && set.previousWeight! > 0)
-                                                  ? FontStyle.normal
-                                                  : FontStyle.italic,
+                                        const SizedBox(height: 3),
+                                        Text(
+                                          (set.previousWeight != null && set.previousWeight! > 0)
+                                              ? _formatWeightValue(set.previousWeight)
+                                              : '—',
+                                          style: textTheme.bodySmall?.copyWith(
+                                            color: colorScheme.onSurfaceVariant.withOpacity(
+                                              (set.previousWeight != null && set.previousWeight! > 0) ? 0.6 : 0.3,
                                             ),
+                                            fontSize: 9,
+                                            fontStyle: (set.previousWeight != null && set.previousWeight! > 0)
+                                                ? FontStyle.normal
+                                                : FontStyle.italic,
                                           ),
                                         ),
                                       ],
@@ -1722,31 +1722,31 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(horizontal: 4),
                                     child: Column(
+                                      mainAxisSize: MainAxisSize.min,
                                       crossAxisAlignment: CrossAxisAlignment.center,
                                       children: [
                                         EditableNumberField(
                                           value: set.reps,
                                           onChanged: (value) => updateSet(exercise.id, setIndex, 'reps', value),
                                           isHighlighted: set.isResting,
+                                          height: 36,
                                           textStyle: textTheme.bodyMedium?.copyWith(
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                        Padding(
-                                          padding: const EdgeInsets.only(top: 2),
-                                          child: Text(
-                                            (set.previousReps != null && set.previousReps! > 0)
-                                                ? '${set.previousReps}'
-                                                : '—',
-                                            style: textTheme.bodySmall?.copyWith(
-                                              color: colorScheme.onSurfaceVariant.withOpacity(
-                                                (set.previousReps != null && set.previousReps! > 0) ? 0.6 : 0.3,
-                                              ),
-                                              fontSize: 10,
-                                              fontStyle: (set.previousReps != null && set.previousReps! > 0)
-                                                  ? FontStyle.normal
-                                                  : FontStyle.italic,
+                                        const SizedBox(height: 3),
+                                        Text(
+                                          (set.previousReps != null && set.previousReps! > 0)
+                                              ? '${set.previousReps}'
+                                              : '—',
+                                          style: textTheme.bodySmall?.copyWith(
+                                            color: colorScheme.onSurfaceVariant.withOpacity(
+                                              (set.previousReps != null && set.previousReps! > 0) ? 0.6 : 0.3,
                                             ),
+                                            fontSize: 9,
+                                            fontStyle: (set.previousReps != null && set.previousReps! > 0)
+                                                ? FontStyle.normal
+                                                : FontStyle.italic,
                                           ),
                                         ),
                                       ],
@@ -1802,13 +1802,14 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                             textStyle: textTheme.bodySmall?.copyWith(
                                               fontWeight: FontWeight.bold,
                                             ),
+                                            height: 36,
                                           ),
                                   ),
                                 ),
                                 const Spacer(),
                                 // Complete button
                                 SizedBox(
-                                  width: 48,
+                                  width: 42,
                                   child: IconButton(
                                     icon: Icon(
                                       set.completed ? Icons.check_circle : Icons.check_circle_outline,
