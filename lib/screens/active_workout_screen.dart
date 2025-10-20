@@ -1565,7 +1565,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                       child: Row(
                         children: [
                           SizedBox(
-                            width: 35,
+                            width: 28,
                             child: Text(
                               'Set',
                               style: textTheme.labelSmall?.copyWith(
