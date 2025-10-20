@@ -594,7 +594,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               // Header with greeting and stats
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                  padding: const EdgeInsets.fromLTRB(16, 32, 16, 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -613,7 +613,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           color: colorScheme.onSurfaceVariant,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 32),
                       
                       // Action Buttons
                       Row(
@@ -646,7 +646,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               // Content
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     // Workout Plans Header
@@ -674,9 +674,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     _buildWorkoutsFolders(colorScheme, textTheme),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 32),
 
                     // Recent Workouts
                     Row(
@@ -692,9 +692,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    _buildRecentWorkoutsSection(colorScheme, textTheme),
                     const SizedBox(height: 16),
+                    _buildRecentWorkoutsSection(colorScheme, textTheme),
+                    const SizedBox(height: 24),
                   ]),
                 ),
               ),
