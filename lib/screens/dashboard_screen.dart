@@ -1272,40 +1272,35 @@ class _CompactPlanWorkoutTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    (workout['name'] as String?) ?? 'Workout',
-                    style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${exercises.length} exercise${exercises.length == 1 ? '' : 's'} • ${durationMinutes != null && durationMinutes > 0 ? '$durationMinutes min' : 'Custom duration'}',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant.withOpacity(0.75),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
                   Row(
-                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Icon(
-                        hasBeenCompleted ? Icons.check_circle : Icons.schedule,
-                        size: 14,
-                        color: hasBeenCompleted
-                            ? colorScheme.primary
-                            : colorScheme.onSurfaceVariant.withOpacity(0.6),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        hasBeenCompleted ? lastCompleted : 'Never completed',
-                        style: textTheme.bodySmall?.copyWith(
-                          color: hasBeenCompleted
-                              ? colorScheme.primary
-                              : colorScheme.onSurfaceVariant.withOpacity(0.75),
+                      Expanded(
+                        child: Text(
+                          (workout['name'] as String?) ?? 'Workout',
+                          style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      if (hasBeenCompleted)
+                        Text(
+                          _formatTimeOnlyFromLabel(lastCompleted) ?? lastCompleted,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant.withOpacity(0.65),
+                          ),
+                        ),
                     ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${exercises.length} exercise${exercises.length == 1 ? '' : 's'} • ${durationMinutes != null && durationMinutes > 0 ? '$durationMinutes min' : 'Custom duration'} • '
+                    '${hasBeenCompleted ? lastCompleted : 'Never completed'}',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: hasBeenCompleted
+                          ? colorScheme.primary
+                          : colorScheme.onSurfaceVariant.withOpacity(0.75),
+                    ),
                   ),
                 ],
               ),
