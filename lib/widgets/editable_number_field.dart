@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class EditableNumberField extends StatefulWidget {
   final int value;
@@ -7,7 +6,6 @@ class EditableNumberField extends StatefulWidget {
   final bool isHighlighted;
   final TextStyle? textStyle;
   final double height;
-  final int maxDigits;
 
   const EditableNumberField({
     super.key,
@@ -16,7 +14,6 @@ class EditableNumberField extends StatefulWidget {
     this.isHighlighted = false,
     this.textStyle,
     this.height = 40,
-    this.maxDigits = 4,
   });
 
   @override
@@ -81,10 +78,6 @@ class _EditableNumberFieldState extends State<EditableNumberField> {
         keyboardType: TextInputType.number,
         textAlign: TextAlign.center,
         style: widget.textStyle,
-        inputFormatters: [
-          FilteringTextInputFormatter.digitsOnly,
-          LengthLimitingTextInputFormatter(widget.maxDigits),
-        ],
         decoration: const InputDecoration(
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
