@@ -1236,6 +1236,14 @@ class _CompactPlanWorkoutTile extends StatelessWidget {
       details.add('$durationMinutes min');
     }
 
+    String? _formatTimeOnlyFromLabel(String label) {
+      final parts = label.split(' at ');
+      if (parts.length == 2) {
+        return parts[1];
+      }
+      return null;
+    }
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
