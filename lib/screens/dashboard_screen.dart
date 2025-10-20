@@ -1322,56 +1322,6 @@ class _CompactPlanWorkoutTile extends StatelessWidget {
   }
 }
 
-class _InfoChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final ColorScheme colorScheme;
-  final TextTheme textTheme;
-  final bool highlight;
-
-  const _InfoChip({
-    required this.icon,
-    required this.label,
-    required this.colorScheme,
-    required this.textTheme,
-    this.highlight = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: highlight
-            ? colorScheme.primary.withOpacity(0.14)
-            : colorScheme.surfaceVariant.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 14,
-            color: highlight
-                ? colorScheme.primary
-                : colorScheme.onSurfaceVariant.withOpacity(0.7),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: textTheme.bodySmall?.copyWith(
-              color: highlight
-                  ? colorScheme.primary
-                  : colorScheme.onSurfaceVariant.withOpacity(0.75),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _EmptyPlanIllustration extends StatelessWidget {
   final ColorScheme colorScheme;
   final TextTheme textTheme;
