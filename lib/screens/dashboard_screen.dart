@@ -1294,8 +1294,7 @@ class _CompactPlanWorkoutTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${exercises.length} exercise${exercises.length == 1 ? '' : 's'} • ${durationMinutes != null && durationMinutes > 0 ? '$durationMinutes min' : 'Custom duration'} • '
-                    '${hasBeenCompleted ? lastCompleted : 'Never completed'}',
+                    '${exercises.length} exercise${exercises.length == 1 ? '' : 's'} • ${hasBeenCompleted ? lastCompleted : 'Never completed'}',
                     style: textTheme.bodySmall?.copyWith(
                       color: hasBeenCompleted
                           ? colorScheme.primary
