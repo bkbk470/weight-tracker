@@ -318,6 +318,7 @@ class _AppNavigatorState extends State<AppNavigator> {
   String? _lastWorkoutId;
   String? _lastWorkoutName;
   String? _workoutLibraryTab; // Add this to track which tab to show
+  Map<String, dynamic>? _selectedExercise;
 
   @override
   void dispose() {
@@ -365,9 +366,18 @@ class _AppNavigatorState extends State<AppNavigator> {
             _lastWorkoutName = workoutName;
           }
         }
+        if (data.containsKey('exercise')) {
+          final exerciseData = data['exercise'];
+          if (exerciseData is Map<String, dynamic>) {
+            _selectedExercise = Map<String, dynamic>.from(exerciseData);
+          }
+        }
       }
       if (screen == 'workout-detail' && (data == null || !data.containsKey('workout'))) {
         _selectedWorkout = null;
+      }
+      if (screen == 'exercise-detail' && (data == null || !data.containsKey('exercise'))) {
+        _selectedExercise = null;
       }
 
       if (currentScreen != screen) {
@@ -560,6 +570,7 @@ class _AppNavigatorState extends State<AppNavigator> {
         return ExerciseDetailScreen(
           onNavigate: (screen) => navigate(screen, context),
           returnScreen: _previousScreen,
+          exercise: _selectedExercise,
         );
       case 'goals':
         return GoalsScreen(onNavigate: (screen) => navigate(screen, context));
@@ -572,7 +583,9 @@ class _AppNavigatorState extends State<AppNavigator> {
       case 'privacy-policy':
         return PrivacyPolicyScreen(onNavigate: (screen) => navigate(screen, context));
       case 'exercises':
-        return ExercisesScreen(onNavigate: (screen) => navigate(screen, context));
+        return ExercisesScreen(
+          onNavigate: (screen, [data]) => navigate(screen, context, data),
+        );
       case 'workout-detail':
         final workout = _selectedWorkout;
         final workoutExercises = _buildWorkoutExercises(workout);

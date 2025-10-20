@@ -330,6 +330,8 @@ class Exercise {
   final String equipment;
   final String imageUrl;
   final bool isCustom;
+  final String? videoUrl;
+  final Map<String, dynamic> rawData;
 
   Exercise({
     required this.name,
@@ -337,10 +339,32 @@ class Exercise {
     required this.difficulty,
     required this.equipment,
     String? imageUrl,
+    this.videoUrl,
     this.isCustom = false,
-  }) : imageUrl = imageUrl ??
+    Map<String, dynamic>? rawData,
+  })  : imageUrl = imageUrl ??
             kDefaultExerciseImages[name] ??
-            kExercisePlaceholderImage;
+            kExercisePlaceholderImage,
+        rawData = rawData != null
+            ? Map<String, dynamic>.from(rawData)
+            : <String, dynamic>{};
+
+  Map<String, dynamic> toDetailPayload() {
+    final payload = Map<String, dynamic>.from(rawData);
+    payload['name'] ??= name;
+    payload['category'] ??= category;
+    payload['difficulty'] ??= difficulty;
+    payload['equipment'] ??= equipment;
+    payload['image_url'] ??= imageUrl;
+    payload['imageUrl'] ??= imageUrl;
+    if (videoUrl != null && videoUrl!.isNotEmpty) {
+      payload.putIfAbsent('video_url', () => videoUrl);
+      payload['videoUrl'] ??= videoUrl;
+    }
+    payload['is_custom'] ??= isCustom;
+    payload['isCustom'] ??= isCustom;
+    return payload;
+  }
 }
 
 class _ExerciseCard extends StatelessWidget {

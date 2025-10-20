@@ -30,8 +30,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
   String selectedPeriod = '3M';
   final periods = ['1M', '3M', '6M', '1Y', 'All'];
 
-  late final String _exerciseName;
-  late final String _exerciseImagePath;
+  String _exerciseName = 'Bench Press';
+  String _exerciseImagePath = kExercisePlaceholderImage;
   String? _exerciseVideoPath;
   final personalRecord = '225 lbs';
   final lastPerformed = '2 days ago';
@@ -62,6 +62,12 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
   }
 
   void _initializeExerciseData() {
+    _gifTimer?.cancel();
+    _showGif = false;
+    _videoController?.dispose();
+    _videoController = null;
+    _isVideoLoading = false;
+
     final data = widget.exercise != null
         ? Map<String, dynamic>.from(widget.exercise!)
         : <String, dynamic>{};
@@ -91,6 +97,17 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
       }
     }
     return null;
+  }
+
+
+  @override
+  void didUpdateWidget(covariant ExerciseDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.exercise != oldWidget.exercise) {
+      setState(() {
+        _initializeExerciseData();
+      });
+    }
   }
 
   Future<void> _prepareVideo() async {
