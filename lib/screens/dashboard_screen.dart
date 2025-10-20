@@ -905,8 +905,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                           'workout': workout,
                                         }),
                                       ),
-                                      if (!isLastItem)
-                                        const SizedBox(height: 4),
                                     ],
                                   );
                                 }),
