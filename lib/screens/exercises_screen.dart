@@ -165,7 +165,7 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
         top: true,
         bottom: false,
         child: CustomScrollView(
-            slivers: [
+          slivers: [
           // Header
           SliverToBoxAdapter(
             child: Padding(
