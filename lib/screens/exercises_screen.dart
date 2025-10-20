@@ -315,7 +315,8 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
                     ),
                   ),
                 ),
-        ],
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => widget.onNavigate('create-exercise'),
