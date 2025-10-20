@@ -1546,7 +1546,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                               size: 16,
                               color: colorScheme.onSurfaceVariant,
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 4),
                             Expanded(
                               child: Text(
                                 exercise.notes,
@@ -1612,7 +1612,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                             ),
                           ),
                           Expanded(
-                            flex: 2,
+                            flex: 3,
                             child: Center(
                               child: Text(
                                 'Rest',
@@ -1751,7 +1751,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                 ),
                                 // Rest time (editable when not resting, countdown when resting)
                                 Expanded(
-                                  flex: 2,
+                                  flex: 3,
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(horizontal: 2),
                                     child: set.isResting
