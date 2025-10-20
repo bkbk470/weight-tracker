@@ -906,13 +906,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         }),
                                       ),
                                       if (!isLastItem)
-                                        Divider(
-                                          height: 1,
-                                          thickness: 0.75,
-                                          indent: 60,
-                                          endIndent: 16,
-                                          color: colorScheme.outlineVariant.withOpacity(0.3),
-                                        ),
+                                        const SizedBox(height: 8),
                                     ],
                                   );
                                 }),
