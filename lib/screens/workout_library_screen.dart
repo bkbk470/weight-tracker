@@ -351,8 +351,9 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
             ),
         ],
       ),
-    );
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildNormalWorkoutList(ColorScheme colorScheme, TextTheme textTheme) {

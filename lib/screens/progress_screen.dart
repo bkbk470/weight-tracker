@@ -22,8 +22,9 @@ class _ProgressScreenState extends State<ProgressScreen> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
+      body: SafeArea(
+        child: CustomScrollView(
+          slivers: [
           // Header
           SliverToBoxAdapter(
             child: Padding(
@@ -391,7 +392,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 
   BarChartGroupData _createBarGroup(int x, double y, Color color) {
