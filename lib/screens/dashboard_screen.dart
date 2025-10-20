@@ -1230,12 +1230,6 @@ class _CompactPlanWorkoutTile extends StatelessWidget {
             ? durationValue.round()
             : int.tryParse('$durationValue');
 
-    final details = <String>[];
-    details.add('${exercises.length} exercise${exercises.length == 1 ? '' : 's'}');
-    if (durationMinutes != null && durationMinutes > 0) {
-      details.add('$durationMinutes min');
-    }
-
     String? _formatTimeOnlyFromLabel(String label) {
       final parts = label.split(' at ');
       if (parts.length == 2) {
@@ -1278,60 +1272,38 @@ class _CompactPlanWorkoutTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          (workout['name'] as String?) ?? 'Workout',
-                          style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      if (hasBeenCompleted)
-                        Builder(
-                          builder: (context) {
-                            final timeLabel =
-                                _formatTimeOnlyFromLabel(lastCompleted) ?? lastCompleted;
-                            return Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.access_time,
-                                  size: 14,
-                                  color: colorScheme.onSurfaceVariant.withOpacity(0.6),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  timeLabel,
-                                  style: textTheme.bodySmall?.copyWith(
-                                    color: colorScheme.onSurfaceVariant.withOpacity(0.75),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                    ],
+                  Text(
+                    (workout['name'] as String?) ?? 'Workout',
+                    style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 6),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 4,
+                  Text(
+                    '${exercises.length} exercise${exercises.length == 1 ? '' : 's'} • ${durationMinutes != null && durationMinutes > 0 ? '$durationMinutes min' : 'Custom duration'}',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant.withOpacity(0.75),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      _InfoChip(
-                        icon: Icons.view_list_outlined,
-                        label: details.join(' • '),
-                        colorScheme: colorScheme,
-                        textTheme: textTheme,
+                      Icon(
+                        hasBeenCompleted ? Icons.check_circle : Icons.schedule,
+                        size: 14,
+                        color: hasBeenCompleted
+                            ? colorScheme.primary
+                            : colorScheme.onSurfaceVariant.withOpacity(0.6),
                       ),
-                      _InfoChip(
-                        icon: hasBeenCompleted ? Icons.check_circle : Icons.schedule,
-                        label: hasBeenCompleted ? lastCompleted : 'Never completed',
-                        colorScheme: colorScheme,
-                        textTheme: textTheme,
-                        highlight: hasBeenCompleted,
+                      const SizedBox(width: 6),
+                      Text(
+                        hasBeenCompleted ? lastCompleted : 'Never completed',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: hasBeenCompleted
+                              ? colorScheme.primary
+                              : colorScheme.onSurfaceVariant.withOpacity(0.75),
+                        ),
                       ),
                     ],
                   ),
