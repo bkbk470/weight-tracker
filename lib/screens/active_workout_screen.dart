@@ -1575,44 +1575,56 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          SizedBox(
-                            width: 65,
-                            child: Text(
-                              'Weight',
-                              style: textTheme.labelSmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                                fontWeight: FontWeight.bold,
+                          Expanded(
+                            flex: 2,
+                            child: Center(
+                              child: Text(
+                                'Weight',
+                                style: textTheme.labelSmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                              textAlign: TextAlign.center,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          SizedBox(
-                            width: 50,
-                            child: Text(
-                              'Reps',
-                              style: textTheme.labelSmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                                fontWeight: FontWeight.bold,
+                          Expanded(
+                            flex: 2,
+                            child: Center(
+                              child: Text(
+                                'Reps',
+                                style: textTheme.labelSmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                              textAlign: TextAlign.center,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                                SizedBox(
-                                  width: 68,
-                            child: Text(
-                              'Rest',
-                              style: textTheme.labelSmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                                fontWeight: FontWeight.bold,
+                          Expanded(
+                            flex: 3,
+                            child: Center(
+                              child: Text(
+                                'Previous',
+                                style: textTheme.labelSmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                              textAlign: TextAlign.center,
                             ),
                           ),
-                          const Spacer(),
+                          Expanded(
+                            flex: 2,
+                            child: Center(
+                              child: Text(
+                                'Rest',
+                                style: textTheme.labelSmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
                           SizedBox(
-                            width: 60,
+                            width: 52,
                             child: Text(
                               'Done',
                               style: textTheme.labelSmall?.copyWith(
@@ -1684,72 +1696,56 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                   flex: 2,
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(horizontal: 4),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      children: [
-                                        EditableNumberField(
-                                          value: set.weight,
-                                          onChanged: (value) => updateSet(exercise.id, setIndex, 'weight', value),
-                                          isHighlighted: set.isResting,
-                                          height: 36,
-                                          textStyle: textTheme.bodyMedium?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 3),
-                                        Text(
-                                          (set.previousWeight != null && set.previousWeight! > 0)
-                                              ? _formatWeightValue(set.previousWeight)
-                                              : '—',
-                                          style: textTheme.bodySmall?.copyWith(
-                                            color: colorScheme.onSurfaceVariant.withOpacity(
-                                              (set.previousWeight != null && set.previousWeight! > 0) ? 0.6 : 0.3,
-                                            ),
-                                            fontSize: 9,
-                                            fontStyle: (set.previousWeight != null && set.previousWeight! > 0)
-                                                ? FontStyle.normal
-                                                : FontStyle.italic,
-                                          ),
-                                        ),
-                                      ],
+                                    child: EditableNumberField(
+                                      value: set.weight,
+                                      onChanged: (value) => updateSet(exercise.id, setIndex, 'weight', value),
+                                      isHighlighted: set.isResting,
+                                      height: 36,
+                                      textStyle: textTheme.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ),
-                                // Reps (always editable + previous)
+                                // Reps (always editable)
                                 Expanded(
                                   flex: 2,
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(horizontal: 4),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      children: [
-                                        EditableNumberField(
-                                          value: set.reps,
-                                          onChanged: (value) => updateSet(exercise.id, setIndex, 'reps', value),
-                                          isHighlighted: set.isResting,
-                                          height: 36,
-                                          textStyle: textTheme.bodyMedium?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                    child: EditableNumberField(
+                                      value: set.reps,
+                                      onChanged: (value) => updateSet(exercise.id, setIndex, 'reps', value),
+                                      isHighlighted: set.isResting,
+                                      height: 36,
+                                      textStyle: textTheme.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                // Previous weight x reps
+                                Expanded(
+                                  flex: 3,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                                    child: Container(
+                                      height: 36,
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        color: colorScheme.surfaceVariant.withOpacity(0.35),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        (set.previousWeight != null && set.previousWeight! > 0 && set.previousReps != null && set.previousReps! > 0)
+                                            ? '${_formatWeightValue(set.previousWeight)} × ${set.previousReps}'
+                                            : '—',
+                                        style: textTheme.bodySmall?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: colorScheme.onSurfaceVariant.withOpacity(0.7),
                                         ),
-                                        const SizedBox(height: 3),
-                                        Text(
-                                          (set.previousReps != null && set.previousReps! > 0)
-                                              ? '${set.previousReps}'
-                                              : '—',
-                                          style: textTheme.bodySmall?.copyWith(
-                                            color: colorScheme.onSurfaceVariant.withOpacity(
-                                              (set.previousReps != null && set.previousReps! > 0) ? 0.6 : 0.3,
-                                            ),
-                                            fontSize: 9,
-                                            fontStyle: (set.previousReps != null && set.previousReps! > 0)
-                                                ? FontStyle.normal
-                                                : FontStyle.italic,
-                                          ),
-                                        ),
-                                      ],
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1806,10 +1802,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                           ),
                                   ),
                                 ),
-                                const Spacer(),
                                 // Complete button
                                 SizedBox(
-                                  width: 42,
+                                  width: 52,
                                   child: IconButton(
                                     icon: Icon(
                                       set.completed ? Icons.check_circle : Icons.check_circle_outline,
