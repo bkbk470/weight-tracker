@@ -736,62 +736,65 @@ class _AppNavigatorState extends State<AppNavigator> {
             ),
           // Navigation Bar
           if (showBottomNav())
-            NavigationBar(
-              selectedIndex: selectedBottomNavIndex,
-              onDestinationSelected: (index) {
-                setState(() {
-                  selectedBottomNavIndex = index;
-                  switch (index) {
-                    case 0:
-                      currentScreen = 'dashboard';
-                      break;
-                    case 1:
-                      currentScreen = 'exercises';
-                      break;
-                    case 2:
-                      currentScreen = 'workout';
-                      break;
-                    case 3:
-                      currentScreen = 'progress';
-                      break;
-                    case 4:
-                      currentScreen = 'profile';
-                      break;
-                  }
-                });
-              },
-              destinations: const [
-                NavigationDestination(
-                  icon: Icon(Icons.home_outlined),
-                  selectedIcon: Icon(Icons.home),
-                  label: 'Home',
-                  tooltip: '',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.list_alt),
-                  selectedIcon: Icon(Icons.list_alt),
-                  label: 'Exercises',
-                  tooltip: '',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.fitness_center_outlined),
-                  selectedIcon: Icon(Icons.fitness_center),
-                  label: 'Workout',
-                  tooltip: '',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.trending_up_outlined),
-                  selectedIcon: Icon(Icons.trending_up),
-                  label: 'Progress',
-                  tooltip: '',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.person_outline),
-                  selectedIcon: Icon(Icons.person),
-                  label: 'Profile',
-                  tooltip: '',
-                ),
-              ],
+            SafeArea(
+              top: false,
+              child: NavigationBar(
+                selectedIndex: selectedBottomNavIndex,
+                onDestinationSelected: (index) {
+                  setState(() {
+                    selectedBottomNavIndex = index;
+                    switch (index) {
+                      case 0:
+                        currentScreen = 'dashboard';
+                        break;
+                      case 1:
+                        currentScreen = 'exercises';
+                        break;
+                      case 2:
+                        currentScreen = 'workout';
+                        break;
+                      case 3:
+                        currentScreen = 'progress';
+                        break;
+                      case 4:
+                        currentScreen = 'profile';
+                        break;
+                    }
+                  });
+                },
+                destinations: const [
+                  NavigationDestination(
+                    icon: Icon(Icons.home_outlined),
+                    selectedIcon: Icon(Icons.home),
+                    label: 'Home',
+                    tooltip: '',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.list_alt),
+                    selectedIcon: Icon(Icons.list_alt),
+                    label: 'Exercises',
+                    tooltip: '',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.fitness_center_outlined),
+                    selectedIcon: Icon(Icons.fitness_center),
+                    label: 'Workout',
+                    tooltip: '',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.trending_up_outlined),
+                    selectedIcon: Icon(Icons.trending_up),
+                    label: 'Progress',
+                    tooltip: '',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.person_outline),
+                    selectedIcon: Icon(Icons.person),
+                    label: 'Profile',
+                    tooltip: '',
+                  ),
+                ],
+              ),
             ),
         ],
       ),

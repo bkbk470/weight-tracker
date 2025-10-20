@@ -255,7 +255,14 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           final record = bySetNumber[i + 1];
           if (record != null) {
             final weightValue = record['weight_lbs'];
-            set.previousWeight = weightValue is num ? weightValue.toDouble() : double.tryParse(weightValue?.toString() ?? '');
+            final previousWeight = weightValue is num ? weightValue.toDouble() : double.tryParse(weightValue?.toString() ?? '');
+            set.previousWeight = previousWeight;
+            
+            // Auto-fill weight with previous weight if current weight is 0
+            if (set.weight == 0 && previousWeight != null && previousWeight > 0) {
+              set.weight = previousWeight.round();
+            }
+            
             final repsValue = record['reps'];
             set.previousReps = repsValue is int ? repsValue : int.tryParse(repsValue?.toString() ?? '');
           } else {
@@ -304,7 +311,14 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
             if (data is Map) {
               final weightRaw = data['weight'];
               final repsRaw = data['reps'];
-              exercise.sets[i].previousWeight = weightRaw is num ? weightRaw.toDouble() : double.tryParse('${weightRaw ?? ''}');
+              final previousWeight = weightRaw is num ? weightRaw.toDouble() : double.tryParse('${weightRaw ?? ''}');
+              exercise.sets[i].previousWeight = previousWeight;
+              
+              // Auto-fill weight with previous weight if current weight is 0
+              if (exercise.sets[i].weight == 0 && previousWeight != null && previousWeight > 0) {
+                exercise.sets[i].weight = previousWeight.round();
+              }
+              
               exercise.sets[i].previousReps = repsRaw is int ? repsRaw : int.tryParse('${repsRaw ?? ''}');
             }
           }
@@ -1109,6 +1123,46 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     return '$month ${local.day}, ${local.year}';
   }
 
+  void _showExerciseInfo(BuildContext context, Exercise exercise) async {
+    // Try to fetch full exercise details from Supabase
+    try {
+      final exercises = await SupabaseService.instance.getExercises();
+      final exerciseData = exercises.firstWhere(
+        (e) => (e['name'] as String).toLowerCase() == exercise.name.toLowerCase(),
+        orElse: () => <String, dynamic>{},
+      );
+
+      if (!mounted) return;
+
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        isDismissible: true, // Allow closing by tapping outside
+        enableDrag: true, // Allow closing by dragging down
+        backgroundColor: Colors.transparent,
+        builder: (context) => _ExerciseInfoSheet(
+          exerciseName: exercise.name,
+          exerciseData: exerciseData,
+        ),
+      );
+    } catch (e) {
+      print('Error loading exercise info: $e');
+      // Show basic info if fetch fails
+      if (!mounted) return;
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        isDismissible: true, // Allow closing by tapping outside
+        enableDrag: true, // Allow closing by dragging down
+        backgroundColor: Colors.transparent,
+        builder: (context) => _ExerciseInfoSheet(
+          exerciseName: exercise.name,
+          exerciseData: {},
+        ),
+      );
+    }
+  }
+
   void _showNotesDialog(BuildContext context, Exercise exercise, ColorScheme colorScheme) {
     final notesController = TextEditingController(text: exercise.notes);
     
@@ -1371,9 +1425,34 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          exercise.name,
-                          style: textTheme.titleMedium,
+                        Expanded(
+                          child: InkWell(
+                            onTap: () => _showExerciseInfo(context, exercise),
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      exercise.name,
+                                      style: textTheme.titleMedium?.copyWith(
+                                        color: colorScheme.primary,
+                                        decoration: TextDecoration.underline,
+                                        decorationColor: colorScheme.primary.withOpacity(0.3),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Icon(
+                                    Icons.info_outline,
+                                    size: 18,
+                                    color: colorScheme.primary,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
                         PopupMenuButton<String>(
                           icon: const Icon(Icons.more_vert),
@@ -1616,22 +1695,49 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
+                                        if (set.previousWeight != null && set.previousWeight! > 0)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 2),
+                                            child: Text(
+                                              _formatWeightValue(set.previousWeight),
+                                              style: textTheme.bodySmall?.copyWith(
+                                                color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+                                                fontSize: 10,
+                                              ),
+                                            ),
+                                          ),
                                       ],
                                     ),
                                   ),
                                 ),
-                                // Reps (always editable)
+                                // Reps (always editable + previous)
                                 Expanded(
                                   flex: 2,
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(horizontal: 4),
-                                    child: EditableNumberField(
-                                      value: set.reps,
-                                      onChanged: (value) => updateSet(exercise.id, setIndex, 'reps', value),
-                                      isHighlighted: set.isResting,
-                                      textStyle: textTheme.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        EditableNumberField(
+                                          value: set.reps,
+                                          onChanged: (value) => updateSet(exercise.id, setIndex, 'reps', value),
+                                          isHighlighted: set.isResting,
+                                          textStyle: textTheme.bodyMedium?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        if (set.previousReps != null && set.previousReps! > 0)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 2),
+                                            child: Text(
+                                              '${set.previousReps}',
+                                              style: textTheme.bodySmall?.copyWith(
+                                                color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+                                                fontSize: 10,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
                                     ),
                                   ),
                                 ),
@@ -1739,6 +1845,235 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ExerciseInfoSheet extends StatelessWidget {
+  final String exerciseName;
+  final Map<String, dynamic> exerciseData;
+
+  const _ExerciseInfoSheet({
+    required this.exerciseName,
+    required this.exerciseData,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    
+    final category = exerciseData['category'] as String? ?? 'Exercise';
+    final difficulty = exerciseData['difficulty'] as String?;
+    final equipment = exerciseData['equipment'] as String? ?? 'Various';
+    final imageUrl = exerciseData['image_url'] as String? ?? exerciseData['imageUrl'] as String?;
+    final instructions = exerciseData['instructions'] as String?;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // Handle bar
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colorScheme.onSurfaceVariant.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // Content
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.all(24),
+                  children: [
+                    // Exercise name
+                    Text(
+                      exerciseName,
+                      style: textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Category badge
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        Chip(
+                          label: Text(category),
+                          backgroundColor: colorScheme.primaryContainer,
+                          labelStyle: TextStyle(
+                            color: colorScheme.onPrimaryContainer,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (difficulty != null)
+                          Chip(
+                            label: Text(difficulty),
+                            backgroundColor: _getDifficultyColor(difficulty, colorScheme).withOpacity(0.2),
+                            labelStyle: TextStyle(
+                              color: _getDifficultyColor(difficulty, colorScheme),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    // Exercise image
+                    if (imageUrl != null && imageUrl.isNotEmpty) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: colorScheme.surfaceVariant,
+                                child: Icon(
+                                  Icons.fitness_center,
+                                  size: 64,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              );
+                            },
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                color: colorScheme.surfaceVariant,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress.cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                    // Equipment
+                    _InfoSection(
+                      icon: Icons.sports_gymnastics,
+                      title: 'Equipment',
+                      content: equipment,
+                      colorScheme: colorScheme,
+                      textTheme: textTheme,
+                    ),
+                    const SizedBox(height: 16),
+                    // Instructions
+                    if (instructions != null && instructions.isNotEmpty)
+                      _InfoSection(
+                        icon: Icons.article,
+                        title: 'Instructions',
+                        content: instructions,
+                        colorScheme: colorScheme,
+                        textTheme: textTheme,
+                      )
+                    else
+                      _InfoSection(
+                        icon: Icons.info_outline,
+                        title: 'About',
+                        content: 'This is a $category exercise using $equipment. '
+                            'Focus on proper form and controlled movements.',
+                        colorScheme: colorScheme,
+                        textTheme: textTheme,
+                      ),
+                    const SizedBox(height: 24),
+                    // Close button
+                    FilledButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Close'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Color _getDifficultyColor(String difficulty, ColorScheme colorScheme) {
+    switch (difficulty.toLowerCase()) {
+      case 'beginner':
+        return Colors.green;
+      case 'intermediate':
+        return Colors.orange;
+      case 'advanced':
+        return Colors.red;
+      default:
+        return colorScheme.primary;
+    }
+  }
+}
+
+class _InfoSection extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String content;
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+
+  const _InfoSection({
+    required this.icon,
+    required this.title,
+    required this.content,
+    required this.colorScheme,
+    required this.textTheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: colorScheme.primary,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceVariant.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            content,
+            style: textTheme.bodyMedium,
+          ),
+        ),
+      ],
     );
   }
 }

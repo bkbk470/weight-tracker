@@ -208,6 +208,20 @@ class LocalStorageService {
     await saveSetting('themeMode', mode);
   }
 
+  // Get expanded folders
+  List<String>? getExpandedFolders() {
+    final value = getSetting('expandedFolders');
+    if (value is List) {
+      return value.map((e) => e.toString()).toList();
+    }
+    return null;
+  }
+
+  // Save expanded folders
+  Future<void> saveExpandedFolders(List<String> folderIds) async {
+    await saveSetting('expandedFolders', folderIds);
+  }
+
   // ==================== EXERCISE HISTORY ====================
 
   Future<void> saveExerciseHistory(

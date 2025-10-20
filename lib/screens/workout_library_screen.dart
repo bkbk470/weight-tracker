@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import '../services/supabase_service.dart';
 
 class WorkoutLibraryScreen extends StatefulWidget {
@@ -24,9 +23,6 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
   List<Map<String, dynamic>> workoutTemplates = [];
   bool isLoading = true;
   bool isLoadingTemplates = false;
-  bool isReordering = false;
-  int? draggedIndex;
-  int? hoveredIndex;
 
   @override
   void initState() {
@@ -74,60 +70,6 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
     }
   }
 
-  Future<void> _reorderWorkouts(int oldIndex, int newIndex) async {
-    setState(() {
-      // Adjust newIndex for list reordering
-      if (newIndex > oldIndex) {
-        newIndex -= 1;
-      }
-
-      // Reorder the list
-      final workout = myWorkouts.removeAt(oldIndex);
-      myWorkouts.insert(newIndex, workout);
-    });
-
-    try {
-      // Save the new order to the database
-      await SupabaseService.instance.reorderWorkouts(myWorkouts);
-    } catch (e) {
-      print('Error saving workout order: $e');
-      // Reload on error to get correct order
-      _loadWorkouts();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error saving order: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  void _onDragStart(int index) {
-    setState(() {
-      draggedIndex = index;
-    });
-  }
-
-  void _onDragEnd() {
-    if (draggedIndex != null && hoveredIndex != null && draggedIndex != hoveredIndex) {
-      _reorderWorkouts(draggedIndex!, hoveredIndex!);
-    }
-    setState(() {
-      draggedIndex = null;
-      hoveredIndex = null;
-    });
-  }
-
-  void _onDragEnter(int index) {
-    if (draggedIndex != null && draggedIndex != index) {
-      setState(() {
-        hoveredIndex = index;
-      });
-    }
-  }
-
   @override
   void dispose() {
     _searchController.dispose();
@@ -162,20 +104,6 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
               ),
             ),
             actions: [
-              if (selectedTab == 'My Workouts' && myWorkouts.isNotEmpty)
-                IconButton(
-                  icon: Icon(isReordering ? Icons.check : Icons.drag_handle),
-                  onPressed: () {
-                    setState(() {
-                      isReordering = !isReordering;
-                      if (!isReordering) {
-                        draggedIndex = null;
-                        hoveredIndex = null;
-                      }
-                    });
-                  },
-                  tooltip: isReordering ? 'Done Reordering' : 'Reorder Workouts',
-                ),
               IconButton(
                 icon: const Icon(Icons.folder),
                 onPressed: () => widget.onNavigate('workout-folders'),
@@ -185,110 +113,76 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
           ),
 
           // Search Bar
-          if (!isReordering)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (value) {
-                    setState(() {
-                      searchQuery = value;
-                    });
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'Search workouts...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() {
-                                searchQuery = '';
-                              });
-                            },
-                          )
-                        : null,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) {
+                  setState(() {
+                    searchQuery = value;
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: 'Search workouts...',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              searchQuery = '';
+                            });
+                          },
+                        )
+                      : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  filled: true,
+                  fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
                 ),
               ),
             ),
+          ),
 
           // Tab Selection
-          if (!isReordering)
-            SliverToBoxAdapter(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: SegmentedButton<String>(
-                        segments: const [
-                          ButtonSegment(
-                            value: 'My Workouts',
-                            label: Text('My Workouts'),
-                            icon: Icon(Icons.bookmark),
-                          ),
-                          ButtonSegment(
-                            value: 'Templates',
-                            label: Text('Templates'),
-                            icon: Icon(Icons.library_books),
-                          ),
-                        ],
-                        selected: {selectedTab},
-                        onSelectionChanged: (Set<String> newSelection) {
-                          setState(() {
-                            selectedTab = newSelection.first;
-                          });
-                          // Load templates when Templates tab is selected
-                          if (selectedTab == 'Templates') {
-                            _loadTemplates();
-                          }
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-          // Reordering hint
-          if (isReordering)
-            SliverToBoxAdapter(
-              child: Container(
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: colorScheme.onPrimaryContainer,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        kIsWeb 
-                          ? 'Click and drag workouts to reorder them'
-                          : 'Long press and drag workouts to reorder them',
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onPrimaryContainer,
+          SliverToBoxAdapter(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(
+                          value: 'My Workouts',
+                          label: Text('My Workouts'),
+                          icon: Icon(Icons.bookmark),
                         ),
-                      ),
+                        ButtonSegment(
+                          value: 'Templates',
+                          label: Text('Templates'),
+                          icon: Icon(Icons.library_books),
+                        ),
+                      ],
+                      selected: {selectedTab},
+                      onSelectionChanged: (Set<String> newSelection) {
+                        setState(() {
+                          selectedTab = newSelection.first;
+                        });
+                        // Load templates when Templates tab is selected
+                        if (selectedTab == 'Templates') {
+                          _loadTemplates();
+                        }
+                      },
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
+          ),
 
           // Content based on selected tab
           if (selectedTab == 'My Workouts')
@@ -329,9 +223,7 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
                           ),
                         ),
                       )
-                    : isReordering
-                        ? _buildReorderableWorkoutList(colorScheme, textTheme)
-                        : _buildNormalWorkoutList(colorScheme, textTheme)
+                    : _buildNormalWorkoutList(colorScheme, textTheme)
           else
             SliverPadding(
               padding: const EdgeInsets.all(16),
@@ -385,7 +277,6 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
                                 difficulty: template['difficulty'] ?? 'Intermediate',
                                 colorScheme: colorScheme,
                                 textTheme: textTheme,
-                                showDragHandle: false,
                                 onTap: () => widget.onNavigate(
                                   'workout-detail',
                                   {
@@ -452,127 +343,6 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
     );
   }
 
-  Widget _buildReorderableWorkoutList(ColorScheme colorScheme, TextTheme textTheme) {
-    if (kIsWeb) {
-      // Use custom drag and drop for web
-      return SliverPadding(
-        padding: const EdgeInsets.all(16),
-        sliver: SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final workout = myWorkouts[index];
-              final exercises = workout['workout_exercises'] as List? ?? [];
-              final isDragging = draggedIndex == index;
-              final isHovered = hoveredIndex == index;
-
-              return Draggable<int>(
-                data: index,
-                onDragStarted: () => _onDragStart(index),
-                onDragEnd: (_) => _onDragEnd(),
-                feedback: Material(
-                  elevation: 8,
-                  borderRadius: BorderRadius.circular(12),
-                  child: SizedBox(
-                    width: MediaQuery.of(context).size.width - 32,
-                    child: Opacity(
-                      opacity: 0.8,
-                      child: _WorkoutCard(
-                        name: workout['name'] ?? 'Unnamed Workout',
-                        description: workout['description'] ?? 'No description',
-                        exercises: exercises.length,
-                        duration: '${workout['estimated_duration_minutes'] ?? 45} min',
-                        difficulty: workout['difficulty'] ?? 'Intermediate',
-                        colorScheme: colorScheme,
-                        textTheme: textTheme,
-                        showDragHandle: true,
-                        onTap: () {},
-                      ),
-                    ),
-                  ),
-                ),
-                childWhenDragging: Opacity(
-                  opacity: 0.3,
-                  child: _WorkoutCard(
-                    name: workout['name'] ?? 'Unnamed Workout',
-                    description: workout['description'] ?? 'No description',
-                    exercises: exercises.length,
-                    duration: '${workout['estimated_duration_minutes'] ?? 45} min',
-                    difficulty: workout['difficulty'] ?? 'Intermediate',
-                    colorScheme: colorScheme,
-                    textTheme: textTheme,
-                    showDragHandle: true,
-                    onTap: () {},
-                  ),
-                ),
-                child: DragTarget<int>(
-                  onWillAccept: (data) => data != null && data != index,
-                  onAccept: (data) {
-                    _reorderWorkouts(data, index);
-                  },
-                  onMove: (_) => _onDragEnter(index),
-                  builder: (context, candidateData, rejectedData) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        border: isHovered ? Border.all(
-                          color: colorScheme.primary,
-                          width: 2,
-                        ) : null,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: AnimatedOpacity(
-                        opacity: isDragging ? 0.3 : 1.0,
-                        duration: const Duration(milliseconds: 200),
-                        child: _WorkoutCard(
-                          name: workout['name'] ?? 'Unnamed Workout',
-                          description: workout['description'] ?? 'No description',
-                          exercises: exercises.length,
-                          duration: '${workout['estimated_duration_minutes'] ?? 45} min',
-                          difficulty: workout['difficulty'] ?? 'Intermediate',
-                          colorScheme: colorScheme,
-                          textTheme: textTheme,
-                          showDragHandle: true,
-                          onTap: () {},
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              );
-            },
-            childCount: myWorkouts.length,
-          ),
-        ),
-      );
-    } else {
-      // Use ReorderableListView for mobile
-      return SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: ReorderableListView(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            onReorder: _reorderWorkouts,
-            children: myWorkouts.map((workout) {
-              final exercises = workout['workout_exercises'] as List? ?? [];
-              return _WorkoutCard(
-                key: ValueKey(workout['id']),
-                name: workout['name'] ?? 'Unnamed Workout',
-                description: workout['description'] ?? 'No description',
-                exercises: exercises.length,
-                duration: '${workout['estimated_duration_minutes'] ?? 45} min',
-                difficulty: workout['difficulty'] ?? 'Intermediate',
-                colorScheme: colorScheme,
-                textTheme: textTheme,
-                showDragHandle: true,
-                onTap: () {}, // Disable tap during reordering
-              );
-            }).toList(),
-          ),
-        ),
-      );
-    }
-  }
-
   Widget _buildNormalWorkoutList(ColorScheme colorScheme, TextTheme textTheme) {
     return SliverPadding(
       padding: const EdgeInsets.all(16),
@@ -595,7 +365,6 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
               difficulty: workout['difficulty'] ?? 'Intermediate',
               colorScheme: colorScheme,
               textTheme: textTheme,
-              showDragHandle: false,
               onTap: () => widget.onNavigate(
                 'workout-detail',
                 {
@@ -728,7 +497,6 @@ class _WorkoutCard extends StatelessWidget {
   final String difficulty;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
-  final bool showDragHandle;
   final VoidCallback onTap;
   final VoidCallback? onDuplicate;
   final VoidCallback? onDelete;
@@ -742,7 +510,6 @@ class _WorkoutCard extends StatelessWidget {
     required this.difficulty,
     required this.colorScheme,
     required this.textTheme,
-    required this.showDragHandle,
     required this.onTap,
     this.onDuplicate,
     this.onDelete,
@@ -772,17 +539,6 @@ class _WorkoutCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              if (showDragHandle)
-                Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.grab,
-                    child: Icon(
-                      Icons.drag_handle,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -864,11 +620,10 @@ class _WorkoutCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (!showDragHandle)
-                Icon(
-                  Icons.chevron_right,
-                  color: colorScheme.onSurfaceVariant,
-                ),
+              Icon(
+                Icons.chevron_right,
+                color: colorScheme.onSurfaceVariant,
+              ),
             ],
           ),
         ),
