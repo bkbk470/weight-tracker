@@ -5,17 +5,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
+import 'package:video_player/video_player.dart';
 import '../constants/exercise_assets.dart';
 import '../services/supabase_service.dart';
 
 class ExerciseDetailScreen extends StatefulWidget {
   final Function(String) onNavigate;
   final String? returnScreen;
+  final Map<String, dynamic>? exercise;
 
   const ExerciseDetailScreen({
     super.key,
     required this.onNavigate,
     this.returnScreen,
+    this.exercise,
   });
 
   @override
@@ -27,15 +30,22 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
   String selectedPeriod = '3M';
   final periods = ['1M', '3M', '6M', '1Y', 'All'];
 
-  final exerciseName = 'Bench Press';
-  final exerciseImageUrl = kExercisePlaceholderImage;
+  late final String __exerciseName;
+  late final String _exerciseImagePath;
+  String? _exerciseVideoPath;
   final personalRecord = '225 lbs';
   final lastPerformed = '2 days ago';
   final totalVolume = '12,450 lbs';
   final totalSets = 156;
 
+  VideoPlayerController? _videoController;
+  bool _isVideoLoading = false;
+
   bool get _isGif {
-    final lower = exerciseImageUrl.toLowerCase();
+    if (_exerciseVideoPath != null && _exerciseVideoPath!.isNotEmpty) {
+      return false;
+    }
+    final lower = _exerciseImagePath.toLowerCase();
     return lower.endsWith('.gif');
   }
 
@@ -44,6 +54,82 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
   static final Map<String, Future<Duration>> _gifLoopDurationCache = {};
   Timer? _gifTimer;
   Duration? _gifSingleLoopDuration;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeExerciseData();
+  }
+
+  void _initializeExerciseData() {
+    final data = widget.exercise != null
+        ? Map<String, dynamic>.from(widget.exercise!)
+        : <String, dynamic>{};
+
+    __exerciseName = _firstNonEmptyString(data, ['name', 'title']) ?? 'Bench Press';
+    _exerciseImagePath = _firstNonEmptyString(
+          data,
+          ['image_url', 'imageUrl', 'thumbnail_url', 'media_url'],
+        ) ??
+        kExercisePlaceholderImage;
+    _exerciseVideoPath = _firstNonEmptyString(
+      data,
+      ['video_url', 'videoUrl', 'video', 'demo_video_url', 'tutorial_video', 'video_path', 'media_video'],
+    );
+
+    if (_exerciseVideoPath != null && _exerciseVideoPath!.isNotEmpty) {
+      Future.microtask(_prepareVideo);
+    }
+  }
+
+  String? _firstNonEmptyString(Map<String, dynamic> data, List<String> keys) {
+    for (final key in keys) {
+      final value = data[key];
+      if (value is String) {
+        final trimmed = value.trim();
+        if (trimmed.isNotEmpty) return trimmed;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _prepareVideo() async {
+    final path = _exerciseVideoPath;
+    if (path == null || path.isEmpty) return;
+
+    setState(() => _isVideoLoading = true);
+
+    try {
+      String resolved = path;
+      if (_needsSignedUrl(path)) {
+        resolved = await SupabaseService.instance.getSignedUrlForStoragePath(path);
+      }
+
+      final controller = VideoPlayerController.networkUrl(Uri.parse(resolved));
+      await controller.initialize();
+      controller
+        ..setLooping(true)
+        ..setVolume(0)
+        ..play();
+
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
+
+      setState(() {
+        _videoController = controller;
+        _isVideoLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error initializing exercise video: $e');
+      if (!mounted) return;
+      setState(() {
+        _isVideoLoading = false;
+        _exerciseVideoPath = null;
+      });
+    }
+  }
 
   bool _needsSignedUrl(String path) {
     return path.isNotEmpty &&
@@ -164,7 +250,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
     _gifTimer?.cancel();
 
     try {
-      _gifSingleLoopDuration ??= await _getGifLoopDuration(exerciseImageUrl);
+      _gifSingleLoopDuration ??= await _getGifLoopDuration(_exerciseImagePath);
       final totalDuration =
           (_gifSingleLoopDuration ?? const Duration(seconds: 2)) * 2;
       _gifTimer = Timer(totalDuration, () {
@@ -198,7 +284,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
       ),
     );
 
-    if (exerciseImageUrl.isEmpty) {
+    if (_exerciseImagePath.isEmpty) {
       return Container(
         decoration: gradient,
         child: Center(
@@ -224,9 +310,9 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
       );
     }
 
-    final firstFrame = exerciseImageUrl.endsWith('.gif')
-        ? _buildStaticHeaderImage(exerciseImageUrl, _buildErrorFallback)
-        : _buildFullHeaderImage(exerciseImageUrl, _buildErrorFallback);
+    final firstFrame = _exerciseImagePath.endsWith('.gif')
+        ? _buildStaticHeaderImage(_exerciseImagePath, _buildErrorFallback)
+        : _buildFullHeaderImage(_exerciseImagePath, _buildErrorFallback);
 
     return Stack(
       fit: StackFit.expand,
@@ -262,7 +348,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
             ),
           ),
         if (_isGif && _showGif)
-          _buildFullHeaderImage(exerciseImageUrl, _buildErrorFallback),
+          _buildFullHeaderImage(_exerciseImagePath, _buildErrorFallback),
         IgnorePointer(
           child: Container(
               decoration: gradient.copyWith(
@@ -305,7 +391,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
                 onPressed: () => widget.onNavigate(_backDestination),
               ),
               flexibleSpace: FlexibleSpaceBar(
-                title: Text(exerciseName),
+                title: Text(_exerciseName),
                 background: _buildHeaderBackground(context),
               ),
             ),
