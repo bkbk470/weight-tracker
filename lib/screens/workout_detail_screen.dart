@@ -548,6 +548,61 @@ class WorkoutExerciseSet {
 }
 
 extension on _WorkoutDetailScreenState {
+  Future<Map<String, dynamic>> _createWorkoutFromCuratedTemplate(
+    Map<String, dynamic> template,
+  ) async {
+    final templateName = template['name'] as String? ?? 'Workout Template';
+    final description = template['description'] as String?;
+    final difficulty = template['difficulty'] as String?;
+    final durationMinutes = template['estimated_duration_minutes'] as int?;
+
+    final newWorkout = await SupabaseService.instance.createWorkout(
+      name: 'Copy of $templateName',
+      description: description,
+      difficulty: difficulty,
+      estimatedDurationMinutes: durationMinutes,
+    );
+
+    final exercises = (template['workout_template_exercises'] as List?)
+            ?.whereType<Map<String, dynamic>>()
+            .toList() ??
+        [];
+
+    for (var i = 0; i < exercises.length; i++) {
+      final exercise = exercises[i];
+      final exerciseName = (exercise['exercise_name'] as String?) ?? 'Exercise';
+      final rawNotes = (exercise['notes'] as String?)?.trim();
+      final notes = rawNotes == null || rawNotes.isEmpty ? null : rawNotes;
+      final category = (exercise['category'] as String?)?.trim();
+
+      try {
+        final exerciseId = await SupabaseService.instance.getOrCreateExerciseId(
+          name: exerciseName,
+          category: category == null || category.isEmpty ? 'Other' : category,
+          notes: notes,
+        );
+
+        if (exerciseId == null) continue;
+
+        await SupabaseService.instance.addExerciseToWorkout(
+          workoutId: newWorkout['id'] as String,
+          exerciseId: exerciseId,
+          orderIndex: i,
+          targetSets: exercise['target_sets'] as int? ?? 3,
+          targetReps: exercise['target_reps'] as int? ?? 10,
+          restTimeSeconds: exercise['rest_time_seconds'] as int? ?? 90,
+          notes: notes,
+        );
+      } catch (e) {
+        print('Failed to add curated template exercise $exerciseName: $e');
+      }
+    }
+
+    final created =
+        await SupabaseService.instance.getWorkout(newWorkout['id'] as String);
+    return created ?? newWorkout;
+  }
+
   Future<void> _duplicateWorkout() async {
     final data = widget.workoutData;
     final workoutId = widget.workoutId ?? data?['id'] as String?;
@@ -570,7 +625,11 @@ extension on _WorkoutDetailScreenState {
       if (isTemplate) {
         final templateId = data?['id']?.toString();
         if (templateId == null) throw Exception('Template identifier missing');
-        duplicated = await SupabaseService.instance.duplicateTemplateToWorkout(templateId);
+        if (templateId.startsWith('tmpl_')) {
+          duplicated = await _createWorkoutFromCuratedTemplate(data!);
+        } else {
+          duplicated = await SupabaseService.instance.duplicateTemplateToWorkout(templateId);
+        }
       } else {
         final originalWorkout = await SupabaseService.instance.getWorkout(workoutId!);
         if (originalWorkout == null) {

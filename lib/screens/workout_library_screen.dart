@@ -390,6 +390,26 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
       return _buildNormalWorkoutList(colorScheme, textTheme);
     }
 
+    final normalizedQuery = searchQuery.trim().toLowerCase();
+    final filteredTemplates = normalizedQuery.isEmpty
+        ? workoutTemplates
+        : workoutTemplates.where((template) {
+            final name = (template['name'] as String? ?? '').toLowerCase();
+            final description = (template['description'] as String? ?? '').toLowerCase();
+            if (name.contains(normalizedQuery) || description.contains(normalizedQuery)) {
+              return true;
+            }
+            final exercises =
+                (template['workout_template_exercises'] as List?)?.whereType<Map<String, dynamic>>() ??
+                    const Iterable<Map<String, dynamic>>.empty();
+            return exercises.any((exercise) {
+              final exerciseName = (exercise['exercise_name'] as String? ?? '').toLowerCase();
+              return exerciseName.contains(normalizedQuery);
+            });
+          }).toList();
+    final bool noTemplateMatches =
+        workoutTemplates.isNotEmpty && filteredTemplates.isEmpty && normalizedQuery.isNotEmpty;
+
     return SliverPadding(
       padding: const EdgeInsets.all(16),
       sliver: isLoadingTemplates
@@ -423,21 +443,57 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
                     ),
                   ),
                 )
+              : noTemplateMatches
+                  ? SliverFillRemaining(
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.filter_alt_off_outlined,
+                              size: 72,
+                              color: colorScheme.primary.withOpacity(0.3),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No templates match “$searchQuery”.',
+                              style: textTheme.titleMedium,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Try searching a different muscle group or exercise name.',
+                              style: textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
               : SliverList(
                   delegate: SliverChildListDelegate([
                     Text(
-                      'Workout Templates',
+                      'Curated Templates',
                       style: textTheme.titleMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
                     ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Developer-maintained sessions you can duplicate and tweak for your goals.',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                     const SizedBox(height: 16),
-                    ...workoutTemplates.map((template) {
-                      final exercises = template['workout_template_exercises'] as List? ?? [];
+                    ...filteredTemplates.map((template) {
+                      final templateExercises = template['workout_template_exercises'] as List? ?? [];
                       return _WorkoutCard(
                         name: template['name'] ?? 'Unnamed Template',
                         description: template['description'] ?? 'No description',
-                        exercises: exercises.length,
+                        exercises: templateExercises.length,
                         duration: '${template['estimated_duration_minutes'] ?? 45} min',
                         difficulty: template['difficulty'] ?? 'Intermediate',
                         colorScheme: colorScheme,
@@ -455,7 +511,7 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
                             final difficulty = template['difficulty'] as String?;
                             final durationMinutes =
                                 template['estimated_duration_minutes'] as int?;
-                            final exercises = (template['workout_template_exercises'] as List)
+                            final exercisesFromTemplate = (template['workout_template_exercises'] as List)
                                 .whereType<Map<String, dynamic>>()
                                 .toList();
 
@@ -466,8 +522,8 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
                               estimatedDurationMinutes: durationMinutes,
                             );
 
-                            for (var i = 0; i < exercises.length; i++) {
-                              final exercise = exercises[i];
+                            for (var i = 0; i < exercisesFromTemplate.length; i++) {
+                              final exercise = exercisesFromTemplate[i];
                               final exerciseName =
                                   (exercise['exercise_name'] as String?) ?? 'Exercise';
                               final rawNotes = (exercise['notes'] as String?)?.trim();
