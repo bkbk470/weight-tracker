@@ -37,33 +37,42 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
     }
 
     try {
-      // Load plans, workouts, and example templates in parallel
-      final foldersFuture = _supabaseService.getWorkoutFolders();
-      final templatesFuture = _supabaseService.getWorkoutTemplates();
+      // Load plans and example templates in parallel
+      final results = await Future.wait([
+        _supabaseService.getWorkoutFolders(),
+        _supabaseService.getWorkoutTemplates(),
+      ]);
 
-      final loadedFolders = await foldersFuture;
-      final exampleTemplates = await templatesFuture;
-      
-      // Group workouts by plan using junction table
+      final loadedFolders = results[0] as List<Map<String, dynamic>>;
+      final exampleTemplates = results[1] as List<Map<String, dynamic>>;
+
+      // Extract folder IDs for batch loading
+      final folderIds = loadedFolders
+          .map((f) => f['id'] as String)
+          .toList();
+
+      // OPTIMIZED: Batch load all workouts for all folders in parallel
+      final workoutResults = await Future.wait([
+        // Load all workouts for all folders in one query
+        folderIds.isEmpty
+            ? Future.value(<String, List<Map<String, dynamic>>>{})
+            : _supabaseService.getAllWorkoutsByFolders(folderIds),
+        // Load unorganized workouts
+        _supabaseService.getWorkoutsByFolder(null),
+      ]);
+
+      final Map<String, List<Map<String, dynamic>>> workoutsByFolderId = workoutResults[0] as Map<String, List<Map<String, dynamic>>>;
+      final List<Map<String, dynamic>> unorganizedWorkouts = workoutResults[1] as List<Map<String, dynamic>>;
+
+      // Build grouped map
       final Map<String?, List<Map<String, dynamic>>> grouped = {};
-      grouped[null] = []; // Default "Unorganized" bucket
-      
-      // Initialize empty lists for each folder
-      for (var folder in loadedFolders) {
-        final folderId = folder['id'] as String;
-        grouped[folderId] = [];
-      }
-      
-      // Load workouts for each plan using the junction table
-      for (var folder in loadedFolders) {
-        final folderId = folder['id'] as String;
-        final workoutsInPlan = await _supabaseService.getWorkoutsByFolder(folderId);
-        grouped[folderId] = workoutsInPlan;
-      }
-      
-      // Load unorganized workouts (not in any plan)
-      final unorganizedWorkouts = await _supabaseService.getWorkoutsByFolder(null);
       grouped[null] = unorganizedWorkouts;
+
+      // Initialize empty lists for each folder and populate with loaded workouts
+      for (var folder in loadedFolders) {
+        final folderId = folder['id'] as String;
+        grouped[folderId] = workoutsByFolderId[folderId] ?? [];
+      }
 
       if (!mounted) return;
       setState(() {

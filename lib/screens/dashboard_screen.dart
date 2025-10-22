@@ -125,46 +125,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
             return normalized;
           })
           .toList();
-      
-      // Group workouts by folder using junction table
-      final Map<String?, List<Map<String, dynamic>>> grouped = {};
-      grouped[null] = []; // Default bucket for workouts without a folder
-      
-      // Initialize empty lists for each folder
-      for (var folder in folders) {
-        final dynamic rawFolderId = folder['id'];
-        final String? folderId = rawFolderId?.toString();
-        if (folderId != null) {
-          grouped[folderId] = [];
-        }
-      }
-      
-      // Load workouts for each folder using junction table
-      for (var folder in folders) {
-        final dynamic rawFolderId = folder['id'];
-        final String? folderId = rawFolderId?.toString();
-        if (folderId == null) {
-          continue;
-        }
-        final workoutsInFolder = await _supabaseService.getWorkoutsByFolder(folderId);
-        grouped[folderId] = workoutsInFolder;
-      }
-      
-      // Load unorganized workouts (not in any plan)
-      final unorganizedWorkouts = await _supabaseService.getWorkoutsByFolder(null);
-      grouped[null] = unorganizedWorkouts;
-      
-      // Get all workouts for last completed dates
-      final allWorkouts = await _supabaseService.getWorkouts();
 
-      // Load last completed date for each workout
-      final Map<String, DateTime?> lastDates = {};
-      for (var workout in allWorkouts) {
-        final workoutId = _normalizeId(workout['id']);
-        if (workoutId == null) continue;
-        final lastDate = await _getLastWorkoutDate(workoutId);
-        lastDates[workoutId] = lastDate;
+      // Extract folder IDs for batch loading
+      final folderIds = folders
+          .map((f) => f['id'] as String?)
+          .whereType<String>()
+          .toList();
+
+      // OPTIMIZED: Batch load all workouts for all folders in parallel
+      final results = await Future.wait([
+        // Load all workouts for all folders in one query
+        folderIds.isEmpty
+            ? Future.value(<String, List<Map<String, dynamic>>>{})
+            : _supabaseService.getAllWorkoutsByFolders(folderIds),
+        // Load unorganized workouts
+        _supabaseService.getWorkoutsByFolder(null),
+      ]);
+
+      final Map<String, List<Map<String, dynamic>>> workoutsByFolderId = results[0] as Map<String, List<Map<String, dynamic>>>;
+      final List<Map<String, dynamic>> unorganizedWorkouts = results[1] as List<Map<String, dynamic>>;
+
+      // Build grouped map
+      final Map<String?, List<Map<String, dynamic>>> grouped = {};
+      grouped[null] = unorganizedWorkouts;
+
+      // Initialize empty lists for each folder and populate with loaded workouts
+      for (var folder in folders) {
+        final folderId = folder['id'] as String;
+        grouped[folderId] = workoutsByFolderId[folderId] ?? [];
       }
+
+      // OPTIMIZED: Collect all workout IDs and batch load last dates
+      final allWorkoutIds = <String>[];
+      for (var workoutsList in grouped.values) {
+        for (var workout in workoutsList) {
+          final workoutId = _normalizeId(workout['id']);
+          if (workoutId != null) {
+            allWorkoutIds.add(workoutId);
+          }
+        }
+      }
+
+      // Batch load all last workout dates in one query
+      final lastDates = allWorkoutIds.isEmpty
+          ? <String, DateTime?>{}
+          : await _supabaseService.getLastWorkoutDates(allWorkoutIds);
 
       if (!mounted) return;
       setState(() {
