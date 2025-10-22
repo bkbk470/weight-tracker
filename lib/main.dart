@@ -686,8 +686,17 @@ class _AppNavigatorState extends State<AppNavigator> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Scaffold(
-      body: getScreen(),
+    return GestureDetector(
+      onTap: () {
+        // Unfocus any text fields when tapping outside
+        final currentFocus = FocusScope.of(context);
+        if (!currentFocus.hasPrimaryFocus && currentFocus.focusedChild != null) {
+          FocusManager.instance.primaryFocus?.unfocus();
+        }
+      },
+      behavior: HitTestBehavior.translucent,
+      child: Scaffold(
+        body: getScreen(),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -822,6 +831,7 @@ class _AppNavigatorState extends State<AppNavigator> {
               ),
             ),
         ],
+      ),
       ),
     );
   }

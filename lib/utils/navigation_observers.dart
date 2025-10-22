@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 /// Unfocuses any active text input when navigating.
@@ -7,9 +8,13 @@ import 'package:flutter/material.dart';
 /// another TextField is focused.
 class UnfocusOnNavigateObserver extends NavigatorObserver {
   UnfocusOnNavigateObserver();
+  
   void _unfocus() {
     // Safely unfocus without throwing if no focus
-    FocusManager.instance.primaryFocus?.unfocus();
+    // Use a microtask to ensure unfocus happens after current frame
+    Future.microtask(() {
+      FocusManager.instance.primaryFocus?.unfocus();
+    });
   }
 
   @override
