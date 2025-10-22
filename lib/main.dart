@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'services/local_storage_service.dart';
 import 'services/supabase_service.dart';
 import 'services/sync_service.dart';
+import 'services/notification_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/welcome_screen.dart';
@@ -38,16 +39,20 @@ import 'services/workout_timer_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize Supabase
   await Supabase.initialize(
     url: 'https://rpfgqwkvvnhcjayzodmn.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwZmdxd2t2dm5oY2pheXpvZG1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAxOTA5MTMsImV4cCI6MjA3NTc2NjkxM30.XWh2yxp4AcKWlgDHpLNhB7H7LQpzFEFbEZ-Y4T-CDcU',
   );
-  
+
   // Initialize local storage
   await LocalStorageService.instance.init();
-  
+
+  // Initialize notification service and request permissions
+  await NotificationService.instance.initialize();
+  await NotificationService.instance.requestPermissions();
+
   runApp(const WeightTrackerApp());
 }
 
