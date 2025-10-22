@@ -441,8 +441,8 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
                                                             borderRadius:
                                                                 BorderRadius.circular(12),
                                                           ),
-                                                          child: Row(
-                                                            children: [
+                                                          child: Builder(
+                                                            builder: (_) {
                                                               final set = exerciseSets[i];
                                                               final setNumber =
                                                                   (set['set_number'] is num)
@@ -466,69 +466,76 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
                                                               final notes =
                                                                   (set['notes'] as String?)
                                                                       ?.trim();
-                                                              Container(
-                                                                width: 40,
-                                                                height: 40,
-                                                                decoration: BoxDecoration(
-                                                                  color: colorScheme
-                                                                      .secondaryContainer,
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(8),
-                                                                ),
-                                                                child: Center(
-                                                                  child: Text(
-                                                                    '$setNumber',
-                                                                    style: textTheme.labelLarge
-                                                                        ?.copyWith(
+                                                              return Row(
+                                                                children: [
+                                                                  Container(
+                                                                    width: 40,
+                                                                    height: 40,
+                                                                    decoration: BoxDecoration(
                                                                       color: colorScheme
-                                                                          .onSecondaryContainer,
-                                                                      fontWeight:
-                                                                          FontWeight.bold,
+                                                                          .secondaryContainer,
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(8),
+                                                                    ),
+                                                                    child: Center(
+                                                                      child: Text(
+                                                                        '$setNumber',
+                                                                        style: textTheme.labelLarge
+                                                                            ?.copyWith(
+                                                                          color: colorScheme
+                                                                              .onSecondaryContainer,
+                                                                          fontWeight:
+                                                                              FontWeight.bold,
+                                                                        ),
+                                                                      ),
                                                                     ),
                                                                   ),
-                                                                ),
-                                                              ),
-                                                              const SizedBox(width: 12),
-                                                              Expanded(
-                                                                child: Column(
-                                                                  crossAxisAlignment:
-                                                                      CrossAxisAlignment.start,
-                                                                  children: [
-                                                                    Text(
-                                                                      '$weightDisplay lbs × $repsDisplay reps',
-                                                                      style: textTheme.bodyMedium
-                                                                          ?.copyWith(
-                                                                        fontWeight:
-                                                                            FontWeight.w500,
-                                                                      ),
-                                                                    ),
-                                                                    if (notes != null &&
-                                                                        notes.isNotEmpty)
-                                                                      Padding(
-                                                                        padding:
-                                                                            const EdgeInsets.only(
-                                                                          top: 4,
-                                                                        ),
-                                                                        child: Text(
-                                                                          notes,
-                                                                          style: textTheme.bodySmall
+                                                                  const SizedBox(width: 12),
+                                                                  Expanded(
+                                                                    child: Column(
+                                                                      crossAxisAlignment:
+                                                                          CrossAxisAlignment.start,
+                                                                      children: [
+                                                                        Text(
+                                                                          '$weightDisplay lbs × $repsDisplay reps',
+                                                                          style: textTheme
+                                                                              .bodyMedium
                                                                               ?.copyWith(
-                                                                            color: colorScheme
-                                                                                .onSurfaceVariant,
+                                                                            fontWeight:
+                                                                                FontWeight.w500,
                                                                           ),
                                                                         ),
-                                                                      ),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                              if (set['completed'] == true)
-                                                                Icon(
-                                                                  Icons.check_circle,
-                                                                  color:
-                                                                      colorScheme.secondary,
-                                                                  size: 20,
-                                                                ),
-                                                            ],
+                                                                        if (notes != null &&
+                                                                            notes.isNotEmpty)
+                                                                          Padding(
+                                                                            padding:
+                                                                                const EdgeInsets
+                                                                                    .only(
+                                                                              top: 4,
+                                                                            ),
+                                                                            child: Text(
+                                                                              notes,
+                                                                              style: textTheme
+                                                                                  .bodySmall
+                                                                                  ?.copyWith(
+                                                                                color: colorScheme
+                                                                                    .onSurfaceVariant,
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                      ],
+                                                                    ),
+                                                                  ),
+                                                                  if (set['completed'] == true)
+                                                                    Icon(
+                                                                      Icons.check_circle,
+                                                                      color:
+                                                                          colorScheme.secondary,
+                                                                      size: 20,
+                                                                    ),
+                                                                ],
+                                                              );
+                                                            },
                                                           ),
                                                         ),
                                                       ),
