@@ -63,32 +63,32 @@ BEGIN
 
     -- Bench Press (using Bench Press - Wide Grip as closest match)
     INSERT INTO public.workout_exercises (workout_id, exercise_id, order_index, target_sets, target_reps, rest_time_seconds)
-    SELECT v_workout_day1_id, id, 0, 4, 8, 180
+    SELECT v_workout_day1_id, id, 0, 4, 8, 55
     FROM public.exercises WHERE name = 'Bench Press - Wide Grip (Barbell)' AND is_default = true LIMIT 1;
 
     -- Incline Dumbbell Press
     INSERT INTO public.workout_exercises (workout_id, exercise_id, order_index, target_sets, target_reps, rest_time_seconds)
-    SELECT v_workout_day1_id, id, 1, 3, 10, 120
+    SELECT v_workout_day1_id, id, 1, 3, 10, 55
     FROM public.exercises WHERE name = 'Incline Bench Press (Dumbbell)' AND is_default = true LIMIT 1;
 
     -- Chest Dips
     INSERT INTO public.workout_exercises (workout_id, exercise_id, order_index, target_sets, target_reps, rest_time_seconds)
-    SELECT v_workout_day1_id, id, 2, 3, 12, 120
+    SELECT v_workout_day1_id, id, 2, 3, 12, 55
     FROM public.exercises WHERE name = 'Chest Dip' AND is_default = true LIMIT 1;
 
     -- Lateral Raises
     INSERT INTO public.workout_exercises (workout_id, exercise_id, order_index, target_sets, target_reps, rest_time_seconds)
-    SELECT v_workout_day1_id, id, 3, 3, 15, 90
+    SELECT v_workout_day1_id, id, 3, 3, 15, 55
     FROM public.exercises WHERE name = 'Lateral Raise (Dumbbell)' AND is_default = true LIMIT 1;
 
     -- Skull Crushers (using Triceps Pushdown as substitute)
     INSERT INTO public.workout_exercises (workout_id, exercise_id, order_index, target_sets, target_reps, rest_time_seconds)
-    SELECT v_workout_day1_id, id, 4, 3, 12, 90
+    SELECT v_workout_day1_id, id, 4, 3, 12, 55
     FROM public.exercises WHERE name = 'Triceps Pushdown' AND is_default = true LIMIT 1;
 
     -- Ab Wheel
     INSERT INTO public.workout_exercises (workout_id, exercise_id, order_index, target_sets, target_reps, rest_time_seconds)
-    SELECT v_workout_day1_id, id, 5, 3, 15, 60
+    SELECT v_workout_day1_id, id, 5, 3, 15, 55
     FROM public.exercises WHERE name = 'Ab Wheel' AND is_default = true LIMIT 1;
 
     RAISE NOTICE 'Added exercises to Day 1 - Push';
