@@ -11,6 +11,7 @@ DECLARE
     v_workout_day1_id UUID;
     v_workout_day2_id UUID;
     v_workout_day3_id UUID;
+    v_workout_day4_id UUID;
     v_workout_day5_id UUID;
     v_workout_day6_id UUID;
     v_workout_day7_id UUID;
@@ -37,6 +38,10 @@ BEGIN
     INSERT INTO public.workouts (user_id, name, description, difficulty, estimated_duration_minutes)
     VALUES (v_user_id, 'Day 3 - Legs (Quads, Hamstrings, Glutes)', 'Leg workout focusing on quads, hamstrings, glutes, and calves', 'Intermediate', 80)
     RETURNING id INTO v_workout_day3_id;
+
+    INSERT INTO public.workouts (user_id, name, description, difficulty, estimated_duration_minutes)
+    VALUES (v_user_id, 'Day 4 - Rest / Active Recovery', 'Light cardio, mobility, stretching, or yoga - keep it easy!', 'Beginner', 30)
+    RETURNING id INTO v_workout_day4_id;
 
     INSERT INTO public.workouts (user_id, name, description, difficulty, estimated_duration_minutes)
     VALUES (v_user_id, 'Day 5 - Push (Chest, Shoulders, Triceps) V2', 'Push workout variation with different exercise selection', 'Intermediate', 75)
@@ -267,11 +272,12 @@ BEGIN
     -- SUCCESS!
     -- =====================================================
     RAISE NOTICE '========================================';
-    RAISE NOTICE 'Successfully created 6 workouts!';
+    RAISE NOTICE 'Successfully created 7 workouts!';
     RAISE NOTICE '========================================';
     RAISE NOTICE 'Day 1 Push ID: %', v_workout_day1_id;
     RAISE NOTICE 'Day 2 Pull ID: %', v_workout_day2_id;
     RAISE NOTICE 'Day 3 Legs ID: %', v_workout_day3_id;
+    RAISE NOTICE 'Day 4 Rest/Recovery ID: %', v_workout_day4_id;
     RAISE NOTICE 'Day 5 Push V2 ID: %', v_workout_day5_id;
     RAISE NOTICE 'Day 6 Pull V2 ID: %', v_workout_day6_id;
     RAISE NOTICE 'Day 7 Legs V2 ID: %', v_workout_day7_id;
