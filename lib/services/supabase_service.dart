@@ -467,7 +467,7 @@ class SupabaseService {
               updated_at
             )
           ''')
-          .in_('workout_plan_id', folderIds)
+          .inFilter('workout_plan_id', folderIds)
           .order('order_index', ascending: true);
 
       // Group workouts by folder
@@ -499,7 +499,7 @@ class SupabaseService {
       final response = await client
           .from('workout_logs')
           .select('workout_id, start_time')
-          .in_('workout_id', workoutIds)
+          .inFilter('workout_id', workoutIds)
           .eq('user_id', currentUserId!)
           .order('start_time', ascending: false);
 
