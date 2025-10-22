@@ -266,24 +266,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
             
             final repsValue = record['reps'];
             set.previousReps = repsValue is int ? repsValue : int.tryParse(repsValue?.toString() ?? '');
-
-            final restValue = record['rest_time_seconds'];
-            final previousRest = restValue is num ? restValue.toInt() : int.tryParse(restValue?.toString() ?? '');
-            set.previousRestSeconds = previousRest;
-            if (previousRest != null && previousRest > 0) {
-              set.plannedRestSeconds = previousRest;
-              set.restStartTime = previousRest;
-              if (!set.isResting) {
-                set.currentRestTime = previousRest;
-              }
-              if (i == 0) {
-                exercise.restTime = previousRest;
-              }
-            }
           } else {
             set.previousWeight = null;
             set.previousReps = null;
-            set.previousRestSeconds = null;
           }
         }
       });
@@ -301,12 +286,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   }
 
   void _applyLocalHistoryIfMissing(Exercise exercise) {
-    final hasPrevious = exercise.sets.any(
-      (set) =>
-          set.previousWeight != null ||
-          set.previousReps != null ||
-          set.previousRestSeconds != null,
-    );
+    final hasPrevious = exercise.sets.any((set) => set.previousWeight != null || set.previousReps != null);
     if (hasPrevious) return;
 
     final localStorage = LocalStorageService.instance;
@@ -341,20 +321,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               }
               
               exercise.sets[i].previousReps = repsRaw is int ? repsRaw : int.tryParse('${repsRaw ?? ''}');
-
-              final restRaw = data['rest'];
-              final previousRest = restRaw is num ? restRaw.toInt() : int.tryParse('${restRaw ?? ''}');
-              exercise.sets[i].previousRestSeconds = previousRest;
-              if (previousRest != null && previousRest > 0) {
-                exercise.sets[i].plannedRestSeconds = previousRest;
-                exercise.sets[i].restStartTime = previousRest;
-                if (!exercise.sets[i].isResting) {
-                  exercise.sets[i].currentRestTime = previousRest;
-                }
-                if (i == 0) {
-                  exercise.restTime = previousRest;
-                }
-              }
             }
           }
         }
@@ -2048,30 +2014,42 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                         : EditableNumberField(
                                             value: set.plannedRestSeconds > 0 ? set.plannedRestSeconds : exercise.restTime,
                                             onChanged: (value) {
-                                              bool shouldSyncTemplate = false;
                                               setState(() {
                                                 final previousExerciseRest = exercise.restTime;
                                                 final previousSetRest = set.plannedRestSeconds;
+                                                final baselineRest = previousExerciseRest > 0
+                                                    ? previousExerciseRest
+                                                    : (previousSetRest > 0 ? previousSetRest : exercise.restTime);
 
                                                 set.plannedRestSeconds = value;
                                                 set.restStartTime = value;
                                                 set.currentRestTime = value;
-                                                set.previousRestSeconds = value;
 
-                                                if (setIndex == 0 ||
-                                                    previousExerciseRest <= 0 ||
-                                                    previousExerciseRest == previousSetRest ||
-                                                    exercise.sets.length == 1) {
-                                                  if (exercise.restTime != value) {
-                                                    shouldSyncTemplate = true;
+                                                // Update the exercise-level default so new sets inherit this value.
+                                                exercise.restTime = value;
+
+                                                // Keep other sets in sync when they were using the old baseline rest value.
+                                                for (final otherSet in exercise.sets) {
+                                                  if (identical(otherSet, set)) continue;
+                                                  if (baselineRest <= 0 &&
+                                                      otherSet.plannedRestSeconds <= 0) {
+                                                    otherSet.plannedRestSeconds = value;
+                                                    if (!otherSet.isResting) {
+                                                      otherSet.restStartTime = value;
+                                                      otherSet.currentRestTime = value;
+                                                    }
+                                                  } else if (otherSet.plannedRestSeconds == baselineRest) {
+                                                    otherSet.plannedRestSeconds = value;
+                                                    if (!otherSet.isResting) {
+                                                      otherSet.restStartTime = value;
+                                                      otherSet.currentRestTime = value;
+                                                    }
                                                   }
-                                                  exercise.restTime = value;
                                                 }
                                               });
                                               if (widget.workoutId != null) {
                                                 final exerciseIndex = exercises.indexWhere((e) => e.id == exercise.id);
-                                                if (exerciseIndex != -1 &&
-                                                    (setIndex == 0 || shouldSyncTemplate)) {
+                                                if (exerciseIndex != -1) {
                                                   unawaited(_syncWorkoutExerciseTemplate(exercise, exerciseIndex));
                                                 }
                                               }
@@ -2455,7 +2433,6 @@ class ExerciseSet {
   double? previousWeight;
   int? previousReps;
   int plannedRestSeconds;
-  int? previousRestSeconds;
 
   ExerciseSet({
     required this.weight,
@@ -2467,7 +2444,6 @@ class ExerciseSet {
     this.previousWeight,
     this.previousReps,
     this.plannedRestSeconds = 0,
-    this.previousRestSeconds,
   });
 }
 
