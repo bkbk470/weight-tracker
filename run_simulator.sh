@@ -15,7 +15,7 @@ rm -rf ios/DerivedData
 echo "✅ Project cleaned"
 echo ""
 
-echo "📥 Step 2: Getting dependencies..."
+echo "📥 Step 2: Getting dependencies...."
 flutter pub get
 echo "✅ Dependencies retrieved"
 echo ""
