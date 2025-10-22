@@ -413,8 +413,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               child: FilledButton.icon(
                 onPressed: () async {
                   Navigator.pop(dialogContext);
-                  // Ensure any in-progress text edits are committed
-                  FocusScope.of(context).unfocus();
 
                   if (mounted) {
                     setState(() {
@@ -478,8 +476,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
             FilledButton(
               onPressed: () async {
                 Navigator.pop(dialogContext);
-                // Ensure any in-progress text edits are committed
-                FocusScope.of(context).unfocus();
 
                 // Save workout to Supabase
                 final saved = await _saveWorkoutToDatabase();
@@ -570,22 +566,14 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           continue;
         }
 
-        // Prefer the known exercise ID already associated to this exercise
-        // (e.g., coming from a workout template). Fallback to name lookup
-        // and finally creation if missing.
-        String? exerciseId = exercise.supabaseExerciseId;
-        if (exerciseId == null || exerciseId.isEmpty) {
-          exerciseId = exerciseIdCache[normalizedName];
-        }
+        String? exerciseId = exerciseIdCache[normalizedName];
         if (exerciseId == null) {
           try {
             exerciseId = await SupabaseService.instance.getOrCreateExerciseId(
               name: exercise.name.trim(),
               notes: exercise.notes.isEmpty ? null : exercise.notes,
             );
-            // Cache and attach to exercise for consistency going forward
             exerciseIdCache[normalizedName] = exerciseId;
-            exercise.supabaseExerciseId = exerciseId;
           } catch (e) {
             print('Error ensuring exercise "${exercise.name}" exists: $e');
             continue;
