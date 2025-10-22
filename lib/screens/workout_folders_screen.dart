@@ -751,6 +751,7 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
               onRemoveWorkout: null, // Can't remove from unorganized
               colorScheme: colorScheme,
               textTheme: textTheme,
+              lastWorkoutTime: null,
             ),
             const SizedBox(height: 16),
           ],
@@ -893,6 +894,7 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
                 },
                 colorScheme: colorScheme,
                 textTheme: textTheme,
+                lastWorkoutTime: folder['last_workout_time'] as String?, // Add this field from folder data
               ),
             );
           }),
@@ -1266,6 +1268,7 @@ class _PlanSection extends StatelessWidget {
   final bool isFavorite;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
+  final String? lastWorkoutTime; // New field for displaying time
 
   const _PlanSection({
     required this.title,
@@ -1286,48 +1289,127 @@ class _PlanSection extends StatelessWidget {
     this.isFavorite = false,
     required this.colorScheme,
     required this.textTheme,
+    this.lastWorkoutTime,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      color: colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Column(
         children: [
-          ListTile(
-            leading: Icon(icon, color: color, size: 32),
-            title: Text(title, style: textTheme.titleMedium),
-            subtitle: description != null
-                ? Text(description!)
-                : Text('$workoutCount workout${workoutCount != 1 ? 's' : ''}'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (onToggleFavorite != null)
-                  IconButton(
-                    icon: Icon(
-                      isFavorite ? Icons.star : Icons.star_border,
-                      color: isFavorite ? Colors.amber : null,
-                      size: 20,
-                    ),
-                    onPressed: onToggleFavorite,
-                    tooltip: isFavorite ? 'Remove from favorites' : 'Add to favorites',
-                  ),
-                if (onEditPlan != null)
-                  IconButton(
-                    icon: const Icon(Icons.edit, size: 20),
-                    onPressed: onEditPlan,
-                  ),
-                if (onDeletePlan != null)
-                  IconButton(
-                    icon: const Icon(Icons.delete, size: 20),
-                    onPressed: onDeletePlan,
-                  ),
-                Icon(
-                  isExpanded ? Icons.expand_less : Icons.expand_more,
-                ),
-              ],
-            ),
+          InkWell(
             onTap: onTap,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: Row(
+                children: [
+                  // Icon on the left
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      icon,
+                      color: color,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Title and subtitle in the middle
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          description ?? '$workoutCount exercise${workoutCount != 1 ? 's' : ''} • ${lastWorkoutTime ?? 'Never completed'}',
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Time/Actions on the right
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      // Display time if available
+                      if (lastWorkoutTime != null)
+                        Text(
+                          lastWorkoutTime!.split(' ').last, // Show just the time part
+                          style: textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                      const SizedBox(height: 4),
+                      // Action buttons row
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (onToggleFavorite != null)
+                            IconButton(
+                              icon: Icon(
+                                isFavorite ? Icons.star : Icons.star_border,
+                                color: isFavorite ? Colors.amber : colorScheme.onSurfaceVariant,
+                                size: 20,
+                              ),
+                              onPressed: onToggleFavorite,
+                              tooltip: isFavorite ? 'Remove from favorites' : 'Add to favorites',
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                          if (onEditPlan != null)
+                            IconButton(
+                              icon: Icon(
+                                Icons.edit,
+                                size: 20,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                              onPressed: onEditPlan,
+                              padding: const EdgeInsets.all(4),
+                              constraints: const BoxConstraints(),
+                            ),
+                          if (onDeletePlan != null)
+                            IconButton(
+                              icon: Icon(
+                                Icons.delete,
+                                size: 20,
+                                color: colorScheme.error,
+                              ),
+                              onPressed: onDeletePlan,
+                              padding: const EdgeInsets.all(4),
+                              constraints: const BoxConstraints(),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
           if (isExpanded && workouts.isNotEmpty) ...[
             const Divider(height: 1),
