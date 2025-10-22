@@ -1,6 +1,32 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
+import 'package:flutter/services.dart';
 
+/// Global manager to ensure only one field is editing at a time
+class _EditableFieldManager {
+  static final _EditableFieldManager _instance = _EditableFieldManager._internal();
+  factory _EditableFieldManager() => _instance;
+  _EditableFieldManager._internal();
+
+  VoidCallback? _currentEditingField;
+
+  void registerEditingField(VoidCallback stopEditing) {
+    // Stop any currently editing field
+    _currentEditingField?.call();
+    _currentEditingField = stopEditing;
+  }
+
+  void unregisterEditingField() {
+    _currentEditingField = null;
+  }
+
+  void stopCurrentEditing() {
+    _currentEditingField?.call();
+  }
+}
+
+/// A click-to-edit number field that completely avoids the Flutter Web focus bug
+/// by only showing the TextField when explicitly tapped and ensuring only one field
+/// is editing at a time
 class EditableNumberField extends StatefulWidget {
   final int value;
   final Function(int) onChanged;
@@ -22,67 +48,84 @@ class EditableNumberField extends StatefulWidget {
 }
 
 class _EditableNumberFieldState extends State<EditableNumberField> {
+  bool _isEditing = false;
   late TextEditingController _controller;
   late FocusNode _focusNode;
-  bool _isDisposing = false;
+  final _manager = _EditableFieldManager();
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: '${widget.value}');
     _focusNode = FocusNode();
-    
-    // Select all text when focus is gained
-    _focusNode.addListener(_handleFocusChange);
-  }
-
-  void _handleFocusChange() {
-    if (_isDisposing) return;
-    
-    if (_focusNode.hasFocus) {
-      // Select all text when gaining focus
-      Future.microtask(() {
-        if (_isDisposing || !mounted) return;
-        _controller.selection = TextSelection(
-          baseOffset: 0,
-          extentOffset: _controller.text.length,
-        );
-      });
-    } else {
-      // Ensure field is unfocused properly on Flutter Web
-      Future.microtask(() {
-        if (_isDisposing || !mounted) return;
-        _focusNode.unfocus();
-      });
-    }
   }
 
   @override
   void didUpdateWidget(EditableNumberField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.value != oldWidget.value && !_focusNode.hasFocus) {
+    if (widget.value != oldWidget.value && !_isEditing) {
       _controller.text = '${widget.value}';
     }
   }
 
   @override
   void dispose() {
-    _isDisposing = true;
-    _focusNode.removeListener(_handleFocusChange);
-    _focusNode.dispose();
+    if (_isEditing) {
+      _manager.unregisterEditingField();
+    }
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
-  void _handleSubmitted(String value) {
-    final intValue = int.tryParse(value);
-    if (intValue != null) {
-      widget.onChanged(intValue);
-    }
-    // Unfocus after submitting
+  void _startEditing() {
+    if (_isEditing) return;
+    
+    // Stop any other field that's currently editing
+    _manager.registerEditingField(_stopEditing);
+    
+    setState(() {
+      _isEditing = true;
+      _controller.text = '${widget.value}';
+    });
+    
+    // Focus and select all text after build completes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _isEditing) {
+        _focusNode.requestFocus();
+        _controller.selection = TextSelection(
+          baseOffset: 0,
+          extentOffset: _controller.text.length,
+        );
+      }
+    });
+  }
+
+  void _stopEditing() {
+    if (!mounted || !_isEditing) return;
+    
+    _manager.unregisterEditingField();
+    
+    // Unfocus immediately to prevent Flutter Web bug
+    _focusNode.unfocus();
+    
+    // Small delay before parsing and updating
     Future.microtask(() {
-      if (!_isDisposing && mounted) {
-        _focusNode.unfocus();
+      if (!mounted) return;
+      
+      final text = _controller.text.trim();
+      if (text.isNotEmpty) {
+        final intValue = int.tryParse(text);
+        if (intValue != null && intValue >= 0 && intValue != widget.value) {
+          widget.onChanged(intValue);
+        }
+      }
+      
+      if (mounted) {
+        setState(() {
+          _isEditing = false;
+          _controller.text = '${widget.value}'; // Reset to current value
+        });
       }
     });
   }
@@ -91,42 +134,47 @@ class _EditableNumberFieldState extends State<EditableNumberField> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     
-    return Container(
-      height: widget.height,
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: widget.isHighlighted
-              ? colorScheme.secondary.withOpacity(0.5)
-              : colorScheme.outline.withOpacity(0.3),
-          width: widget.isHighlighted ? 2 : 1,
+    return GestureDetector(
+      onTap: _isEditing ? null : _startEditing,
+      child: Container(
+        height: widget.height,
+        decoration: BoxDecoration(
+          color: _isEditing 
+              ? colorScheme.surface
+              : colorScheme.surface.withOpacity(0.8),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: widget.isHighlighted
+                ? colorScheme.secondary.withOpacity(0.5)
+                : (_isEditing 
+                    ? colorScheme.primary.withOpacity(0.5)
+                    : colorScheme.outline.withOpacity(0.3)),
+            width: (_isEditing || widget.isHighlighted) ? 2 : 1,
+          ),
         ),
-      ),
-      child: TextField(
-        controller: _controller,
-        focusNode: _focusNode,
-        keyboardType: TextInputType.number,
-        textAlign: TextAlign.center,
-        style: widget.textStyle,
-        decoration: const InputDecoration(
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-          isDense: true,
-        ),
-        onTapOutside: (event) {
-          // Unfocus when tapping outside on Flutter Web
-          if (!_isDisposing && mounted) {
-            _focusNode.unfocus();
-          }
-        },
-        onChanged: (value) {
-          final intValue = int.tryParse(value);
-          if (intValue != null) {
-            widget.onChanged(intValue);
-          }
-        },
-        onSubmitted: _handleSubmitted,
+        child: _isEditing
+            ? TextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
+                style: widget.textStyle,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                  isDense: true,
+                ),
+                onSubmitted: (_) => _stopEditing(),
+                onTapOutside: (_) => _stopEditing(),
+              )
+            : Center(
+                child: Text(
+                  '${widget.value}',
+                  style: widget.textStyle,
+                  textAlign: TextAlign.center,
+                ),
+              ),
       ),
     );
   }
