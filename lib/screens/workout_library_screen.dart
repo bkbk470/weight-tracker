@@ -470,13 +470,14 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
                               final exercise = exercises[i];
                               final exerciseName =
                                   (exercise['exercise_name'] as String?) ?? 'Exercise';
+                              final rawNotes = (exercise['notes'] as String?)?.trim();
+                              final exerciseNotes = (rawNotes == null || rawNotes.isEmpty) ? null : rawNotes;
+                              final category = (exercise['category'] as String?)?.trim();
                               try {
                                 final exerciseId = await SupabaseService.instance.getOrCreateExerciseId(
                                   name: exerciseName,
-                                  category: (exercise['category'] as String?) ?? 'Other',
-                                  notes: (exercise['notes'] as String?)?.isEmpty ?? true
-                                      ? null
-                                      : exercise['notes'] as String,
+                                  category: category == null || category.isEmpty ? 'Other' : category,
+                                  notes: exerciseNotes,
                                 );
 
                                 if (exerciseId == null) continue;
@@ -488,9 +489,7 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
                                   targetSets: exercise['target_sets'] as int? ?? 3,
                                   targetReps: exercise['target_reps'] as int? ?? 10,
                                   restTimeSeconds: exercise['rest_time_seconds'] as int? ?? 90,
-                                  notes: (exercise['notes'] as String?)?.isEmpty ?? true
-                                      ? null
-                                      : exercise['notes'] as String,
+                                  notes: exerciseNotes,
                                 );
                               } catch (exerciseError) {
                                 print('Failed to add exercise $exerciseName: $exerciseError');
