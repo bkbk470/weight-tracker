@@ -4,6 +4,7 @@ import 'dart:async';
 import '../services/local_storage_service.dart';
 import '../services/workout_timer_service.dart';
 import '../services/supabase_service.dart';
+import '../services/notification_service.dart';
 import '../widgets/editable_number_field.dart';
 
 class WorkoutScreen extends StatefulWidget {
@@ -1256,13 +1257,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               if (restTimer > 0) {
                 restTimer--;
                 // Update the specific set's rest time
-                if (exerciseIndex < exercises.length && 
+                if (exerciseIndex < exercises.length &&
                     setIndex < exercises[exerciseIndex].sets.length) {
                   exercises[exerciseIndex].sets[setIndex].currentRestTime = restTimer;
                 }
               } else {
                 isResting = false;
-                if (exerciseIndex < exercises.length && 
+                if (exerciseIndex < exercises.length &&
                     setIndex < exercises[exerciseIndex].sets.length) {
                   final target = exercises[exerciseIndex].sets[setIndex].plannedRestSeconds > 0
                       ? exercises[exerciseIndex].sets[setIndex].plannedRestSeconds
@@ -1271,6 +1272,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                   exercises[exerciseIndex].sets[setIndex].restStartTime = target;
                   exercises[exerciseIndex].sets[setIndex].currentRestTime = target;
                 }
+                // Show notification when rest timer completes
+                NotificationService.instance.showRestTimerCompleteNotification();
                 timer.cancel();
               }
             });
