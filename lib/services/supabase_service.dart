@@ -394,56 +394,134 @@ class SupabaseService {
     try {
       if (folderId != null) {
         // Get workouts in this plan via junction table
+        // OPTIMIZED: Only fetch basic workout info, not full exercise details
         final response = await client
             .from('workout_plan_workouts')
             .select('''
               workout_id,
               workouts (
-                *,
-                workout_exercises (
-                  *,
-                  exercise:exercises (*)
-                )
+                id,
+                name,
+                description,
+                difficulty,
+                estimated_duration_minutes,
+                is_favorite,
+                created_at,
+                updated_at
               )
             ''')
-            .eq('workout_plan_id', folderId);
-        
+            .eq('workout_plan_id', folderId)
+            .order('order_index', ascending: true);
+
         return List<Map<String, dynamic>>.from(
           response.map((item) => item['workouts'] as Map<String, dynamic>)
         );
       } else {
         // Get workouts not in any plan (orphaned workouts)
-        final allWorkouts = await client
+        // OPTIMIZED: Single query using NOT IN instead of fetching all and filtering
+        final response = await client
             .from('workouts')
             .select('''
-              *,
-              workout_exercises (
-                *,
-                exercise:exercises (*)
-              )
+              id,
+              name,
+              description,
+              difficulty,
+              estimated_duration_minutes,
+              is_favorite,
+              created_at,
+              updated_at
             ''')
             .eq('user_id', currentUserId!)
+            .not('id', 'in',
+              '(SELECT workout_id FROM workout_plan_workouts)'
+            )
             .order('created_at', ascending: false);
 
-        // Get all workout IDs that are in plans
-        final workoutsInPlans = await client
-            .from('workout_plan_workouts')
-            .select('workout_id');
-        
-        final workoutIdsInPlans = workoutsInPlans
-            .map((item) => item['workout_id'] as String)
-            .toSet();
-
-        // Filter out workouts that are in plans
-        return List<Map<String, dynamic>>.from(
-          allWorkouts.where((workout) => 
-            !workoutIdsInPlans.contains(workout['id'] as String)
-          )
-        );
+        return List<Map<String, dynamic>>.from(response);
       }
     } catch (e) {
       print('Error fetching workouts by plan: $e');
       return [];
+    }
+  }
+
+  // OPTIMIZED: Batch load all workouts for all folders in one query
+  Future<Map<String, List<Map<String, dynamic>>>> getAllWorkoutsByFolders(List<String> folderIds) async {
+    if (currentUserId == null || folderIds.isEmpty) return {};
+
+    try {
+      // Single query to get all workouts for all folders
+      final response = await client
+          .from('workout_plan_workouts')
+          .select('''
+            workout_plan_id,
+            order_index,
+            workouts (
+              id,
+              name,
+              description,
+              difficulty,
+              estimated_duration_minutes,
+              is_favorite,
+              created_at,
+              updated_at
+            )
+          ''')
+          .in_('workout_plan_id', folderIds)
+          .order('order_index', ascending: true);
+
+      // Group workouts by folder
+      final Map<String, List<Map<String, dynamic>>> grouped = {};
+      for (var folderId in folderIds) {
+        grouped[folderId] = [];
+      }
+
+      for (var item in response) {
+        final folderId = item['workout_plan_id'] as String;
+        final workout = item['workouts'] as Map<String, dynamic>;
+        if (grouped.containsKey(folderId)) {
+          grouped[folderId]!.add(workout);
+        }
+      }
+
+      return grouped;
+    } catch (e) {
+      print('Error batch loading workouts: $e');
+      return {};
+    }
+  }
+
+  // OPTIMIZED: Batch load last workout dates for multiple workouts in one query
+  Future<Map<String, DateTime?>> getLastWorkoutDates(List<String> workoutIds) async {
+    if (currentUserId == null || workoutIds.isEmpty) return {};
+
+    try {
+      final response = await client
+          .from('workout_logs')
+          .select('workout_id, start_time')
+          .in_('workout_id', workoutIds)
+          .eq('user_id', currentUserId!)
+          .order('start_time', ascending: false);
+
+      // Get the most recent date for each workout
+      final Map<String, DateTime?> lastDates = {};
+      for (var log in response) {
+        final workoutId = log['workout_id'] as String;
+        if (!lastDates.containsKey(workoutId)) {
+          final startTime = log['start_time'] as String?;
+          lastDates[workoutId] = startTime != null ? DateTime.parse(startTime) : null;
+        }
+      }
+
+      // Fill in null for workouts with no logs
+      for (var workoutId in workoutIds) {
+        lastDates.putIfAbsent(workoutId, () => null);
+      }
+
+      return lastDates;
+    } catch (e) {
+      print('Error batch loading last workout dates: $e');
+      return {};
     }
   }
 
