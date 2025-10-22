@@ -1015,7 +1015,7 @@ class SupabaseService {
     final response = await client
         .from('exercise_sets')
         .select(
-            'id, workout_log_id, set_number, weight_lbs, reps, created_at, workout_logs!inner(user_id)')
+            'id, workout_log_id, set_number, weight_lbs, reps, rest_time_seconds, created_at, workout_logs!inner(user_id)')
         .eq('exercise_id', exerciseId)
         .eq('workout_logs.user_id', currentUserId!)
         .order('created_at', ascending: false)

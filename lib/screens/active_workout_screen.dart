@@ -2420,6 +2420,7 @@ class ExerciseSet {
   double? previousWeight;
   int? previousReps;
   int plannedRestSeconds;
+  int? previousRestSeconds;
 
   ExerciseSet({
     required this.weight,
@@ -2431,6 +2432,7 @@ class ExerciseSet {
     this.previousWeight,
     this.previousReps,
     this.plannedRestSeconds = 0,
+    this.previousRestSeconds,
   });
 }
 
