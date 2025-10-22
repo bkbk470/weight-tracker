@@ -795,6 +795,12 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                       onPressed: () => Navigator.of(sheetContext).pop(),
                       icon: const Icon(Icons.thumb_up_alt_outlined),
                       label: const Text('Awesome!'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        textStyle: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ],
                 ),
