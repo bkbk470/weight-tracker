@@ -202,7 +202,7 @@ class _WeightTrackerAppState extends State<WeightTrackerApp> {
     return MaterialApp(
       title: 'FitTrack',
       debugShowCheckedModeBanner: false,
-      navigatorObservers: [UnfocusOnNavigateObserver()],
+      navigatorObservers: const [UnfocusOnNavigateObserver()],
       themeMode: _themeMode,
       theme: ThemeData(
         useMaterial3: true,
