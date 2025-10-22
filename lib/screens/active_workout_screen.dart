@@ -2096,6 +2096,85 @@ class _ExerciseInfoSheet extends StatelessWidget {
     required this.exerciseData,
   });
 
+  bool _needsSignedUrl(String path) {
+    return path.isNotEmpty &&
+        !path.startsWith('http') &&
+        !path.startsWith('assets/');
+  }
+
+  Widget _buildExerciseImage(String imageUrl, ColorScheme colorScheme) {
+    // If it's a Supabase storage path, get signed URL
+    if (_needsSignedUrl(imageUrl)) {
+      return FutureBuilder<String>(
+        future: SupabaseService.instance.getSignedUrlForStoragePath(imageUrl),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return Image.network(
+              snapshot.data!,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: colorScheme.surfaceVariant,
+                  child: Icon(
+                    Icons.fitness_center,
+                    size: 64,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                );
+              },
+            );
+          }
+          if (snapshot.hasError) {
+            return Container(
+              color: colorScheme.surfaceVariant,
+              child: Icon(
+                Icons.fitness_center,
+                size: 64,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            );
+          }
+          return Container(
+            color: colorScheme.surfaceVariant,
+            child: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        },
+      );
+    }
+
+    // Otherwise use the URL directly
+    return Image.network(
+      imageUrl,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          color: colorScheme.surfaceVariant,
+          child: Icon(
+            Icons.fitness_center,
+            size: 64,
+            color: colorScheme.onSurfaceVariant,
+          ),
+        );
+      },
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Container(
+          color: colorScheme.surfaceVariant,
+          child: Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                  : null,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -2174,34 +2253,7 @@ class _ExerciseInfoSheet extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         child: AspectRatio(
                           aspectRatio: 16 / 9,
-                          child: Image.network(
-                            imageUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: colorScheme.surfaceVariant,
-                                child: Icon(
-                                  Icons.fitness_center,
-                                  size: 64,
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                              );
-                            },
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Container(
-                                color: colorScheme.surfaceVariant,
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                    value: loadingProgress.expectedTotalBytes != null
-                                        ? loadingProgress.cumulativeBytesLoaded /
-                                            loadingProgress.expectedTotalBytes!
-                                        : null,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                          child: _buildExerciseImage(imageUrl, colorScheme),
                         ),
                       ),
                       const SizedBox(height: 24),
