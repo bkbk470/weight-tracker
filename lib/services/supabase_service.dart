@@ -418,8 +418,17 @@ class SupabaseService {
         );
       } else {
         // Get workouts not in any plan (orphaned workouts)
-        // OPTIMIZED: Single query using NOT IN instead of fetching all and filtering
-        final response = await client
+        // First, get all workout IDs that are in plans
+        final workoutsInPlans = await client
+            .from('workout_plan_workouts')
+            .select('workout_id');
+
+        final workoutIdsInPlans = workoutsInPlans
+            .map((item) => item['workout_id'] as String)
+            .toSet();
+
+        // Then fetch all user's workouts
+        final allWorkouts = await client
             .from('workouts')
             .select('''
               id,
@@ -432,12 +441,14 @@ class SupabaseService {
               updated_at
             ''')
             .eq('user_id', currentUserId!)
-            .not('id', 'in',
-              '(SELECT workout_id FROM workout_plan_workouts)'
-            )
             .order('created_at', ascending: false);
 
-        return List<Map<String, dynamic>>.from(response);
+        // Filter out workouts that are in plans
+        final unorganizedWorkouts = allWorkouts
+            .where((workout) => !workoutIdsInPlans.contains(workout['id']))
+            .toList();
+
+        return List<Map<String, dynamic>>.from(unorganizedWorkouts);
       }
     } catch (e) {
       print('Error fetching workouts by plan: $e');
