@@ -739,41 +739,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
 
-    final hasAnyWorkouts = _workoutsByFolder.values.any((workouts) => workouts.isNotEmpty);
-
-    if (!hasAnyWorkouts) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'No workouts yet',
-                style: textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Build your first custom workout to see it here.',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: () => widget.onNavigate('workout-builder'),
-                icon: const Icon(Icons.add),
-                label: const Text('Create Workout'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     final plansList = _folders.isEmpty
-        ? const SizedBox.shrink()
+        ? Card(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'No workout plans yet',
+                    style: textTheme.titleMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Create a plan to organize your workouts.',
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
         : ReorderableListView.builder(
             key: const PageStorageKey('dashboard-plan-order'),
             shrinkWrap: true,
@@ -932,9 +922,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (_folders.isNotEmpty) plansList,
-        if (_folders.isNotEmpty && (_workoutsByFolder[null]?.isNotEmpty ?? false))
-          const SizedBox(height: 16),
+        plansList,
+        const SizedBox(height: 16),
 
         // My Workouts default section
         if (_workoutsByFolder[null]?.isNotEmpty ?? false) ...[
@@ -983,7 +972,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 final workoutId = _normalizeId(workout['id']);
                                 final lastDate = workoutId != null ? _workoutLastCompletedDates[workoutId] : null;
                                 final isLastItem = unorganizedWorkouts.take(5).toList().last == workout;
-                                
+
                                 return Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
@@ -1028,6 +1017,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             );
           }(),
+        ] else ...[
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'No workouts yet',
+                    style: textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Build your first custom workout to see it here.',
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    onPressed: () => widget.onNavigate('workout-builder'),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Create Workout'),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ],
     );

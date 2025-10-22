@@ -411,12 +411,20 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
         builder: (context) => AlertDialog(
           title: const Text('No Workouts Available'),
           content: const Text(
-            'You don\'t have any workouts yet. Create some workouts first!',
+            'You don\'t have any workouts yet. Would you like to create one now?',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
+              child: const Text('Cancel'),
+            ),
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                widget.onNavigate('workout-builder');
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('Create Workout'),
             ),
           ],
         ),
@@ -434,6 +442,7 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
         onWorkoutsAdded: () {
           _loadFoldersAndWorkouts();
         },
+        onNavigate: widget.onNavigate,
       ),
     );
   }
@@ -952,6 +961,7 @@ class _AddWorkoutDialog extends StatefulWidget {
   final List<Map<String, dynamic>> allWorkouts;
   final Set<String> initialAddedWorkoutIds;
   final VoidCallback onWorkoutsAdded;
+  final Function(String, [Map<String, dynamic>?]) onNavigate;
 
   const _AddWorkoutDialog({
     required this.planId,
@@ -959,6 +969,7 @@ class _AddWorkoutDialog extends StatefulWidget {
     required this.allWorkouts,
     required this.initialAddedWorkoutIds,
     required this.onWorkoutsAdded,
+    required this.onNavigate,
   });
 
   @override
@@ -1123,14 +1134,50 @@ class _AddWorkoutDialogState extends State<_AddWorkoutDialog> {
             Expanded(
               child: filteredWorkouts.isEmpty
                   ? Center(
-                      child: Text(
-                        _searchQuery.isEmpty
-                            ? 'No workouts available'
-                            : 'No workouts found',
-                        style: TextStyle(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
+                      child: _searchQuery.isEmpty
+                          ? Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.fitness_center_outlined,
+                                  size: 64,
+                                  color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No workouts available',
+                                  style: TextStyle(
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Would you like to create a workout to add to this plan?',
+                                  style: TextStyle(
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontSize: 14,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 24),
+                                FilledButton.icon(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    widget.onNavigate('workout-builder');
+                                  },
+                                  icon: const Icon(Icons.add),
+                                  label: const Text('Create Workout'),
+                                ),
+                              ],
+                            )
+                          : Text(
+                              'No workouts found',
+                              style: TextStyle(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
                     )
                   : ListView.builder(
                       shrinkWrap: true,
@@ -1463,26 +1510,42 @@ class _PlanSection extends StatelessWidget {
           ],
           if (isExpanded && workouts.isEmpty) ...[
             Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'No workouts in this plan yet',
-                style: textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.fitness_center_outlined,
+                    size: 48,
+                    color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'No workouts in this plan yet',
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Would you like to add an existing workout or create a new one?',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  if (onAddWorkout != null) ...[
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: onAddWorkout,
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add Workout'),
+                    ),
+                  ],
+                ],
               ),
             ),
-            if (onAddWorkout != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Center(
-                  child: FilledButton.icon(
-                    onPressed: onAddWorkout,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add Workout'),
-                  ),
-                ),
-              ),
           ],
         ],
       ),
