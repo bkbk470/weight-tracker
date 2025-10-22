@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 /// a non-active input element when dialogs/bottom sheets appear while
 /// another TextField is focused.
 class UnfocusOnNavigateObserver extends NavigatorObserver {
-  const UnfocusOnNavigateObserver();
+  UnfocusOnNavigateObserver();
   void _unfocus() {
     // Safely unfocus without throwing if no focus
     FocusManager.instance.primaryFocus?.unfocus();
