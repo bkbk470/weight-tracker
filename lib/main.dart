@@ -37,6 +37,7 @@ import 'screens/workout_folders_screen.dart';
 import 'screens/comprehensive_debug_screen.dart';
 import 'services/workout_timer_service.dart';
 import 'utils/navigation_observers.dart';
+import 'utils/safe_dialog_helpers.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -203,6 +204,16 @@ class _WeightTrackerAppState extends State<WeightTrackerApp> {
       title: 'FitTrack',
       debugShowCheckedModeBanner: false,
       navigatorObservers: [UnfocusOnNavigateObserver()],
+      builder: (context, child) {
+        return GestureDetector(
+          onTap: () {
+            // Global unfocus on any tap
+            FocusManager.instance.primaryFocus?.unfocus();
+          },
+          behavior: HitTestBehavior.translucent,
+          child: child,
+        );
+      },
       themeMode: _themeMode,
       theme: ThemeData(
         useMaterial3: true,
@@ -436,7 +447,10 @@ class _AppNavigatorState extends State<AppNavigator> {
   }
 
   void _showNewWorkoutDialog(BuildContext context) {
-    showDialog(
+    // Unfocus immediately
+    FocusManager.instance.primaryFocus?.unfocus();
+    
+    showSafeDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Active Workout'),
@@ -686,17 +700,8 @@ class _AppNavigatorState extends State<AppNavigator> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return GestureDetector(
-      onTap: () {
-        // Unfocus any text fields when tapping outside
-        final currentFocus = FocusScope.of(context);
-        if (!currentFocus.hasPrimaryFocus && currentFocus.focusedChild != null) {
-          FocusManager.instance.primaryFocus?.unfocus();
-        }
-      },
-      behavior: HitTestBehavior.translucent,
-      child: Scaffold(
-        body: getScreen(),
+    return Scaffold(
+      body: getScreen(),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -831,7 +836,6 @@ class _AppNavigatorState extends State<AppNavigator> {
               ),
             ),
         ],
-      ),
       ),
     );
   }
