@@ -36,6 +36,7 @@ import 'screens/storage_browser_screen.dart';
 import 'screens/workout_folders_screen.dart';
 import 'screens/comprehensive_debug_screen.dart';
 import 'services/workout_timer_service.dart';
+import 'utils/navigation_observers.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -201,6 +202,7 @@ class _WeightTrackerAppState extends State<WeightTrackerApp> {
     return MaterialApp(
       title: 'FitTrack',
       debugShowCheckedModeBanner: false,
+      navigatorObservers: [UnfocusOnNavigateObserver()],
       themeMode: _themeMode,
       theme: ThemeData(
         useMaterial3: true,
