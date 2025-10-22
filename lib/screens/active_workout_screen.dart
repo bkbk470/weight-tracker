@@ -6,6 +6,7 @@ import '../services/workout_timer_service.dart';
 import '../services/supabase_service.dart';
 import '../services/notification_service.dart';
 import '../widgets/editable_number_field.dart';
+import '../utils/safe_dialog_helpers.dart';
 
 class WorkoutScreen extends StatefulWidget {
   final Function(String) onNavigate;
@@ -344,7 +345,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         exercise.sets.any((set) => !set.completed));
 
     void showFinishDialog({required bool warnIncomplete}) {
-      showDialog(
+      // Unfocus before showing dialog
+      FocusManager.instance.primaryFocus?.unfocus();
+      
+      showSafeDialog(
         context: context,
         builder: (dialogContext) => AlertDialog(
           title: Text(warnIncomplete ? 'Unfinished Sets' : 'Finish Workout?'),
@@ -687,7 +691,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       );
     }
 
-    showModalBottomSheet<void>(
+    FocusManager.instance.primaryFocus?.unfocus();
+    showSafeModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -897,7 +902,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     if (SupabaseService.instance.currentUserId == null) return;
     if (!mounted) return;
 
-    final shouldSave = await showDialog<bool>(
+    FocusManager.instance.primaryFocus?.unfocus();
+    final shouldSave = await showSafeDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Save as Template?'),
@@ -944,7 +950,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     String? errorText;
     bool isSaving = false;
 
-    await showDialog<void>(
+    FocusManager.instance.primaryFocus?.unfocus();
+    await showSafeDialog<void>(
       context: context,
       barrierDismissible: !isSaving,
       builder: (dialogContext) {
@@ -1074,7 +1081,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
   void addExercise() {
     final parentContext = context;
-    showDialog(
+    FocusManager.instance.primaryFocus?.unfocus();
+    showSafeDialog(
       context: parentContext,
       builder: (dialogContext) => _SelectExerciseDialog(
         onAdd: (name, category) async {
@@ -1347,7 +1355,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
       if (!mounted) return;
 
-      showModalBottomSheet(
+      FocusManager.instance.primaryFocus?.unfocus();
+      showSafeModalBottomSheet(
         context: context,
         isScrollControlled: true,
         isDismissible: true, // Allow closing by tapping outside
@@ -1362,7 +1371,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       print('Error loading exercise info: $e');
       // Show basic info if fetch fails
       if (!mounted) return;
-      showModalBottomSheet(
+      FocusManager.instance.primaryFocus?.unfocus();
+      showSafeModalBottomSheet(
         context: context,
         isScrollControlled: true,
         isDismissible: true, // Allow closing by tapping outside
@@ -1378,8 +1388,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
   void _showNotesDialog(BuildContext context, Exercise exercise, ColorScheme colorScheme) {
     final notesController = TextEditingController(text: exercise.notes);
+    FocusManager.instance.primaryFocus?.unfocus();
     
-    showDialog(
+    showSafeDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Notes for ${exercise.name}'),
@@ -1433,7 +1444,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   ) {
     final controller = TextEditingController(text: currentValue.toString());
     
-    showDialog(
+    FocusManager.instance.primaryFocus?.unfocus();
+    showSafeDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Set $label'),
@@ -1485,7 +1497,12 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     final sessionName = widget.workoutName?.trim();
 
     if (!isWorkoutActive) {
-      return Scaffold(
+      return GestureDetector(
+        onTap: () {
+          // Unfocus any active text fields when tapping outside
+          FocusManager.instance.primaryFocus?.unfocus();
+        },
+        child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.close),
@@ -1541,10 +1558,16 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
             ],
           ),
         ),
+      ),
       );
     }
 
-    return Scaffold(
+    return GestureDetector(
+      onTap: () {
+        // Unfocus any active text fields when tapping outside
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
+      child: Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -1673,7 +1696,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                             if (value == 'notes') {
                               _showNotesDialog(context, exercise, colorScheme);
                             } else if (value == 'delete') {
-                              showDialog(
+                              FocusManager.instance.primaryFocus?.unfocus();
+                              showSafeDialog(
                                 context: context,
                                 builder: (context) => AlertDialog(
                                   title: const Text('Delete Exercise'),
@@ -2113,6 +2137,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
             label: const Text('Finish Workout'),
           ),
         ],
+      ),
       ),
     );
   }
