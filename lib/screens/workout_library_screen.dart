@@ -474,20 +474,7 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
                     )
               : SliverList(
                   delegate: SliverChildListDelegate([
-                    Text(
-                      'Curated Templates',
-                      style: textTheme.titleMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Developer-maintained sessions you can duplicate and tweak for your goals.',
-                      style: textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 8),
                     ...filteredTemplates.map((template) {
                       final templateExercises = template['workout_template_exercises'] as List? ?? [];
                       return _WorkoutCard(
