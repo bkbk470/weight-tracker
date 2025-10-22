@@ -473,6 +473,27 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     final endTime = DateTime.now();
     final startTime = endTime.subtract(Duration(seconds: workoutTime));
 
+    // Calculate workout stats
+    final totalExercises = exercises.length;
+    final totalSetsCompleted = exercises.fold<int>(
+      0,
+      (sum, exercise) => sum + exercise.sets.where((set) => set.completed).length,
+    );
+    final totalReps = exercises.fold<int>(
+      0,
+      (sum, exercise) => sum + exercise.sets.where((set) => set.completed).fold<int>(
+        0,
+        (repSum, set) => repSum + set.reps,
+      ),
+    );
+    final totalVolume = exercises.fold<double>(
+      0.0,
+      (sum, exercise) => sum + exercise.sets.where((set) => set.completed).fold<double>(
+        0.0,
+        (volSum, set) => volSum + (set.weight * set.reps),
+      ),
+    );
+
     try {
       if (widget.workoutId != null) {
         await _syncAllWorkoutExercises();
@@ -555,11 +576,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       await _saveExerciseHistoryLocally(endTime);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Workout saved successfully! ✅'),
-            backgroundColor: Colors.green,
-          ),
+        // Show workout completion screen instead of just a snackbar
+        _showWorkoutCompletionScreen(
+          duration: workoutTime,
+          totalExercises: totalExercises,
+          totalSets: totalSetsCompleted,
+          totalReps: totalReps,
+          totalVolume: totalVolume,
         );
       }
       return true;
@@ -1416,9 +1439,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
             ),
           ...exercises.map((exercise) {
             return Card(
-              margin: const EdgeInsets.only(bottom: 24),
+              margin: const EdgeInsets.only(bottom: 20),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1561,20 +1584,21 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                       ),
                     // Column headers
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.only(bottom: 6),
                       child: Row(
                         children: [
                           SizedBox(
-                            width: 28,
+                            width: 22,
                             child: Text(
                               'Set',
                               style: textTheme.labelSmall?.copyWith(
                                 color: colorScheme.onSurfaceVariant,
                                 fontWeight: FontWeight.bold,
+                                fontSize: 10,
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 4),
                           Expanded(
                             flex: 3,
                             child: Center(
@@ -1583,6 +1607,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                 style: textTheme.labelSmall?.copyWith(
                                   color: colorScheme.onSurfaceVariant,
                                   fontWeight: FontWeight.bold,
+                                  fontSize: 10,
                                 ),
                               ),
                             ),
@@ -1595,6 +1620,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                 style: textTheme.labelSmall?.copyWith(
                                   color: colorScheme.onSurfaceVariant,
                                   fontWeight: FontWeight.bold,
+                                  fontSize: 10,
                                 ),
                               ),
                             ),
@@ -1607,6 +1633,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                 style: textTheme.labelSmall?.copyWith(
                                   color: colorScheme.onSurfaceVariant,
                                   fontWeight: FontWeight.bold,
+                                  fontSize: 10,
                                 ),
                               ),
                             ),
@@ -1619,17 +1646,19 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                 style: textTheme.labelSmall?.copyWith(
                                   color: colorScheme.onSurfaceVariant,
                                   fontWeight: FontWeight.bold,
+                                  fontSize: 10,
                                 ),
                               ),
                             ),
                           ),
                           SizedBox(
-                            width: 52,
+                            width: 44,
                             child: Text(
                               'Done',
                               style: textTheme.labelSmall?.copyWith(
                                 color: colorScheme.onSurfaceVariant,
                                 fontWeight: FontWeight.bold,
+                                fontSize: 10,
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -1642,7 +1671,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                       final set = entry.value;
                       
                       return Container(
-                        margin: const EdgeInsets.only(bottom: 8),
+                        margin: const EdgeInsets.only(bottom: 6),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -1668,18 +1697,25 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                 ),
                               // Content container
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                                 decoration: BoxDecoration(
                                   color: set.completed
-                                      ? colorScheme.secondaryContainer.withOpacity(0.3)
+                                      ? colorScheme.secondaryContainer.withOpacity(0.5)
                                       : colorScheme.surfaceVariant,
                                   borderRadius: BorderRadius.circular(8),
+                                  // Add border for completed sets
+                                  border: set.completed
+                                      ? Border.all(
+                                          color: colorScheme.secondary.withOpacity(0.4),
+                                          width: 1.5,
+                                        )
+                                      : null,
                                 ),
                                 child: Row(
                                   children: [
                                       // Set number
                                       SizedBox(
-                                  width: 28,
+                                  width: 22,
                                         child: Text(
                                           '${setIndex + 1}',
                                           style: textTheme.bodyMedium?.copyWith(
@@ -1687,22 +1723,24 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                                 ? colorScheme.secondary
                                                 : colorScheme.onSurfaceVariant,
                                             fontWeight: FontWeight.bold,
+                                            fontSize: 14,
                                           ),
                                         ),
                                       ),
-                                const SizedBox(width: 6),
+                                const SizedBox(width: 4),
                                 // Weight (always editable + previous)
                                 Expanded(
                                   flex: 3,
                                   child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                                    padding: const EdgeInsets.symmetric(horizontal: 1),
                                     child: EditableNumberField(
                                       value: set.weight,
                                       onChanged: (value) => updateSet(exercise.id, setIndex, 'weight', value),
                                       isHighlighted: set.isResting,
-                                      height: 36,
+                                      height: 34,
                                       textStyle: textTheme.bodyMedium?.copyWith(
                                         fontWeight: FontWeight.bold,
+                                        fontSize: 14,
                                       ),
                                     ),
                                   ),
@@ -1711,14 +1749,15 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                 Expanded(
                                   flex: 3,
                                   child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                                    padding: const EdgeInsets.symmetric(horizontal: 1),
                                     child: EditableNumberField(
                                       value: set.reps,
                                       onChanged: (value) => updateSet(exercise.id, setIndex, 'reps', value),
                                       isHighlighted: set.isResting,
-                                      height: 36,
+                                      height: 34,
                                       textStyle: textTheme.bodyMedium?.copyWith(
                                         fontWeight: FontWeight.bold,
+                                        fontSize: 14,
                                       ),
                                     ),
                                   ),
@@ -1727,9 +1766,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                 Expanded(
                                   flex: 3,
                                   child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                                    padding: const EdgeInsets.symmetric(horizontal: 1),
                                     child: Container(
-                                      height: 36,
+                                      height: 34,
                                       alignment: Alignment.center,
                                       decoration: BoxDecoration(
                                         color: colorScheme.surfaceVariant.withOpacity(0.35),
@@ -1742,6 +1781,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                         style: textTheme.bodySmall?.copyWith(
                                           fontWeight: FontWeight.w600,
                                           color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+                                          fontSize: 11,
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -1753,10 +1793,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                 Expanded(
                                   flex: 3,
                                   child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                                    padding: const EdgeInsets.symmetric(horizontal: 1),
                                     child: set.isResting
                                         ? Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                                             decoration: BoxDecoration(
                                               color: colorScheme.secondaryContainer.withOpacity(0.5),
                                               borderRadius: BorderRadius.circular(6),
@@ -1775,6 +1815,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                                   style: textTheme.bodySmall?.copyWith(
                                                     fontWeight: FontWeight.bold,
                                                     color: colorScheme.secondary,
+                                                    fontSize: 11,
                                                   ),
                                                 ),
                                               ),
@@ -1797,19 +1838,21 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                             },
                                             textStyle: textTheme.bodySmall?.copyWith(
                                               fontWeight: FontWeight.bold,
+                                              fontSize: 11,
                                             ),
-                                            height: 36,
+                                            height: 34,
                                           ),
                                   ),
                                 ),
                                 // Complete button
                                 SizedBox(
-                                  width: 52,
+                                  width: 44,
                                   child: IconButton(
                                     icon: Icon(
                                       set.completed ? Icons.check_circle : Icons.check_circle_outline,
-                                      size: 28,
+                                      size: 26,
                                     ),
+                                    padding: EdgeInsets.zero,
                                     visualDensity: VisualDensity.compact,
                                     color: set.completed
                                         ? colorScheme.secondary
