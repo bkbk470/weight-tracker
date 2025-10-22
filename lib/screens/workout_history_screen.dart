@@ -258,7 +258,40 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
                           }
 
                           final workout = workouts[index];
-                          final sets = workout['exercise_sets'] as List? ?? [];
+                          final rawSets = (workout['exercise_sets'] as List?)
+                                  ?.whereType<Map<String, dynamic>>()
+                                  .toList() ??
+                              <Map<String, dynamic>>[];
+
+                          final Map<String, List<Map<String, dynamic>>> setsByExercise =
+                              {};
+                          final Map<String, String> exerciseNames = {};
+                          final List<String> exerciseOrder = [];
+
+                          for (final set in rawSets) {
+                            final key =
+                                (set['exercise_id'] ?? set['exercise_name'] ?? 'exercise_${exerciseOrder.length}')
+                                    .toString();
+                            if (!setsByExercise.containsKey(key)) {
+                              setsByExercise[key] = [];
+                              exerciseOrder.add(key);
+                            }
+                            setsByExercise[key]!.add(set);
+                            exerciseNames[key] =
+                                (set['exercise_name'] as String?) ?? exerciseNames[key] ?? 'Exercise';
+                          }
+
+                          for (final key in exerciseOrder) {
+                            setsByExercise[key]!.sort((a, b) {
+                              final aNumber = (a['set_number'] is num)
+                                  ? (a['set_number'] as num).toInt()
+                                  : int.tryParse('${a['set_number'] ?? ''}') ?? 0;
+                              final bNumber = (b['set_number'] is num)
+                                  ? (b['set_number'] as num).toInt()
+                                  : int.tryParse('${b['set_number'] ?? ''}') ?? 0;
+                              return aNumber.compareTo(bNumber);
+                            });
+                          }
                           
                           return Card(
                             margin: const EdgeInsets.only(bottom: 12),
@@ -323,7 +356,7 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
-                                        '${sets.length} sets',
+                                        '${rawSets.length} sets',
                                         style: textTheme.bodySmall?.copyWith(
                                           color: colorScheme.onSurfaceVariant,
                                         ),
@@ -333,7 +366,7 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
                                 ],
                               ),
                               children: [
-                                if (sets.isEmpty)
+                                if (rawSets.isEmpty)
                                   Padding(
                                     padding: const EdgeInsets.all(16),
                                     child: Text(
@@ -356,54 +389,151 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
                                           ),
                                         ),
                                         const SizedBox(height: 12),
-                                        ...sets.map((set) {
-                                          return Padding(
-                                            padding: const EdgeInsets.only(bottom: 8),
-                                            child: Row(
+                                        ...exerciseOrder.map((groupKey) {
+                                          final exerciseName =
+                                              exerciseNames[groupKey] ?? 'Exercise';
+                                          final exerciseSets = setsByExercise[groupKey] ?? [];
+
+                                          return Container(
+                                            margin: const EdgeInsets.only(bottom: 16),
+                                            padding: const EdgeInsets.all(16),
+                                            decoration: BoxDecoration(
+                                              color: colorScheme.surfaceVariant.withOpacity(0.25),
+                                              borderRadius: BorderRadius.circular(16),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
-                                                Container(
-                                                  width: 40,
-                                                  height: 40,
-                                                  decoration: BoxDecoration(
-                                                    color: colorScheme.secondaryContainer,
-                                                    borderRadius: BorderRadius.circular(8),
-                                                  ),
-                                                  child: Center(
-                                                    child: Text(
-                                                      '${set['set_number'] ?? '?'}',
-                                                      style: textTheme.labelLarge?.copyWith(
-                                                        color: colorScheme.onSecondaryContainer,
-                                                        fontWeight: FontWeight.bold,
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      exerciseName,
+                                                      style: textTheme.titleMedium?.copyWith(
+                                                        fontWeight: FontWeight.w600,
                                                       ),
                                                     ),
-                                                  ),
+                                                    const Spacer(),
+                                                    Text(
+                                                      '${exerciseSets.length} set${exerciseSets.length == 1 ? '' : 's'}',
+                                                      style: textTheme.bodySmall?.copyWith(
+                                                        color: colorScheme.onSurfaceVariant,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
-                                                const SizedBox(width: 12),
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      Text(
-                                                        set['exercise_name'] ?? 'Unknown',
-                                                        style: textTheme.bodyMedium?.copyWith(
-                                                          fontWeight: FontWeight.w500,
+                                                const SizedBox(height: 12),
+                                                Column(
+                                                  children: [
+                                                    for (var i = 0;
+                                                        i < exerciseSets.length;
+                                                        i++)
+                                                      Padding(
+                                                        padding: EdgeInsets.only(
+                                                          bottom: i == exerciseSets.length - 1
+                                                              ? 0
+                                                              : 10,
+                                                        ),
+                                                        child: Container(
+                                                          padding: const EdgeInsets.all(12),
+                                                          decoration: BoxDecoration(
+                                                            color: colorScheme.surfaceVariant
+                                                                .withOpacity(0.35),
+                                                            borderRadius:
+                                                                BorderRadius.circular(12),
+                                                          ),
+                                                          child: Row(
+                                                            children: [
+                                                              final set = exerciseSets[i];
+                                                              final setNumber =
+                                                                  (set['set_number'] is num)
+                                                                      ? (set['set_number'] as num)
+                                                                          .toInt()
+                                                                      : int.tryParse(
+                                                                              '${set['set_number'] ?? ''}') ??
+                                                                          i + 1;
+                                                              final weight = set['weight_lbs'];
+                                                              final reps = set['reps'];
+                                                              final weightDisplay = weight is num
+                                                                  ? (weight % 1 == 0
+                                                                      ? weight
+                                                                          .toStringAsFixed(0)
+                                                                      : weight
+                                                                          .toStringAsFixed(1))
+                                                                  : (weight?.toString() ?? '0');
+                                                              final repsDisplay = reps is num
+                                                                  ? reps.toInt().toString()
+                                                                  : (reps?.toString() ?? '0');
+                                                              final notes =
+                                                                  (set['notes'] as String?)
+                                                                      ?.trim();
+                                                              Container(
+                                                                width: 40,
+                                                                height: 40,
+                                                                decoration: BoxDecoration(
+                                                                  color: colorScheme
+                                                                      .secondaryContainer,
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(8),
+                                                                ),
+                                                                child: Center(
+                                                                  child: Text(
+                                                                    '$setNumber',
+                                                                    style: textTheme.labelLarge
+                                                                        ?.copyWith(
+                                                                      color: colorScheme
+                                                                          .onSecondaryContainer,
+                                                                      fontWeight:
+                                                                          FontWeight.bold,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                              const SizedBox(width: 12),
+                                                              Expanded(
+                                                                child: Column(
+                                                                  crossAxisAlignment:
+                                                                      CrossAxisAlignment.start,
+                                                                  children: [
+                                                                    Text(
+                                                                      '$weightDisplay lbs × $repsDisplay reps',
+                                                                      style: textTheme.bodyMedium
+                                                                          ?.copyWith(
+                                                                        fontWeight:
+                                                                            FontWeight.w500,
+                                                                      ),
+                                                                    ),
+                                                                    if (notes != null &&
+                                                                        notes.isNotEmpty)
+                                                                      Padding(
+                                                                        padding:
+                                                                            const EdgeInsets.only(
+                                                                          top: 4,
+                                                                        ),
+                                                                        child: Text(
+                                                                          notes,
+                                                                          style: textTheme.bodySmall
+                                                                              ?.copyWith(
+                                                                            color: colorScheme
+                                                                                .onSurfaceVariant,
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                              if (set['completed'] == true)
+                                                                Icon(
+                                                                  Icons.check_circle,
+                                                                  color:
+                                                                      colorScheme.secondary,
+                                                                  size: 20,
+                                                                ),
+                                                            ],
+                                                          ),
                                                         ),
                                                       ),
-                                                      Text(
-                                                        '${set['weight_lbs'] ?? 0} lbs × ${set['reps'] ?? 0} reps',
-                                                        style: textTheme.bodySmall?.copyWith(
-                                                          color: colorScheme.onSurfaceVariant,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
+                                                  ],
                                                 ),
-                                                if (set['completed'] == true)
-                                                  Icon(
-                                                    Icons.check_circle,
-                                                    color: colorScheme.secondary,
-                                                    size: 20,
-                                                  ),
                                               ],
                                             ),
                                           );
