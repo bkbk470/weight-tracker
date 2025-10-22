@@ -11,7 +11,7 @@
 DO $$
 DECLARE
     -- ⚠️ REPLACE THIS WITH YOUR ACTUAL USER UUID ⚠️
-    v_user_id UUID := 'YOUR-USER-ID-HERE';  -- Example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+    v_user_id UUID := '1167db04-7c58-4351-a94a-954a61dbed52';
 
     v_workout_day1_id UUID;
     v_workout_day2_id UUID;
