@@ -15,6 +15,12 @@ class NotificationService {
     if (_isInitialized) return;
 
     try {
+      if (kIsWeb) {
+        // Local notifications are not supported on web; no-op safely.
+        _isInitialized = true;
+        debugPrint('NotificationService: web detected, skipping initialization');
+        return;
+      }
       // iOS settings
       const DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
         requestAlertPermission: true,
@@ -44,6 +50,9 @@ class NotificationService {
 
   /// Request notification permissions (especially important for iOS)
   Future<bool> requestPermissions() async {
+    if (kIsWeb) {
+      return true; // No permissions on web
+    }
     if (defaultTargetPlatform == TargetPlatform.iOS) {
       final bool? result = await _notifications
           .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
@@ -64,6 +73,9 @@ class NotificationService {
     }
 
     try {
+      if (kIsWeb) {
+        return; // Not supported on web
+      }
       const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
         'rest_timer_channel',
         'Rest Timer',
@@ -110,6 +122,9 @@ class NotificationService {
     }
 
     try {
+      if (kIsWeb) {
+        return; // Not supported on web
+      }
       const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
         'workout_channel',
         'Workout Notifications',
