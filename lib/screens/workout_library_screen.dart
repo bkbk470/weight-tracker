@@ -1,6 +1,141 @@
 import 'package:flutter/material.dart';
 import '../services/supabase_service.dart';
 
+/// Curated developer-managed workout templates available to every user.
+const List<Map<String, dynamic>> _curatedTemplateWorkouts = [
+  {
+    'id': 'tmpl_full_body_foundations',
+    'name': 'Full Body Foundations',
+    'description': 'Balanced beginner friendly session touching every major muscle group.',
+    'difficulty': 'Beginner',
+    'estimated_duration_minutes': 40,
+    'workout_template_exercises': [
+      {
+        'exercise_name': 'Goblet Squat',
+        'target_sets': 3,
+        'target_reps': 12,
+        'rest_time_seconds': 75,
+        'notes': 'Keep chest tall and pause for a beat at the bottom.',
+        'category': 'Legs',
+      },
+      {
+        'exercise_name': 'Push-Up',
+        'target_sets': 3,
+        'target_reps': 10,
+        'rest_time_seconds': 60,
+        'notes': 'Use an incline if you cannot complete quality reps.',
+        'category': 'Chest',
+      },
+      {
+        'exercise_name': 'Dumbbell Row',
+        'target_sets': 3,
+        'target_reps': 12,
+        'rest_time_seconds': 75,
+        'notes': 'Drive elbow toward hip and squeeze at the top.',
+        'category': 'Back',
+      },
+      {
+        'exercise_name': 'Plank',
+        'target_sets': 3,
+        'target_reps': 45,
+        'rest_time_seconds': 45,
+        'notes': 'Hold for 45 seconds, maintain straight line from head to heel.',
+        'category': 'Core',
+      },
+    ],
+  },
+  {
+    'id': 'tmpl_push_power_45',
+    'name': 'Push Power 45',
+    'description': 'Upper-body push day built around heavy presses and triceps finishers.',
+    'difficulty': 'Intermediate',
+    'estimated_duration_minutes': 45,
+    'workout_template_exercises': [
+      {
+        'exercise_name': 'Barbell Bench Press',
+        'target_sets': 4,
+        'target_reps': 8,
+        'rest_time_seconds': 120,
+        'notes': 'Two second lowering phase, explode up.',
+        'category': 'Chest',
+      },
+      {
+        'exercise_name': 'Standing Overhead Press',
+        'target_sets': 3,
+        'target_reps': 10,
+        'rest_time_seconds': 105,
+        'notes': 'Brace glutes to protect lower back.',
+        'category': 'Shoulders',
+      },
+      {
+        'exercise_name': 'Incline Dumbbell Press',
+        'target_sets': 3,
+        'target_reps': 12,
+        'rest_time_seconds': 90,
+        'notes': 'Stop two reps shy of failure each set.',
+        'category': 'Chest',
+      },
+      {
+        'exercise_name': 'Cable Tricep Pressdown',
+        'target_sets': 3,
+        'target_reps': 15,
+        'rest_time_seconds': 60,
+        'notes': 'Keep elbows pinned to sides and squeeze at lockout.',
+        'category': 'Arms',
+      },
+    ],
+  },
+  {
+    'id': 'tmpl_lower_body_strength',
+    'name': 'Lower Body Strength',
+    'description': 'Strength focused lower day with posterior chain attention.',
+    'difficulty': 'Advanced',
+    'estimated_duration_minutes': 55,
+    'workout_template_exercises': [
+      {
+        'exercise_name': 'Back Squat',
+        'target_sets': 5,
+        'target_reps': 5,
+        'rest_time_seconds': 150,
+        'notes': 'Work up to a challenging five with perfect depth.',
+        'category': 'Legs',
+      },
+      {
+        'exercise_name': 'Romanian Deadlift',
+        'target_sets': 4,
+        'target_reps': 8,
+        'rest_time_seconds': 120,
+        'notes': 'Keep slight knee bend and feel hamstring stretch.',
+        'category': 'Posterior Chain',
+      },
+      {
+        'exercise_name': 'Walking Lunge',
+        'target_sets': 3,
+        'target_reps': 12,
+        'rest_time_seconds': 90,
+        'notes': '12 steps per leg, hold dumbbells for load.',
+        'category': 'Legs',
+      },
+      {
+        'exercise_name': 'Leg Press',
+        'target_sets': 3,
+        'target_reps': 15,
+        'rest_time_seconds': 75,
+        'notes': 'Controlled tempo, do not lock knees.',
+        'category': 'Legs',
+      },
+      {
+        'exercise_name': 'Hanging Knee Raise',
+        'target_sets': 3,
+        'target_reps': 12,
+        'rest_time_seconds': 60,
+        'notes': 'Pause at the top to engage core.',
+        'category': 'Core',
+      },
+    ],
+  },
+];
+
 class WorkoutLibraryScreen extends StatefulWidget {
   final void Function(String, [Map<String, dynamic>?]) onNavigate;
   final String? initialTab;
@@ -55,19 +190,22 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
 
   Future<void> _loadTemplates() async {
     if (workoutTemplates.isNotEmpty) return; // Already loaded
-    
+
     setState(() => isLoadingTemplates = true);
-    
-    try {
-      final templates = await SupabaseService.instance.getWorkoutTemplates();
-      setState(() {
-        workoutTemplates = templates;
-        isLoadingTemplates = false;
-      });
-    } catch (e) {
-      print('Error loading templates: $e');
-      setState(() => isLoadingTemplates = false);
-    }
+
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+
+    setState(() {
+      workoutTemplates = _curatedTemplateWorkouts.map((template) {
+        final templateCopy = Map<String, dynamic>.from(template);
+        final exercises =
+            List<Map<String, dynamic>>.from(template['workout_template_exercises'] as List);
+        templateCopy['workout_template_exercises'] =
+            exercises.map((exercise) => Map<String, dynamic>.from(exercise)).toList();
+        return templateCopy;
+      }).toList();
+      isLoadingTemplates = false;
+    });
   }
 
   @override
@@ -312,18 +450,59 @@ class _WorkoutLibraryScreenState extends State<WorkoutLibraryScreen> {
                         ),
                         onDuplicate: () async {
                           try {
-                            // Duplicate template to user's workouts
-                            final newWorkout = await SupabaseService.instance.duplicateTemplateToWorkout(
-                              template['id'] as String,
+                            final templateName = template['name'] as String? ?? 'Workout Template';
+                            final description = template['description'] as String?;
+                            final difficulty = template['difficulty'] as String?;
+                            final durationMinutes =
+                                template['estimated_duration_minutes'] as int?;
+                            final exercises = (template['workout_template_exercises'] as List)
+                                .whereType<Map<String, dynamic>>()
+                                .toList();
+
+                            final newWorkout = await SupabaseService.instance.createWorkout(
+                              name: 'Copy of $templateName',
+                              description: description,
+                              difficulty: difficulty,
+                              estimatedDurationMinutes: durationMinutes,
                             );
 
-                            // Reload user's workouts
+                            for (var i = 0; i < exercises.length; i++) {
+                              final exercise = exercises[i];
+                              final exerciseName =
+                                  (exercise['exercise_name'] as String?) ?? 'Exercise';
+                              try {
+                                final exerciseId = await SupabaseService.instance.getOrCreateExerciseId(
+                                  name: exerciseName,
+                                  category: (exercise['category'] as String?) ?? 'Other',
+                                  notes: (exercise['notes'] as String?)?.isEmpty ?? true
+                                      ? null
+                                      : exercise['notes'] as String,
+                                );
+
+                                if (exerciseId == null) continue;
+
+                                await SupabaseService.instance.addExerciseToWorkout(
+                                  workoutId: newWorkout['id'] as String,
+                                  exerciseId: exerciseId,
+                                  orderIndex: i,
+                                  targetSets: exercise['target_sets'] as int? ?? 3,
+                                  targetReps: exercise['target_reps'] as int? ?? 10,
+                                  restTimeSeconds: exercise['rest_time_seconds'] as int? ?? 90,
+                                  notes: (exercise['notes'] as String?)?.isEmpty ?? true
+                                      ? null
+                                      : exercise['notes'] as String,
+                                );
+                              } catch (exerciseError) {
+                                print('Failed to add exercise $exerciseName: $exerciseError');
+                              }
+                            }
+
                             await _loadWorkouts();
 
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('Workout "${newWorkout['name']}" added to My Workouts'),
+                                  content: Text('Workout "$templateName" added to My Workouts'),
                                   backgroundColor: Colors.green,
                                   action: SnackBarAction(
                                     label: 'View',
