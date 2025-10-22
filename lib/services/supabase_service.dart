@@ -1046,6 +1046,63 @@ class SupabaseService {
     }).toList();
   }
 
+  /// Get latest exercise sets for multiple exercises in a single batch query
+  Future<List<Map<String, dynamic>>> getBatchLatestExerciseSets(
+      List<String> exerciseIds) async {
+    if (currentUserId == null || exerciseIds.isEmpty) return [];
+
+    final response = await client
+        .from('exercise_sets')
+        .select(
+            'id, exercise_id, workout_log_id, set_number, weight_lbs, reps, created_at, workout_logs!inner(user_id)')
+        .inFilter('exercise_id', exerciseIds)
+        .eq('workout_logs.user_id', currentUserId!)
+        .order('created_at', ascending: false);
+
+    final List<Map<String, dynamic>> data =
+        List<Map<String, dynamic>>.from(response);
+    if (data.isEmpty) return [];
+
+    // Group by exercise_id and get latest workout_log_id for each
+    final latestLogIdByExercise = <String, String>{};
+    for (final record in data) {
+      final exerciseId = record['exercise_id'] as String?;
+      if (exerciseId != null && !latestLogIdByExercise.containsKey(exerciseId)) {
+        latestLogIdByExercise[exerciseId] = record['workout_log_id'];
+      }
+    }
+
+    // Filter to only include sets from the latest workout for each exercise
+    final filtered = data.where((record) {
+      final exerciseId = record['exercise_id'] as String?;
+      if (exerciseId == null) return false;
+      final latestLogId = latestLogIdByExercise[exerciseId];
+      return record['workout_log_id'] == latestLogId;
+    }).toList();
+
+    // Sort by exercise_id and set_number
+    filtered.sort((a, b) {
+      final aExId = a['exercise_id'] as String? ?? '';
+      final bExId = b['exercise_id'] as String? ?? '';
+      final exCompare = aExId.compareTo(bExId);
+      if (exCompare != 0) return exCompare;
+
+      final aSet = a['set_number'];
+      final bSet = b['set_number'];
+      final aVal =
+          aSet is int ? aSet : int.tryParse(aSet?.toString() ?? '') ?? 0;
+      final bVal =
+          bSet is int ? bSet : int.tryParse(bSet?.toString() ?? '') ?? 0;
+      return aVal.compareTo(bVal);
+    });
+
+    return filtered.map((record) {
+      final map = Map<String, dynamic>.from(record);
+      map.remove('workout_logs');
+      return map;
+    }).toList();
+  }
+
   // Update measurement
   Future<void> updateMeasurement(
       String measurementId, Map<String, dynamic> updates) async {
