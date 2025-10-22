@@ -14,6 +14,12 @@ ALTER COLUMN rest_time_seconds SET DEFAULT 55;
 UPDATE workout_exercises
 SET rest_time_seconds = 55;
 
+-- Show completion message
+DO $$
+BEGIN
+    RAISE NOTICE 'Default rest time changed to 55 seconds for all future and existing workout exercises';
+END $$;
+
 -- Verify the changes
 SELECT
     'Updated all workout exercises' as message,
@@ -33,5 +39,3 @@ JOIN workouts w ON w.id = we.workout_id
 JOIN exercises e ON e.id = we.exercise_id
 ORDER BY w.name, we.order_index
 LIMIT 20;
-
-RAISE NOTICE 'Default rest time changed to 55 seconds for all future and existing workout exercises';
