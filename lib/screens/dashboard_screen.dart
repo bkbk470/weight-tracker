@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/supabase_service.dart';
 import '../services/local_storage_service.dart';
+import '../utils/safe_dialog_helpers.dart';
 
 class DashboardScreen extends StatefulWidget {
   final void Function(String, [Map<String, dynamic>?]) onNavigate;
@@ -274,7 +275,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final descriptionController = TextEditingController();
     String selectedColor = 'blue';
 
-    showDialog(
+    showSafeDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (dialogContext, setDialogState) => AlertDialog(
@@ -285,6 +286,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 TextField(
                   controller: nameController,
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                   decoration: const InputDecoration(
                     labelText: 'Plan Name',
                     hintText: 'e.g., Strength Training, Cardio Mix',
@@ -294,6 +296,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 16),
                 TextField(
                   controller: descriptionController,
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                   decoration: const InputDecoration(
                     labelText: 'Description (Optional)',
                     hintText: 'Brief description of this plan',
@@ -399,7 +402,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (!mounted) return;
 
     if (availableWorkouts.isEmpty) {
-      showDialog(
+      showSafeDialog(
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('No Workouts Available'),
@@ -424,7 +427,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return;
     }
 
-    showDialog(
+    showSafeDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Add Workout to $planName'),

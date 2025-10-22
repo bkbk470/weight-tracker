@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/supabase_service.dart';
+import '../utils/safe_dialog_helpers.dart';
 
 class WorkoutFoldersScreen extends StatefulWidget {
   final void Function(String, [Map<String, dynamic>?]) onNavigate;
@@ -98,7 +99,7 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
     String selectedColor = 'blue';
     String selectedIcon = 'folder';
 
-    showDialog(
+    showSafeDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
@@ -109,6 +110,7 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
               children: [
                 TextField(
                   controller: nameController,
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                   decoration: const InputDecoration(
                     labelText: 'Plan Name',
                     hintText: 'e.g., Strength Training, Cardio Mix',
@@ -118,6 +120,7 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
                 const SizedBox(height: 16),
                 TextField(
                   controller: descriptionController,
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                   decoration: const InputDecoration(
                     labelText: 'Description (Optional)',
                     hintText: 'Brief description of this plan',
@@ -206,7 +209,7 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
     final descriptionController = TextEditingController(text: folder['description'] as String?);
     String selectedColor = folder['color'] as String? ?? 'blue';
 
-    showDialog(
+    showSafeDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
@@ -217,6 +220,7 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
               children: [
                 TextField(
                   controller: nameController,
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                   decoration: const InputDecoration(
                     labelText: 'Plan Name',
                     hintText: 'e.g., Strength Training, Cardio Mix',
@@ -226,6 +230,7 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
                 const SizedBox(height: 16),
                 TextField(
                   controller: descriptionController,
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                   decoration: const InputDecoration(
                     labelText: 'Description (Optional)',
                     hintText: 'Brief description of this plan',
@@ -415,7 +420,7 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
     if (!mounted) return;
 
     if (allWorkouts.isEmpty) {
-      showDialog(
+      showSafeDialog(
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('No Workouts Available'),
@@ -1076,6 +1081,7 @@ class _AddWorkoutDialogState extends State<_AddWorkoutDialog> {
             // Search bar
             TextField(
               controller: _searchController,
+              onTapOutside: (_) => FocusScope.of(context).unfocus(),
               onChanged: (value) {
                 setState(() {
                   _searchQuery = value;

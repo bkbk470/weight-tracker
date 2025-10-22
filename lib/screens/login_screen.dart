@@ -225,7 +225,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         Expanded(
                           child: GestureDetector(
-                            onTap: () => setState(() => isLogin = true),
+                            onTap: () {
+                              FocusScope.of(context).unfocus();
+                              setState(() => isLogin = true);
+                            },
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               decoration: BoxDecoration(
@@ -247,7 +250,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         Expanded(
                           child: GestureDetector(
-                            onTap: () => setState(() => isLogin = false),
+                            onTap: () {
+                              FocusScope.of(context).unfocus();
+                              setState(() => isLogin = false);
+                            },
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               decoration: BoxDecoration(
@@ -276,6 +282,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   if (!isLogin) ...[
                     TextField(
                       controller: nameController,
+                      onTapOutside: (_) => FocusScope.of(context).unfocus(),
                       decoration: InputDecoration(
                         labelText: 'Full Name',
                         prefixIcon: const Icon(Icons.person_outline),
@@ -289,6 +296,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextField(
                     controller: emailController,
                     keyboardType: TextInputType.emailAddress,
+                    onTapOutside: (_) => FocusScope.of(context).unfocus(),
                     decoration: InputDecoration(
                       labelText: 'Email Address',
                       prefixIcon: const Icon(Icons.email_outlined),
@@ -301,6 +309,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextField(
                     controller: passwordController,
                     obscureText: !showPassword,
+                    onTapOutside: (_) => FocusScope.of(context).unfocus(),
                     decoration: InputDecoration(
                       labelText: 'Password',
                       prefixIcon: const Icon(Icons.lock_outline),
@@ -320,6 +329,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextField(
                       controller: confirmPasswordController,
                       obscureText: !showPassword,
+                      onTapOutside: (_) => FocusScope.of(context).unfocus(),
                       decoration: InputDecoration(
                         labelText: 'Confirm Password',
                         prefixIcon: const Icon(Icons.lock_outline),
