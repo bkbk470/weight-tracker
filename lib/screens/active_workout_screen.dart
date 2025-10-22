@@ -2056,6 +2056,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                                 set.plannedRestSeconds = value;
                                                 set.restStartTime = value;
                                                 set.currentRestTime = value;
+                                                set.previousRestSeconds = value;
 
                                                 if (setIndex == 0 ||
                                                     previousExerciseRest <= 0 ||
