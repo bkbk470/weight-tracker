@@ -96,7 +96,7 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
   void _showCreatePlanDialog() {
     final nameController = TextEditingController();
     final descriptionController = TextEditingController();
-    String selectedColor = 'blue';
+    String selectedColor = 'default';
     String selectedIcon = 'folder';
 
     showSafeDialog(
@@ -133,9 +133,9 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
-                  children: ['blue', 'green', 'orange', 'purple', 'red']
+                  children: ['default', 'blue', 'green', 'orange', 'purple', 'red']
                       .map((color) => ChoiceChip(
-                            label: Text(color),
+                            label: Text(color == 'default' ? 'Default' : color),
                             selected: selectedColor == color,
                             onSelected: (selected) {
                               if (selected) {
@@ -207,7 +207,7 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
   void _showEditPlanDialog(Map<String, dynamic> folder) {
     final nameController = TextEditingController(text: folder['name'] as String?);
     final descriptionController = TextEditingController(text: folder['description'] as String?);
-    String selectedColor = folder['color'] as String? ?? 'blue';
+    String selectedColor = folder['color'] as String? ?? 'default';
 
     showSafeDialog(
       context: context,
@@ -242,9 +242,9 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
-                  children: ['blue', 'green', 'orange', 'purple', 'red']
+                  children: ['default', 'blue', 'green', 'orange', 'purple', 'red']
                       .map((color) => ChoiceChip(
-                            label: Text(color),
+                            label: Text(color == 'default' ? 'Default' : color),
                             selected: selectedColor == color,
                             onSelected: (selected) {
                               if (selected) {
