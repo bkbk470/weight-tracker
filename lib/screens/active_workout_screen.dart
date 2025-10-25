@@ -674,6 +674,35 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     }
   }
 
+  String _getMotivationalMessage(int totalSets, double totalVolume, int duration) {
+    final messages = [
+      'Amazing work! You crushed it! 💪',
+      'Outstanding effort! Keep it up! 🔥',
+      'You\'re getting stronger every day! 💯',
+      'Incredible dedication! Well done! ⭐',
+      'That\'s what champions are made of! 🏆',
+      'Your consistency is paying off! 🚀',
+      'Another step closer to your goals! 🎯',
+      'You showed up and gave it your all! 💥',
+      'Progress isn\'t just visible, it\'s unstoppable! ⚡',
+      'You\'re building the best version of yourself! 🌟',
+    ];
+
+    // Add special messages based on achievements
+    if (totalVolume > 10000) {
+      return 'Phenomenal! Over 10,000 lbs lifted! You\'re a beast! 🦁';
+    } else if (totalVolume > 5000) {
+      return 'Crushing it! Over 5,000 lbs moved today! 💪';
+    } else if (totalSets >= 30) {
+      return 'Wow! ${totalSets} sets completed! That\'s dedication! 🔥';
+    } else if (duration > 3600) {
+      return 'Over an hour of pure effort! Respect! 🙌';
+    }
+
+    // Return random motivational message
+    return messages[DateTime.now().millisecond % messages.length];
+  }
+
   void _showWorkoutCompletionScreen({
     required int duration,
     required int totalExercises,
@@ -781,16 +810,42 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
+                    // Celebration Icon
+                    Center(
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.celebration,
+                          size: 48,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     Text(
-                      'Workout Complete!',
+                      '🎉 Workout Complete! 🎉',
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.headlineSmall?.copyWith(
+                      style: theme.textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      widget.workoutName ?? 'Nice job staying consistent.',
+                      _getMotivationalMessage(totalSets, totalVolume, duration),
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.workoutName ?? 'Great work staying consistent!',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
@@ -843,13 +898,26 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                     const SizedBox(height: 24),
                     FilledButton.icon(
                       onPressed: () => Navigator.of(sheetContext).pop(),
-                      icon: const Icon(Icons.thumb_up_alt_outlined),
-                      label: const Text('Awesome!'),
+                      icon: const Icon(Icons.check_circle_outline),
+                      label: const Text('Continue'),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 18),
                         textStyle: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.of(sheetContext).pop();
+                        // Could navigate to progress/stats screen here in the future
+                      },
+                      icon: Icon(Icons.insights, color: colorScheme.primary),
+                      label: Text('View Progress', style: TextStyle(color: colorScheme.primary)),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        side: BorderSide(color: colorScheme.primary),
                       ),
                     ),
                   ],
