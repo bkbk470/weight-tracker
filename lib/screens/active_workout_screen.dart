@@ -898,6 +898,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                     const SizedBox(height: 24),
                     FilledButton.icon(
                       onPressed: () {
+                        // Clear workout state BEFORE navigating
+                        _timerService.reset();
+                        widget.onWorkoutStateChanged?.call(false, 0);
                         Navigator.of(sheetContext).pop();
                         widget.onNavigate('dashboard');
                       },
@@ -913,6 +916,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                     const SizedBox(height: 12),
                     OutlinedButton.icon(
                       onPressed: () {
+                        // Clear workout state BEFORE navigating
+                        _timerService.reset();
+                        widget.onWorkoutStateChanged?.call(false, 0);
                         Navigator.of(sheetContext).pop();
                         widget.onNavigate('dashboard');
                         // Could navigate to progress/stats screen here in the future
