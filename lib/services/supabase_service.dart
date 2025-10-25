@@ -407,7 +407,10 @@ class SupabaseService {
                 estimated_duration_minutes,
                 is_favorite,
                 created_at,
-                updated_at
+                updated_at,
+                workout_exercises (
+                  id
+                )
               )
             ''')
             .eq('workout_plan_id', folderId)
@@ -438,7 +441,10 @@ class SupabaseService {
               estimated_duration_minutes,
               is_favorite,
               created_at,
-              updated_at
+              updated_at,
+              workout_exercises (
+                id
+              )
             ''')
             .eq('user_id', currentUserId!)
             .order('created_at', ascending: false);
@@ -475,7 +481,10 @@ class SupabaseService {
               estimated_duration_minutes,
               is_favorite,
               created_at,
-              updated_at
+              updated_at,
+              workout_exercises (
+                id
+              )
             )
           ''')
           .inFilter('workout_plan_id', folderIds)
