@@ -159,7 +159,10 @@ class _EditableNumberFieldState extends State<EditableNumberField> {
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
                 style: widget.textStyle,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(5),
+                ],
                 decoration: const InputDecoration(
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
