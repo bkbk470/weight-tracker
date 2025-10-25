@@ -1,16 +1,20 @@
 import 'dart:async';
+import 'package:flutter/widgets.dart';
 
-class WorkoutTimerService {
+class WorkoutTimerService with WidgetsBindingObserver {
   static final WorkoutTimerService _instance = WorkoutTimerService._internal();
   static WorkoutTimerService get instance => _instance;
-  
-  WorkoutTimerService._internal();
+
+  WorkoutTimerService._internal() {
+    WidgetsBinding.instance.addObserver(this);
+  }
 
   Timer? _timer;
   int _elapsedSeconds = 0;
   bool _isRunning = false;
   DateTime? _startTime;
   DateTime? _pauseTime;
+  bool _wasRunningBeforePause = false;
   
   // Callbacks for UI updates
   final List<Function(int)> _listeners = [];
@@ -94,8 +98,25 @@ class WorkoutTimerService {
     }
   }
 
+  // Handle app lifecycle changes (screen lock/unlock)
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      // App went to background (screen locked)
+      _wasRunningBeforePause = _isRunning;
+    } else if (state == AppLifecycleState.resumed) {
+      // App came back to foreground (screen unlocked)
+      if (_wasRunningBeforePause && _startTime != null) {
+        // Recalculate elapsed time based on start time
+        _elapsedSeconds = DateTime.now().difference(_startTime!).inSeconds;
+        _notifyListeners();
+      }
+    }
+  }
+
   // Dispose
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _listeners.clear();
   }
