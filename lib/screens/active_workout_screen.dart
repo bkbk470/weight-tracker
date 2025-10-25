@@ -278,6 +278,18 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               set.reps = previousReps;
               print('✅ Auto-filled set ${i+1} with ${set.reps} reps from previous workout');
             }
+
+            // Auto-fill rest time from previous workout
+            final restValue = record['rest_time_seconds'];
+            if (restValue != null) {
+              final previousRest = restValue is int ? restValue : int.tryParse(restValue.toString());
+              if (previousRest != null && previousRest > 0) {
+                set.plannedRestSeconds = previousRest;
+                set.restStartTime = previousRest;
+                set.currentRestTime = previousRest;
+                print('✅ Auto-filled set ${i+1} with ${previousRest}s rest from previous workout');
+              }
+            }
           } else {
             set.previousWeight = null;
             set.previousReps = null;
@@ -325,8 +337,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
             if (data is Map) {
               final weightRaw = data['weight'];
               final repsRaw = data['reps'];
+              final restRaw = data['rest'];
               final previousWeight = weightRaw is num ? weightRaw.toDouble() : double.tryParse('${weightRaw ?? ''}');
               final previousReps = repsRaw is int ? repsRaw : int.tryParse('${repsRaw ?? ''}');
+              final previousRest = restRaw is int ? restRaw : int.tryParse('${restRaw ?? ''}');
 
               exercise.sets[i].previousWeight = previousWeight;
               exercise.sets[i].previousReps = previousReps;
@@ -339,6 +353,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               // Auto-fill reps with previous reps (always prefer previous over template default)
               if (previousReps != null && previousReps > 0) {
                 exercise.sets[i].reps = previousReps;
+              }
+
+              // Auto-fill rest time from previous workout
+              if (previousRest != null && previousRest > 0) {
+                exercise.sets[i].plannedRestSeconds = previousRest;
+                exercise.sets[i].restStartTime = previousRest;
+                exercise.sets[i].currentRestTime = previousRest;
               }
             }
           }
