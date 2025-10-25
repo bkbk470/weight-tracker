@@ -1113,8 +1113,8 @@ class _ExerciseInfoSheetState extends State<_ExerciseInfoSheet> {
                     if (widget.exercise.rawData['description'] != null &&
                         (widget.exercise.rawData['description'] as String).isNotEmpty)
                       const SizedBox(height: 16),
-                    // Progress Charts
-                    if (!isLoadingHistory && exerciseHistory.isNotEmpty) ...[
+                    // Progress Charts - Always show
+                    if (!isLoadingHistory) ...[
                       const SizedBox(height: 8),
                       Text(
                         'Progress Over Time',
@@ -1149,11 +1149,31 @@ class _ExerciseInfoSheetState extends State<_ExerciseInfoSheet> {
                                 height: 200,
                                 child: _getWeightProgressionData().isEmpty
                                     ? Center(
-                                        child: Text(
-                                          'No data available',
-                                          style: textTheme.bodyMedium?.copyWith(
-                                            color: colorScheme.onSurfaceVariant,
-                                          ),
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.show_chart,
+                                              size: 48,
+                                              color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Text(
+                                              'No data yet',
+                                              style: textTheme.titleMedium?.copyWith(
+                                                color: colorScheme.onSurfaceVariant,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              'Complete a workout with this exercise\nto see your progress',
+                                              style: textTheme.bodySmall?.copyWith(
+                                                color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ],
                                         ),
                                       )
                                     : LineChart(
@@ -1252,11 +1272,31 @@ class _ExerciseInfoSheetState extends State<_ExerciseInfoSheet> {
                                 height: 200,
                                 child: _getVolumeProgressionData().isEmpty
                                     ? Center(
-                                        child: Text(
-                                          'No data available',
-                                          style: textTheme.bodyMedium?.copyWith(
-                                            color: colorScheme.onSurfaceVariant,
-                                          ),
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.bar_chart,
+                                              size: 48,
+                                              color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Text(
+                                              'No data yet',
+                                              style: textTheme.titleMedium?.copyWith(
+                                                color: colorScheme.onSurfaceVariant,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              'Complete a workout with this exercise\nto track your volume over time',
+                                              style: textTheme.bodySmall?.copyWith(
+                                                color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ],
                                         ),
                                       )
                                     : LineChart(
