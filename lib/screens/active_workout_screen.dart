@@ -1372,38 +1372,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           // Add haptic feedback when completing a set
           HapticFeedback.mediumImpact();
 
-          // Show brief popup confirmation for set completion
-          if (mounted) {
-            final exerciseName = exerciseIndex < exercises.length
-                ? exercises[exerciseIndex].name
-                : 'Exercise';
-            final setNumber = setIndex + 1;
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    const Icon(Icons.check_circle, color: Colors.white, size: 20),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Set $setNumber completed! 💪',
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ],
-                ),
-                backgroundColor: Colors.green.shade600,
-                duration: const Duration(seconds: 2),
-                behavior: SnackBarBehavior.floating,
-                margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            );
-          }
-
           // Stop and reset any previous rest timer
           if (isResting) {
             restTimerInstance?.cancel();
@@ -1468,6 +1436,34 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
                   // Show notification when rest timer completes
                   NotificationService.instance.showRestTimerCompleteNotification();
+
+                  // Show in-app popup when rest timer completes (if app is open)
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Row(
+                          children: [
+                            const Icon(Icons.timer_off, color: Colors.white, size: 20),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Text(
+                                'Rest time complete! Ready for next set 🔥',
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ),
+                        backgroundColor: Colors.orange.shade600,
+                        duration: const Duration(seconds: 3),
+                        behavior: SnackBarBehavior.floating,
+                        margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    );
+                  }
+
                   timer.cancel();
                 }
               });
