@@ -783,6 +783,68 @@ class _ExerciseInfoSheetState extends State<_ExerciseInfoSheet> {
     }
   }
 
+  List<FlSpot> _getWeightProgressionData() {
+    if (exerciseHistory.isEmpty) return [];
+
+    // Group by workout date and get max weight for each session
+    final Map<DateTime, double> dateWeightMap = {};
+
+    for (final set in exerciseHistory) {
+      final createdAt = set['created_at'] as String?;
+      final weight = (set['weight_lbs'] as num?)?.toDouble() ?? 0;
+
+      if (createdAt != null && weight > 0) {
+        final date = DateTime.parse(createdAt);
+        final dateOnly = DateTime(date.year, date.month, date.day);
+
+        if (!dateWeightMap.containsKey(dateOnly) || weight > dateWeightMap[dateOnly]!) {
+          dateWeightMap[dateOnly] = weight;
+        }
+      }
+    }
+
+    // Sort by date and create spots
+    final sortedDates = dateWeightMap.keys.toList()..sort();
+    final spots = <FlSpot>[];
+
+    for (int i = 0; i < sortedDates.length; i++) {
+      spots.add(FlSpot(i.toDouble(), dateWeightMap[sortedDates[i]]!));
+    }
+
+    return spots;
+  }
+
+  List<FlSpot> _getVolumeProgressionData() {
+    if (exerciseHistory.isEmpty) return [];
+
+    // Group by workout date and calculate total volume
+    final Map<DateTime, double> dateVolumeMap = {};
+
+    for (final set in exerciseHistory) {
+      final createdAt = set['created_at'] as String?;
+      final weight = (set['weight_lbs'] as num?)?.toDouble() ?? 0;
+      final reps = (set['reps'] as num?)?.toInt() ?? 0;
+
+      if (createdAt != null && weight > 0 && reps > 0) {
+        final date = DateTime.parse(createdAt);
+        final dateOnly = DateTime(date.year, date.month, date.day);
+        final volume = weight * reps;
+
+        dateVolumeMap[dateOnly] = (dateVolumeMap[dateOnly] ?? 0) + volume;
+      }
+    }
+
+    // Sort by date and create spots
+    final sortedDates = dateVolumeMap.keys.toList()..sort();
+    final spots = <FlSpot>[];
+
+    for (int i = 0; i < sortedDates.length; i++) {
+      spots.add(FlSpot(i.toDouble(), dateVolumeMap[sortedDates[i]]!));
+    }
+
+    return spots;
+  }
+
   bool _needsSignedUrl(String path) {
     return path.isNotEmpty &&
         !path.startsWith('http') &&
@@ -1051,6 +1113,222 @@ class _ExerciseInfoSheetState extends State<_ExerciseInfoSheet> {
                     if (widget.exercise.rawData['description'] != null &&
                         (widget.exercise.rawData['description'] as String).isNotEmpty)
                       const SizedBox(height: 16),
+                    // Progress Charts
+                    if (!isLoadingHistory && exerciseHistory.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Progress Over Time',
+                        style: textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Weight Progression Chart
+                      Card(
+                        elevation: 0,
+                        color: colorScheme.surfaceVariant.withOpacity(0.3),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.trending_up, size: 20, color: colorScheme.primary),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Weight Progression',
+                                    style: textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                height: 200,
+                                child: _getWeightProgressionData().isEmpty
+                                    ? Center(
+                                        child: Text(
+                                          'No data available',
+                                          style: textTheme.bodyMedium?.copyWith(
+                                            color: colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      )
+                                    : LineChart(
+                                        LineChartData(
+                                          gridData: FlGridData(
+                                            show: true,
+                                            drawVerticalLine: false,
+                                            horizontalInterval: 50,
+                                            getDrawingHorizontalLine: (value) {
+                                              return FlLine(
+                                                color: colorScheme.outline.withOpacity(0.2),
+                                                strokeWidth: 1,
+                                              );
+                                            },
+                                          ),
+                                          titlesData: FlTitlesData(
+                                            show: true,
+                                            rightTitles: const AxisTitles(
+                                              sideTitles: SideTitles(showTitles: false),
+                                            ),
+                                            topTitles: const AxisTitles(
+                                              sideTitles: SideTitles(showTitles: false),
+                                            ),
+                                            leftTitles: AxisTitles(
+                                              sideTitles: SideTitles(
+                                                showTitles: true,
+                                                reservedSize: 40,
+                                                getTitlesWidget: (value, meta) {
+                                                  return Text(
+                                                    '${value.toInt()}',
+                                                    style: textTheme.bodySmall,
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                            bottomTitles: const AxisTitles(
+                                              sideTitles: SideTitles(showTitles: false),
+                                            ),
+                                          ),
+                                          borderData: FlBorderData(show: false),
+                                          lineBarsData: [
+                                            LineChartBarData(
+                                              spots: _getWeightProgressionData(),
+                                              isCurved: true,
+                                              color: colorScheme.primary,
+                                              barWidth: 3,
+                                              isStrokeCapRound: true,
+                                              dotData: FlDotData(
+                                                show: true,
+                                                getDotPainter: (spot, percent, barData, index) {
+                                                  return FlDotCirclePainter(
+                                                    radius: 4,
+                                                    color: colorScheme.primary,
+                                                    strokeWidth: 2,
+                                                    strokeColor: colorScheme.surface,
+                                                  );
+                                                },
+                                              ),
+                                              belowBarData: BarAreaData(
+                                                show: true,
+                                                color: colorScheme.primary.withOpacity(0.1),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Volume Progression Chart
+                      Card(
+                        elevation: 0,
+                        color: colorScheme.surfaceVariant.withOpacity(0.3),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.bar_chart, size: 20, color: colorScheme.secondary),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Volume Progression',
+                                    style: textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                height: 200,
+                                child: _getVolumeProgressionData().isEmpty
+                                    ? Center(
+                                        child: Text(
+                                          'No data available',
+                                          style: textTheme.bodyMedium?.copyWith(
+                                            color: colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      )
+                                    : LineChart(
+                                        LineChartData(
+                                          gridData: FlGridData(
+                                            show: true,
+                                            drawVerticalLine: false,
+                                            getDrawingHorizontalLine: (value) {
+                                              return FlLine(
+                                                color: colorScheme.outline.withOpacity(0.2),
+                                                strokeWidth: 1,
+                                              );
+                                            },
+                                          ),
+                                          titlesData: FlTitlesData(
+                                            show: true,
+                                            rightTitles: const AxisTitles(
+                                              sideTitles: SideTitles(showTitles: false),
+                                            ),
+                                            topTitles: const AxisTitles(
+                                              sideTitles: SideTitles(showTitles: false),
+                                            ),
+                                            leftTitles: AxisTitles(
+                                              sideTitles: SideTitles(
+                                                showTitles: true,
+                                                reservedSize: 50,
+                                                getTitlesWidget: (value, meta) {
+                                                  return Text(
+                                                    '${value.toInt()}',
+                                                    style: textTheme.bodySmall,
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                            bottomTitles: const AxisTitles(
+                                              sideTitles: SideTitles(showTitles: false),
+                                            ),
+                                          ),
+                                          borderData: FlBorderData(show: false),
+                                          lineBarsData: [
+                                            LineChartBarData(
+                                              spots: _getVolumeProgressionData(),
+                                              isCurved: true,
+                                              color: colorScheme.secondary,
+                                              barWidth: 3,
+                                              isStrokeCapRound: true,
+                                              dotData: FlDotData(
+                                                show: true,
+                                                getDotPainter: (spot, percent, barData, index) {
+                                                  return FlDotCirclePainter(
+                                                    radius: 4,
+                                                    color: colorScheme.secondary,
+                                                    strokeWidth: 2,
+                                                    strokeColor: colorScheme.surface,
+                                                  );
+                                                },
+                                              ),
+                                              belowBarData: BarAreaData(
+                                                show: true,
+                                                color: colorScheme.secondary.withOpacity(0.1),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     // Video URL indicator
                     if (widget.exercise.videoUrl != null && widget.exercise.videoUrl!.isNotEmpty) ...[
                       Container(
