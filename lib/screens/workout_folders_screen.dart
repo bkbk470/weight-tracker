@@ -127,16 +127,22 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
                   ),
                   maxLines: 2,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 // Color selection
-                const Text('Plan Color'),
-                const SizedBox(height: 8),
+                const Text('Plan Color', style: TextStyle(fontSize: 12)),
+                const SizedBox(height: 6),
                 Wrap(
-                  spacing: 8,
+                  spacing: 6,
+                  runSpacing: 6,
                   children: ['default', 'blue', 'green', 'orange', 'purple', 'red']
                       .map((color) => ChoiceChip(
-                            label: Text(color == 'default' ? 'Default' : color),
+                            label: Text(
+                              color == 'default' ? 'Default' : color,
+                              style: const TextStyle(fontSize: 11),
+                            ),
                             selected: selectedColor == color,
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                            visualDensity: VisualDensity.compact,
                             onSelected: (selected) {
                               if (selected) {
                                 setDialogState(() {
@@ -237,15 +243,21 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
                   ),
                   maxLines: 2,
                 ),
-                const SizedBox(height: 16),
-                const Text('Plan Color'),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
+                const Text('Plan Color', style: TextStyle(fontSize: 12)),
+                const SizedBox(height: 6),
                 Wrap(
-                  spacing: 8,
+                  spacing: 6,
+                  runSpacing: 6,
                   children: ['default', 'blue', 'green', 'orange', 'purple', 'red']
                       .map((color) => ChoiceChip(
-                            label: Text(color == 'default' ? 'Default' : color),
+                            label: Text(
+                              color == 'default' ? 'Default' : color,
+                              style: const TextStyle(fontSize: 11),
+                            ),
                             selected: selectedColor == color,
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                            visualDensity: VisualDensity.compact,
                             onSelected: (selected) {
                               if (selected) {
                                 setDialogState(() {
@@ -706,8 +718,10 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
         return Colors.purple;
       case 'red':
         return Colors.red;
+      case 'default':
+        return Theme.of(context).colorScheme.primary;
       default:
-        return Colors.grey;
+        return Theme.of(context).colorScheme.primary;
     }
   }
 
