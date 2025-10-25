@@ -1248,9 +1248,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       exercises[exerciseIndex].sets.add(newSet);
     });
 
-    if (widget.workoutId != null) {
-      unawaited(_syncWorkoutExerciseTemplate(exercises[exerciseIndex], exerciseIndex));
-    }
+    // Template sync removed - will only sync when workout is completed
   }
 
   void updateSet(String exerciseId, int setIndex, String field, int value) {
@@ -1265,9 +1263,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       }
     });
 
-    if (widget.workoutId != null) {
-      unawaited(_syncWorkoutExerciseTemplate(exercises[exerciseIndex], exerciseIndex));
-    }
+    // Template sync removed - will only sync when workout is completed
   }
 
   void completeSet(String exerciseId, int setIndex) {
@@ -1366,9 +1362,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       exercises[exerciseIndex].sets.removeAt(setIndex);
     });
 
-    if (widget.workoutId != null) {
-      unawaited(_syncWorkoutExerciseTemplate(exercises[exerciseIndex], exerciseIndex));
-    }
+    // Template sync removed - will only sync when workout is completed
   }
 
   void removeExercise(String exerciseId) {
@@ -1483,12 +1477,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               setState(() {
                 exercise.notes = trimmed;
               });
-              if (widget.workoutId != null) {
-                final exerciseIndex = exercises.indexWhere((e) => e.id == exercise.id);
-                if (exerciseIndex != -1) {
-                  unawaited(_syncWorkoutExerciseTemplate(exercise, exerciseIndex));
-                }
-              }
+              // Template sync removed - will only sync when workout is completed
               notesController.dispose();
               Navigator.pop(context);
             },
@@ -2105,12 +2094,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
                                                 print('🔄 Updated rest time for set ${exercise.sets.indexOf(set) + 1}: ${value}s');
                                               });
-                                              if (widget.workoutId != null) {
-                                                final exerciseIndex = exercises.indexWhere((e) => e.id == exercise.id);
-                                                if (exerciseIndex != -1) {
-                                                  unawaited(_syncWorkoutExerciseTemplate(exercise, exerciseIndex));
-                                                }
-                                              }
+                                              // Template sync removed - will only sync when workout is completed
                                             },
                                             textStyle: textTheme.bodySmall?.copyWith(
                                               fontWeight: FontWeight.bold,
