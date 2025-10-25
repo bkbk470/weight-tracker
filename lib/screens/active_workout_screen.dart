@@ -1657,10 +1657,20 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         ),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.check),
-            color: colorScheme.secondary,
-            onPressed: endWorkout,
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              icon: const Icon(Icons.check),
+              color: colorScheme.secondary,
+              iconSize: 28,
+              padding: const EdgeInsets.all(12),
+              constraints: const BoxConstraints(
+                minWidth: 48,
+                minHeight: 48,
+              ),
+              tooltip: 'Finish Workout',
+              onPressed: endWorkout,
+            ),
           ),
         ],
       ),
