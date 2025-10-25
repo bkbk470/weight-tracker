@@ -2105,37 +2105,12 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                             value: set.plannedRestSeconds > 0 ? set.plannedRestSeconds : exercise.restTime,
                                             onChanged: (value) {
                                               setState(() {
-                                                final previousExerciseRest = exercise.restTime;
-                                                final previousSetRest = set.plannedRestSeconds;
-                                                final baselineRest = previousExerciseRest > 0
-                                                    ? previousExerciseRest
-                                                    : (previousSetRest > 0 ? previousSetRest : exercise.restTime);
-
+                                                // Update only this specific set's rest time
                                                 set.plannedRestSeconds = value;
                                                 set.restStartTime = value;
                                                 set.currentRestTime = value;
 
-                                                // Update the exercise-level default so new sets inherit this value.
-                                                exercise.restTime = value;
-
-                                                // Keep other sets in sync when they were using the old baseline rest value.
-                                                for (final otherSet in exercise.sets) {
-                                                  if (identical(otherSet, set)) continue;
-                                                  if (baselineRest <= 0 &&
-                                                      otherSet.plannedRestSeconds <= 0) {
-                                                    otherSet.plannedRestSeconds = value;
-                                                    if (!otherSet.isResting) {
-                                                      otherSet.restStartTime = value;
-                                                      otherSet.currentRestTime = value;
-                                                    }
-                                                  } else if (otherSet.plannedRestSeconds == baselineRest) {
-                                                    otherSet.plannedRestSeconds = value;
-                                                    if (!otherSet.isResting) {
-                                                      otherSet.restStartTime = value;
-                                                      otherSet.currentRestTime = value;
-                                                    }
-                                                  }
-                                                }
+                                                print('🔄 Updated rest time for set ${exercise.sets.indexOf(set) + 1}: ${value}s');
                                               });
                                               if (widget.workoutId != null) {
                                                 final exerciseIndex = exercises.indexWhere((e) => e.id == exercise.id);
