@@ -38,6 +38,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   int maxRestTime = 0;
   bool isResting = false;
   Timer? restTimerInstance;
+  DateTime? _restStartTime; // Track when rest started
+  int? _restDuration; // Track total rest duration in seconds
 
   List<Exercise> exercises = [];
 
@@ -1394,37 +1396,50 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           set.currentRestTime = plannedRest; // Set to full time immediately
           set.isResting = true;
           
-          // Start rest timer
+          // Start rest timer with DateTime tracking for background support
+          _restStartTime = DateTime.now();
+          _restDuration = plannedRest;
           restTimer = plannedRest;
           maxRestTime = plannedRest;
           isResting = true;
-          
+
           restTimerInstance?.cancel();
           restTimerInstance = Timer.periodic(const Duration(seconds: 1), (timer) {
-            setState(() {
-              if (restTimer > 0) {
-                restTimer--;
-                // Update the specific set's rest time
-                if (exerciseIndex < exercises.length &&
-                    setIndex < exercises[exerciseIndex].sets.length) {
-                  exercises[exerciseIndex].sets[setIndex].currentRestTime = restTimer;
+            if (_restStartTime != null && _restDuration != null) {
+              // Calculate elapsed time based on DateTime (works even when app was backgrounded)
+              final elapsed = DateTime.now().difference(_restStartTime!).inSeconds;
+              final remaining = _restDuration! - elapsed;
+
+              setState(() {
+                if (remaining > 0) {
+                  restTimer = remaining;
+                  // Update the specific set's rest time
+                  if (exerciseIndex < exercises.length &&
+                      setIndex < exercises[exerciseIndex].sets.length) {
+                    exercises[exerciseIndex].sets[setIndex].currentRestTime = remaining;
+                  }
+                } else {
+                  // Rest timer complete
+                  isResting = false;
+                  _restStartTime = null;
+                  _restDuration = null;
+
+                  if (exerciseIndex < exercises.length &&
+                      setIndex < exercises[exerciseIndex].sets.length) {
+                    final target = exercises[exerciseIndex].sets[setIndex].plannedRestSeconds > 0
+                        ? exercises[exerciseIndex].sets[setIndex].plannedRestSeconds
+                        : exercises[exerciseIndex].restTime;
+                    exercises[exerciseIndex].sets[setIndex].isResting = false;
+                    exercises[exerciseIndex].sets[setIndex].restStartTime = target;
+                    exercises[exerciseIndex].sets[setIndex].currentRestTime = target;
+                  }
+
+                  // Show notification when rest timer completes
+                  NotificationService.instance.showRestTimerCompleteNotification();
+                  timer.cancel();
                 }
-              } else {
-                isResting = false;
-                if (exerciseIndex < exercises.length &&
-                    setIndex < exercises[exerciseIndex].sets.length) {
-                  final target = exercises[exerciseIndex].sets[setIndex].plannedRestSeconds > 0
-                      ? exercises[exerciseIndex].sets[setIndex].plannedRestSeconds
-                      : exercises[exerciseIndex].restTime;
-                  exercises[exerciseIndex].sets[setIndex].isResting = false;
-                  exercises[exerciseIndex].sets[setIndex].restStartTime = target;
-                  exercises[exerciseIndex].sets[setIndex].currentRestTime = target;
-                }
-                // Show notification when rest timer completes
-                NotificationService.instance.showRestTimerCompleteNotification();
-                timer.cancel();
-              }
-            });
+              });
+            }
           });
         }
       }
@@ -1453,6 +1468,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     setState(() {
       isResting = false;
       restTimer = 0;
+      _restStartTime = null;
+      _restDuration = null;
     });
     restTimerInstance?.cancel();
   }
