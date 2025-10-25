@@ -681,6 +681,7 @@ class _AppNavigatorState extends State<AppNavigator> {
       List<WorkoutExerciseSet> sets;
 
       if (setDetailsRaw is List && setDetailsRaw.isNotEmpty) {
+        debugPrint('📥 Loading $name from set_details: $setDetailsRaw');
         // Load individual set details from database
         sets = setDetailsRaw.map((setData) {
           final weight = setData is Map ? (setData['weight'] is int ? setData['weight'] as int : int.tryParse('${setData['weight']}') ?? 0) : 0;
@@ -692,7 +693,9 @@ class _AppNavigatorState extends State<AppNavigator> {
             restSeconds: rest,
           );
         }).toList();
+        debugPrint('✅ Loaded ${sets.length} sets from set_details for $name');
       } else {
+        debugPrint('⚠️  No set_details for $name, using defaults (weight=0, reps=$repsValue)');
         // Fallback: generate default sets (old behavior)
         final numSets = setsValue is int ? setsValue : int.tryParse('$setsValue') ?? 3;
         sets = List.generate(

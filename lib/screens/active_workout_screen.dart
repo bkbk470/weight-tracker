@@ -540,7 +540,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
     try {
       if (widget.workoutId != null) {
+        print('🔄 Syncing all workout exercises to template...');
         await _syncAllWorkoutExercises();
+        print('✅ All exercises synced to template');
+      } else {
+        print('⚠️  Not syncing to template: no workoutId (quick workout)');
       }
 
       // Create workout log
@@ -874,9 +878,16 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   }
 
   Future<void> _syncWorkoutExerciseTemplate(Exercise exercise, int orderIndex) async {
-    if (widget.workoutId == null) return;
+    if (widget.workoutId == null) {
+      print('⚠️  Cannot sync ${exercise.name}: no workoutId');
+      return;
+    }
+
     final ensured = await _ensureWorkoutExerciseMetadata(exercise, orderIndex, createIfMissing: true);
-    if (!ensured || exercise.workoutExerciseId == null) return;
+    if (!ensured || exercise.workoutExerciseId == null) {
+      print('❌ Cannot sync ${exercise.name}: no workoutExerciseId');
+      return;
+    }
 
     final targetReps = exercise.sets.isNotEmpty ? exercise.sets.first.reps : 0;
     final restSeconds = exercise.sets.isNotEmpty
@@ -893,6 +904,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       'rest': set.plannedRestSeconds > 0 ? set.plannedRestSeconds : exercise.restTime,
     }).toList();
 
+    print('💾 Syncing ${exercise.name} template:');
+    print('   - Sets: ${exercise.sets.length}');
+    print('   - Set details: $setDetails');
+
     try {
       final trimmedNotes = exercise.notes.trim();
       await SupabaseService.instance.updateWorkoutExercise(
@@ -905,8 +920,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           'set_details': setDetails,  // Save all set details as JSON
         },
       );
+      print('✅ Successfully synced ${exercise.name} template');
     } catch (e) {
-      print('Failed to sync workout exercise ${exercise.name}: $e');
+      print('❌ Failed to sync workout exercise ${exercise.name}: $e');
     }
   }
 
