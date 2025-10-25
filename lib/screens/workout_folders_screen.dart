@@ -678,22 +678,23 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
 
   Future<void> _reorderPlans(int oldIndex, int newIndex) async {
     // Validate indices
-    if (oldIndex < 0 || oldIndex >= folders.length || newIndex < 0 || newIndex > folders.length) {
+    if (oldIndex < 0 || oldIndex >= folders.length || newIndex < 0 || newIndex >= folders.length) {
       print('Invalid reorder indices: oldIndex=$oldIndex, newIndex=$newIndex, length=${folders.length}');
       return;
     }
 
-    // Adjust newIndex for list reordering
-    if (newIndex > oldIndex) {
-      newIndex -= 1;
+    if (oldIndex == newIndex) {
+      return; // No change needed
     }
 
     // Store the original order in case we need to revert
     final originalFolders = List<Map<String, dynamic>>.from(folders);
 
-    // Reorder the list WITHOUT setState - ReorderableListView handles the UI update
-    final plan = folders.removeAt(oldIndex);
-    folders.insert(newIndex, plan);
+    // Reorder the list with setState for UI update
+    setState(() {
+      final plan = folders.removeAt(oldIndex);
+      folders.insert(newIndex, plan);
+    });
 
     try {
       // Save the new order to the database
@@ -826,7 +827,7 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Long press and drag plans to reorder them',
+                      'Use the arrow buttons to reorder plans',
                       style: textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onPrimaryContainer,
                       ),
@@ -835,77 +836,75 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
                 ],
               ),
             ),
-            // Reorderable list
-            ReorderableListView(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              onReorder: _reorderPlans,
-              proxyDecorator: (child, index, animation) {
-                return Material(
-                  elevation: 8,
-                  borderRadius: BorderRadius.circular(12),
-                  child: child,
-                );
-              },
-              children: folders.map((folder) {
-                final folderId = folder['id'] as String;
-                final workouts = workoutsByFolder[folderId] ?? [];
-                final folderName = folder['name'] as String? ?? 'Unnamed';
-                final folderColor = folder['color'] as String?;
+            // Simple arrow-based reordering (no drag and drop to avoid layout issues)
+            ...folders.asMap().entries.map((entry) {
+              final index = entry.key;
+              final folder = entry.value;
+              final folderId = folder['id'] as String;
+              final workouts = workoutsByFolder[folderId] ?? [];
+              final folderName = folder['name'] as String? ?? 'Unnamed';
+              final folderColor = folder['color'] as String?;
 
-                return Material(
-                  key: ValueKey(folderId),
-                  type: MaterialType.transparency,
-                  child: Container(
-                    height: 72, // Fixed height to prevent layout issues
-                    margin: const EdgeInsets.only(bottom: 16),
-                    child: Card(
-                      margin: EdgeInsets.zero,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        child: Row(
+              return Padding(
+                key: ValueKey(folderId),
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
-                              Icons.drag_handle,
-                              color: colorScheme.onSurfaceVariant,
-                              size: 24,
-                            ),
-                            const SizedBox(width: 12),
-                            Icon(
-                              Icons.folder,
-                              color: _getColorFromString(folderColor),
-                              size: 28,
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    folderName,
-                                    style: textTheme.titleMedium,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '${workouts.length} workout${workouts.length != 1 ? 's' : ''}',
-                                    style: textTheme.bodySmall?.copyWith(
-                                      color: colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
+                            if (index > 0)
+                              IconButton(
+                                icon: const Icon(Icons.arrow_upward, size: 20),
+                                onPressed: () => _reorderPlans(index, index - 1),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                tooltip: 'Move up',
                               ),
-                            ),
+                            if (index < folders.length - 1)
+                              IconButton(
+                                icon: const Icon(Icons.arrow_downward, size: 20),
+                                onPressed: () => _reorderPlans(index, index + 1),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                tooltip: 'Move down',
+                              ),
                           ],
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.folder,
+                          color: _getColorFromString(folderColor),
+                          size: 32,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                folderName,
+                                style: textTheme.titleMedium,
+                              ),
+                              Text(
+                                '${workouts.length} workout${workouts.length != 1 ? 's' : ''}',
+                                style: textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                );
-              }).toList(),
-            ),
+                ),
+              );
+            }).toList(),
           ] else ...[
             ...folders.map((folder) {
             final folderId = folder['id'] as String;
