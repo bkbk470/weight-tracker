@@ -806,7 +806,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               final isExpanded = folderId != null && _expandedFolderIds.contains(folderId);
               final color = _getColorFromString(folder['color'] as String?);
 
-              return Card(
+              final cardContent = Card(
                 key: ValueKey(folderId ?? 'plan-$index'),
                 margin: const EdgeInsets.only(bottom: 12),
                 shape: RoundedRectangleBorder(
@@ -855,23 +855,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 ],
                               ),
                             ),
-                            SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: folderId == null
-                                  ? Icon(
-                                      Icons.drag_indicator,
-                                      size: 24,
-                                      color: colorScheme.onSurfaceVariant.withOpacity(0.3),
-                                    )
-                                  : ReorderableDragStartListener(
-                                      index: index,
-                                      child: Icon(
-                                        Icons.drag_indicator,
-                                        size: 24,
-                                        color: colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
+                            Icon(
+                              Icons.drag_indicator,
+                              size: 24,
+                              color: folderId == null
+                                  ? colorScheme.onSurfaceVariant.withOpacity(0.3)
+                                  : colorScheme.onSurfaceVariant,
                             ),
                             const SizedBox(width: 8),
                             SizedBox(
@@ -950,6 +939,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
               );
+
+              // Wrap with ReorderableDragStartListener only for folders (not unorganized workouts)
+              if (folderId != null) {
+                return ReorderableDragStartListener(
+                  key: ValueKey('drag-$index'),
+                  index: index,
+                  child: cardContent,
+                );
+              }
+
+              return cardContent;
             },
           );
 
