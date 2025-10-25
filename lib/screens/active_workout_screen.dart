@@ -270,7 +270,14 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
             }
 
             final repsValue = record['reps'];
-            set.previousReps = repsValue is int ? repsValue : int.tryParse(repsValue?.toString() ?? '');
+            final previousReps = repsValue is int ? repsValue : int.tryParse(repsValue?.toString() ?? '');
+            set.previousReps = previousReps;
+
+            // Auto-fill reps with previous reps (always prefer previous over template default)
+            if (previousReps != null && previousReps > 0) {
+              set.reps = previousReps;
+              print('✅ Auto-filled set ${i+1} with ${set.reps} reps from previous workout');
+            }
           } else {
             set.previousWeight = null;
             set.previousReps = null;
@@ -319,14 +326,20 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               final weightRaw = data['weight'];
               final repsRaw = data['reps'];
               final previousWeight = weightRaw is num ? weightRaw.toDouble() : double.tryParse('${weightRaw ?? ''}');
+              final previousReps = repsRaw is int ? repsRaw : int.tryParse('${repsRaw ?? ''}');
+
               exercise.sets[i].previousWeight = previousWeight;
-              
+              exercise.sets[i].previousReps = previousReps;
+
               // Auto-fill weight with previous weight if current weight is 0
               if (exercise.sets[i].weight == 0 && previousWeight != null && previousWeight > 0) {
                 exercise.sets[i].weight = previousWeight.round();
               }
-              
-              exercise.sets[i].previousReps = repsRaw is int ? repsRaw : int.tryParse('${repsRaw ?? ''}');
+
+              // Auto-fill reps with previous reps (always prefer previous over template default)
+              if (previousReps != null && previousReps > 0) {
+                exercise.sets[i].reps = previousReps;
+              }
             }
           }
         }
