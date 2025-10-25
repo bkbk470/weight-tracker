@@ -677,25 +677,38 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
   }
 
   Future<void> _reorderPlans(int oldIndex, int newIndex) async {
-    setState(() {
-      // Adjust newIndex for list reordering
-      if (newIndex > oldIndex) {
-        newIndex -= 1;
-      }
+    // Validate indices
+    if (oldIndex < 0 || oldIndex >= folders.length || newIndex < 0 || newIndex > folders.length) {
+      print('Invalid reorder indices: oldIndex=$oldIndex, newIndex=$newIndex, length=${folders.length}');
+      return;
+    }
 
-      // Reorder the list
-      final plan = folders.removeAt(oldIndex);
-      folders.insert(newIndex, plan);
-    });
+    // Store the original order in case we need to revert
+    final originalFolders = List<Map<String, dynamic>>.from(folders);
 
     try {
+      setState(() {
+        // Adjust newIndex for list reordering
+        if (newIndex > oldIndex) {
+          newIndex -= 1;
+        }
+
+        // Reorder the list
+        final plan = folders.removeAt(oldIndex);
+        folders.insert(newIndex, plan);
+      });
+
       // Save the new order to the database
       await _supabaseService.reorderPlans(folders);
     } catch (e) {
       print('Error saving plan order: $e');
-      // Reload on error to get correct order
-      _loadFoldersAndWorkouts();
+
+      // Revert to original order on error
       if (mounted) {
+        setState(() {
+          folders = originalFolders;
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error saving order: $e'),
@@ -831,8 +844,15 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
                 physics: const NeverScrollableScrollPhysics(),
                 onReorder: _reorderPlans,
                 children: folders.map((folder) {
-                  final folderId = folder['id'] as String;
+                  final folderId = folder['id'] as String?;
+                  if (folderId == null) {
+                    // Skip folders without IDs during reordering
+                    return const SizedBox.shrink(key: ValueKey('empty'));
+                  }
                   final workouts = workoutsByFolder[folderId] ?? [];
+                  final folderName = folder['name'] as String? ?? 'Unnamed';
+                  final folderColor = folder['color'] as String?;
+
                   return Card(
                     key: ValueKey(folderId),
                     margin: const EdgeInsets.only(bottom: 16),
@@ -847,13 +867,13 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
                           const SizedBox(width: 8),
                           Icon(
                             Icons.folder,
-                            color: _getColorFromString(folder['color'] as String?),
+                            color: _getColorFromString(folderColor),
                             size: 32,
                           ),
                         ],
                       ),
-                      title: Text(folder['name'] as String, style: textTheme.titleMedium),
-                      subtitle: Text('${ workouts.length} workout${workouts.length != 1 ? 's' : ''}'),
+                      title: Text(folderName, style: textTheme.titleMedium),
+                      subtitle: Text('${workouts.length} workout${workouts.length != 1 ? 's' : ''}'),
                     ),
                   );
                 }).toList(),
