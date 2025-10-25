@@ -885,6 +885,14 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
             : exercise.restTime)
         : exercise.restTime;
     exercise.restTime = restSeconds;
+
+    // Build set details JSON to save individual set data
+    final setDetails = exercise.sets.map((set) => {
+      'weight': set.weight,
+      'reps': set.reps,
+      'rest': set.plannedRestSeconds > 0 ? set.plannedRestSeconds : exercise.restTime,
+    }).toList();
+
     try {
       final trimmedNotes = exercise.notes.trim();
       await SupabaseService.instance.updateWorkoutExercise(
@@ -894,6 +902,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           'target_reps': targetReps,
           'rest_time_seconds': restSeconds,
           'notes': trimmedNotes.isEmpty ? null : trimmedNotes,
+          'set_details': setDetails,  // Save all set details as JSON
         },
       );
     } catch (e) {

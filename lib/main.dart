@@ -666,24 +666,48 @@ class _AppNavigatorState extends State<AppNavigator> {
       final name = (exerciseInfo['name'] ?? exerciseMap['exercise_name'] ?? 'Exercise') as String;
       final setsValue = exerciseMap['target_sets'] ?? exerciseMap['sets'] ?? 3;
       final repsValue = exerciseMap['target_reps'] ?? exerciseMap['reps'] ?? 10;
+      final restTimeValue = exerciseMap['rest_time_seconds'] is int
+          ? exerciseMap['rest_time_seconds'] as int
+          : int.tryParse('${exerciseMap['rest_time_seconds']}') ?? 120;
       final notesValue = exerciseMap['notes'] as String? ?? '';
       final workoutExerciseId = exerciseMap['id'] as String?;
       final exerciseId = exerciseMap['exercise_id'] as String? ?? exerciseInfo['id'] as String?;
       final orderIndex = exerciseMap['order_index'] is int
           ? exerciseMap['order_index'] as int
           : int.tryParse('${exerciseMap['order_index']}') ?? index;
-      return WorkoutExercise(
-        name: name,
-        sets: List.generate(
-          setsValue is int ? setsValue : int.tryParse('$setsValue') ?? 3,
+
+      // Try to load set details from JSON field if available
+      final setDetailsRaw = exerciseMap['set_details'];
+      List<WorkoutExerciseSet> sets;
+
+      if (setDetailsRaw is List && setDetailsRaw.isNotEmpty) {
+        // Load individual set details from database
+        sets = setDetailsRaw.map((setData) {
+          final weight = setData is Map ? (setData['weight'] is int ? setData['weight'] as int : int.tryParse('${setData['weight']}') ?? 0) : 0;
+          final reps = setData is Map ? (setData['reps'] is int ? setData['reps'] as int : int.tryParse('${setData['reps']}') ?? repsValue) : repsValue;
+          final rest = setData is Map ? (setData['rest'] is int ? setData['rest'] as int : int.tryParse('${setData['rest']}') ?? restTimeValue) : restTimeValue;
+          return WorkoutExerciseSet(
+            weight: weight,
+            reps: reps,
+            restSeconds: rest,
+          );
+        }).toList();
+      } else {
+        // Fallback: generate default sets (old behavior)
+        final numSets = setsValue is int ? setsValue : int.tryParse('$setsValue') ?? 3;
+        sets = List.generate(
+          numSets,
           (_) => WorkoutExerciseSet(
             weight: 0,
             reps: repsValue is int ? repsValue : int.tryParse('$repsValue') ?? 10,
-            restSeconds: exerciseMap['rest_time_seconds'] is int
-                ? exerciseMap['rest_time_seconds'] as int
-                : int.tryParse('${exerciseMap['rest_time_seconds']}') ?? 120,
+            restSeconds: restTimeValue,
           ),
-        ),
+        );
+      }
+
+      return WorkoutExercise(
+        name: name,
+        sets: sets,
         notes: notesValue,
         workoutExerciseId: workoutExerciseId,
         exerciseId: exerciseId,
