@@ -853,42 +853,53 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
                 final folderName = folder['name'] as String? ?? 'Unnamed';
                 final folderColor = folder['color'] as String?;
 
-                return Container(
+                return Material(
                   key: ValueKey(folderId),
-                  margin: const EdgeInsets.only(bottom: 16),
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.drag_handle,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(
-                            Icons.folder,
-                            color: _getColorFromString(folderColor),
-                            size: 32,
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  folderName,
-                                  style: textTheme.titleMedium,
-                                ),
-                                Text(
-                                  '${workouts.length} workout${workouts.length != 1 ? 's' : ''}',
-                                  style: textTheme.bodySmall,
-                                ),
-                              ],
+                  type: MaterialType.transparency,
+                  child: Container(
+                    height: 72, // Fixed height to prevent layout issues
+                    margin: const EdgeInsets.only(bottom: 16),
+                    child: Card(
+                      margin: EdgeInsets.zero,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.drag_handle,
+                              color: colorScheme.onSurfaceVariant,
+                              size: 24,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 12),
+                            Icon(
+                              Icons.folder,
+                              color: _getColorFromString(folderColor),
+                              size: 28,
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    folderName,
+                                    style: textTheme.titleMedium,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${workouts.length} workout${workouts.length != 1 ? 's' : ''}',
+                                    style: textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
