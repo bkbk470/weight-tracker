@@ -351,23 +351,60 @@ class SupabaseService {
         .eq('id', workoutId);
   }
 
-  // Add workout to plan (many-to-many)
+  // Add workout to plan (many-to-many) - allows duplicates by using order_index
   Future<void> addWorkoutToPlan(String workoutId, String planId) async {
+    // Get the current max order_index for this plan
+    final existing = await client
+        .from('workout_plan_workouts')
+        .select('order_index')
+        .eq('workout_plan_id', planId)
+        .order('order_index', ascending: false)
+        .limit(1)
+        .maybeSingle();
+
+    // Calculate next order_index (0 if no workouts in plan yet)
+    final nextOrderIndex = existing != null
+        ? ((existing['order_index'] as int?) ?? 0) + 1
+        : 0;
+
+    // Insert with order_index to allow duplicate workouts
     await client
         .from('workout_plan_workouts')
         .insert({
           'workout_id': workoutId,
           'workout_plan_id': planId,
+          'order_index': nextOrderIndex,
         });
   }
 
-  // Remove workout from plan (many-to-many)
-  Future<void> removeWorkoutFromPlan(String workoutId, String planId) async {
-    await client
-        .from('workout_plan_workouts')
-        .delete()
-        .eq('workout_id', workoutId)
-        .eq('workout_plan_id', planId);
+  // Remove workout from plan (many-to-many) - removes only one instance
+  Future<void> removeWorkoutFromPlan(String workoutId, String planId, {int? orderIndex}) async {
+    if (orderIndex != null) {
+      // Remove specific instance by order_index
+      await client
+          .from('workout_plan_workouts')
+          .delete()
+          .eq('workout_id', workoutId)
+          .eq('workout_plan_id', planId)
+          .eq('order_index', orderIndex);
+    } else {
+      // Remove first instance (lowest order_index) if order not specified
+      final firstInstance = await client
+          .from('workout_plan_workouts')
+          .select('id, order_index')
+          .eq('workout_id', workoutId)
+          .eq('workout_plan_id', planId)
+          .order('order_index', ascending: true)
+          .limit(1)
+          .maybeSingle();
+
+      if (firstInstance != null) {
+        await client
+            .from('workout_plan_workouts')
+            .delete()
+            .eq('id', firstInstance['id']);
+      }
+    }
   }
 
   // Get all plans that contain a specific workout
