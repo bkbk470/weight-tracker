@@ -851,26 +851,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 ],
                               ),
                             ),
-                            Tooltip(
-                              message: folderId == null ? 'Plan id missing' : 'Drag to reorder',
+                            SizedBox(
+                              width: 24,
+                              height: 24,
                               child: folderId == null
                                   ? Icon(
                                       Icons.drag_indicator,
+                                      size: 24,
                                       color: colorScheme.onSurfaceVariant.withOpacity(0.3),
                                     )
                                   : ReorderableDragStartListener(
                                       index: index,
                                       child: Icon(
                                         Icons.drag_indicator,
+                                        size: 24,
                                         color: colorScheme.onSurfaceVariant,
                                       ),
                                     ),
                             ),
                             const SizedBox(width: 8),
-                            AnimatedRotation(
-                              turns: isExpanded ? 0.5 : 0,
-                              duration: const Duration(milliseconds: 200),
-                              child: const Icon(Icons.expand_more),
+                            SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: AnimatedRotation(
+                                turns: isExpanded ? 0.5 : 0,
+                                duration: const Duration(milliseconds: 200),
+                                child: const Icon(Icons.expand_more, size: 24),
+                              ),
                             ),
                             const SizedBox(width: 16),
                           ],
