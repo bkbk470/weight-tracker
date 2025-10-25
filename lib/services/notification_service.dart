@@ -79,6 +79,8 @@ class NotificationService {
         presentBadge: true,
         presentSound: true,
         sound: 'default',
+        // These settings ensure notification appears even when phone is locked
+        interruptionLevel: InterruptionLevel.timeSensitive,
       );
 
       const NotificationDetails notificationDetails = NotificationDetails(
