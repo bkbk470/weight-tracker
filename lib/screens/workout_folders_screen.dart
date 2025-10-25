@@ -683,21 +683,19 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
       return;
     }
 
+    // Adjust newIndex for list reordering
+    if (newIndex > oldIndex) {
+      newIndex -= 1;
+    }
+
     // Store the original order in case we need to revert
     final originalFolders = List<Map<String, dynamic>>.from(folders);
 
+    // Reorder the list WITHOUT setState - ReorderableListView handles the UI update
+    final plan = folders.removeAt(oldIndex);
+    folders.insert(newIndex, plan);
+
     try {
-      setState(() {
-        // Adjust newIndex for list reordering
-        if (newIndex > oldIndex) {
-          newIndex -= 1;
-        }
-
-        // Reorder the list
-        final plan = folders.removeAt(oldIndex);
-        folders.insert(newIndex, plan);
-      });
-
       // Save the new order to the database
       await _supabaseService.reorderPlans(folders);
     } catch (e) {
