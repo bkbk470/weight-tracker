@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../constants/exercise_assets.dart';
 import '../services/local_storage_service.dart';
 import '../services/supabase_service.dart';
+import '../utils/safe_dialog_helpers.dart';
 
 class ExercisesScreen extends StatefulWidget {
   final void Function(String, [Map<String, dynamic>?]) onNavigate;
@@ -97,6 +98,20 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
   void dispose() {
     searchController.dispose();
     super.dispose();
+  }
+
+  void _showExerciseBottomSheet(BuildContext context, Exercise exercise) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    showSafeModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _ExerciseInfoSheet(
+        exercise: exercise,
+      ),
+    );
   }
 
   String? _firstNonEmptyString(Map<String, dynamic> map, List<String> keys) {
@@ -305,10 +320,7 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
                             exercise: exercise,
                             colorScheme: colorScheme,
                             textTheme: textTheme,
-                            onTap: () => widget.onNavigate(
-                              'exercise-detail',
-                              {'exercise': exercise.toDetailPayload()},
-                            ),
+                            onTap: () => _showExerciseBottomSheet(context, exercise),
                           );
                         },
                         childCount: filteredExercises.length,
@@ -645,6 +657,268 @@ class _ExerciseCard extends StatelessWidget {
         icon,
         color: scheme.onPrimaryContainer,
       ),
+    );
+  }
+}
+
+// Bottom sheet for exercise details
+class _ExerciseInfoSheet extends StatelessWidget {
+  final Exercise exercise;
+
+  const _ExerciseInfoSheet({
+    required this.exercise,
+  });
+
+  bool _needsSignedUrl(String path) {
+    return path.isNotEmpty &&
+        !path.startsWith('http') &&
+        !path.startsWith('assets/');
+  }
+
+  Widget _buildExerciseImage(String imageUrl, ColorScheme colorScheme) {
+    // If it's a Supabase storage path, get signed URL
+    if (_needsSignedUrl(imageUrl)) {
+      return FutureBuilder<String>(
+        future: SupabaseService.instance.getSignedUrlForStoragePath(imageUrl),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return Image.network(
+              snapshot.data!,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: colorScheme.surfaceVariant,
+                  child: Icon(
+                    Icons.fitness_center,
+                    size: 64,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                );
+              },
+            );
+          }
+          if (snapshot.hasError) {
+            return Container(
+              color: colorScheme.surfaceVariant,
+              child: Icon(
+                Icons.fitness_center,
+                size: 64,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            );
+          }
+          return Container(
+            color: colorScheme.surfaceVariant,
+            child: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        },
+      );
+    }
+
+    // Otherwise use the URL directly
+    return Image.network(
+      imageUrl,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          color: colorScheme.surfaceVariant,
+          child: Icon(
+            Icons.fitness_center,
+            size: 64,
+            color: colorScheme.onSurfaceVariant,
+          ),
+        );
+      },
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Container(
+          color: colorScheme.surfaceVariant,
+          child: Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                  : null,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Color _getDifficultyColor(String difficulty, ColorScheme colorScheme) {
+    switch (difficulty.toLowerCase()) {
+      case 'beginner':
+        return Colors.green;
+      case 'intermediate':
+        return Colors.orange;
+      case 'advanced':
+        return Colors.red;
+      default:
+        return colorScheme.primary;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // Handle bar
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colorScheme.onSurfaceVariant.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // Content
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.all(24),
+                  children: [
+                    // Exercise name
+                    Text(
+                      exercise.name,
+                      style: textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Category and difficulty badges
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        Chip(
+                          label: Text(exercise.category),
+                          backgroundColor: colorScheme.primaryContainer,
+                          labelStyle: TextStyle(
+                            color: colorScheme.onPrimaryContainer,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (exercise.difficulty.isNotEmpty)
+                          Chip(
+                            label: Text(exercise.difficulty),
+                            backgroundColor: _getDifficultyColor(exercise.difficulty, colorScheme).withOpacity(0.2),
+                            labelStyle: TextStyle(
+                              color: _getDifficultyColor(exercise.difficulty, colorScheme),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    // Exercise image
+                    if (exercise.imageUrl.isNotEmpty && exercise.imageUrl != kExercisePlaceholderImage) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: _buildExerciseImage(exercise.imageUrl, colorScheme),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                    // Equipment
+                    _InfoSection(
+                      icon: Icons.sports_gymnastics,
+                      title: 'Equipment',
+                      content: exercise.equipment.isEmpty ? 'Bodyweight' : exercise.equipment,
+                      colorScheme: colorScheme,
+                      textTheme: textTheme,
+                    ),
+                    const SizedBox(height: 16),
+                    // Instructions
+                    if (exercise.instructions.isNotEmpty)
+                      _InfoSection(
+                        icon: Icons.article,
+                        title: 'Instructions',
+                        content: exercise.instructions,
+                        colorScheme: colorScheme,
+                        textTheme: textTheme,
+                      )
+                    else
+                      _InfoSection(
+                        icon: Icons.info_outline,
+                        title: 'About',
+                        content: 'This is a ${exercise.category} exercise. Focus on proper form and controlled movements.',
+                        colorScheme: colorScheme,
+                        textTheme: textTheme,
+                      ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+// Info section widget for exercise details
+class _InfoSection extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String content;
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+
+  const _InfoSection({
+    required this.icon,
+    required this.title,
+    required this.content,
+    required this.colorScheme,
+    required this.textTheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 20, color: colorScheme.primary),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.primary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          content,
+          style: textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            height: 1.5,
+          ),
+        ),
+      ],
     );
   }
 }
