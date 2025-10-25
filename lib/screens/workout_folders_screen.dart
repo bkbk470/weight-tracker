@@ -719,9 +719,9 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
       case 'red':
         return Colors.red;
       case 'default':
-        return Theme.of(context).colorScheme.primary;
+        return Colors.grey;
       default:
-        return Theme.of(context).colorScheme.primary;
+        return Colors.grey;
     }
   }
 
