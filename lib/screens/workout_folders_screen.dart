@@ -777,9 +777,12 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
               color: Colors.grey,
               workoutCount: workoutsByFolder[null]!.length,
               onTap: () {
-                setState(() => selectedFolderId = null);
+                setState(() {
+                  // Toggle: if currently showing uncategorized, collapse it; otherwise expand it
+                  selectedFolderId = selectedFolderId == '__unorganized__' ? null : '__unorganized__';
+                });
               },
-              isExpanded: selectedFolderId == null,
+              isExpanded: selectedFolderId == '__unorganized__',
               workouts: workoutsByFolder[null]!,
               onWorkoutTap: (workout) {
                 widget.onNavigate('workout-detail', {'workout': workout});
