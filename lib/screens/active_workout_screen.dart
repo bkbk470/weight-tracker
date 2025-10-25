@@ -552,7 +552,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
         for (int i = 0; i < exercise.sets.length; i++) {
           final set = exercise.sets[i];
-          if (set.completed) {
+          // Save any set that has data (weight or reps > 0) OR is marked as completed
+          final hasData = set.weight > 0 || set.reps > 0;
+          if (set.completed || hasData) {
             await SupabaseService.instance.addExerciseSet(
               workoutLogId: workoutLog['id'],
               exerciseId: exerciseId,
@@ -560,7 +562,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               setNumber: i + 1,
               weightLbs: set.weight > 0 ? set.weight.toDouble() : null,
               reps: set.reps > 0 ? set.reps : null,
-              completed: true,
+              completed: set.completed,
               restTimeSeconds: set.plannedRestSeconds > 0 ? set.plannedRestSeconds : exercise.restTime,
               notes: exercise.notes.isEmpty ? null : exercise.notes,
             );
@@ -862,13 +864,14 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     final List<Future<void>> futures = [];
 
     for (final exercise in exercises) {
-      final completedSets = exercise.sets.where((set) => set.completed).toList();
-      if (completedSets.isEmpty) continue;
+      // Save sets that are completed OR have data entered
+      final setsToSave = exercise.sets.where((set) => set.completed || set.weight > 0 || set.reps > 0).toList();
+      if (setsToSave.isEmpty) continue;
 
       final normalizedName = exercise.name.trim().toLowerCase();
       final record = <String, dynamic>{
         'date': date.toIso8601String(),
-        'sets': completedSets
+        'sets': setsToSave
             .map((set) => {
                   'weight': set.weight,
                   'reps': set.reps,
