@@ -301,10 +301,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       print('Failed to load previous sets for ${exercise.name}: $e');
     }
 
-    if (widget.workoutId != null) {
-      unawaited(_syncWorkoutExerciseTemplate(exercise, orderIndex));
-    }
-
     if (mounted) {
       _applyLocalHistoryIfMissing(exercise);
     }

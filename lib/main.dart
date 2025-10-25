@@ -610,6 +610,35 @@ class _AppNavigatorState extends State<AppNavigator> {
         );
       case 'workout-detail':
         final workout = _selectedWorkout;
+
+        // Refetch workout from database to get latest set_details
+        if (workout != null && workout['id'] != null) {
+          return FutureBuilder<Map<String, dynamic>?>(
+            future: SupabaseService.instance.getWorkout(workout['id'] as String),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final freshWorkout = snapshot.data ?? workout;
+              final workoutExercises = _buildWorkoutExercises(freshWorkout);
+              final durationMinutes = freshWorkout['estimated_duration_minutes'] as int?;
+
+              return WorkoutDetailScreen(
+                onNavigate: (screen, [data]) => navigate(screen, context, data),
+                workoutId: freshWorkout['id'] as String?,
+                workoutName: freshWorkout['name'] as String? ?? 'Workout',
+                workoutDescription: freshWorkout['description'] as String? ?? 'Custom workout',
+                duration: durationMinutes != null ? '$durationMinutes min' : '45 min',
+                difficulty: freshWorkout['difficulty'] as String? ?? 'Intermediate',
+                initialExercises: workoutExercises,
+                workoutData: freshWorkout,
+              );
+            },
+          );
+        }
+
+        // Fallback for workout without ID
         final workoutExercises = _buildWorkoutExercises(workout);
         final durationMinutes = workout?['estimated_duration_minutes'] as int?;
         return WorkoutDetailScreen(
