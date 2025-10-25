@@ -881,7 +881,7 @@ class _ExerciseInfoSheetState extends State<_ExerciseInfoSheet> {
     final textTheme = Theme.of(context).textTheme;
 
     return DraggableScrollableSheet(
-      initialChildSize: 0.7,
+      initialChildSize: 0.9,
       minChildSize: 0.5,
       maxChildSize: 0.95,
       builder: (context, scrollController) {
@@ -941,17 +941,24 @@ class _ExerciseInfoSheetState extends State<_ExerciseInfoSheet> {
                       ],
                     ),
                     const SizedBox(height: 24),
-                    // Exercise image
-                    if (widget.exercise.imageUrl.isNotEmpty && widget.exercise.imageUrl != kExercisePlaceholderImage) ...[
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: AspectRatio(
-                          aspectRatio: 16 / 9,
-                          child: _buildExerciseImage(widget.exercise.imageUrl, colorScheme),
-                        ),
+                    // Exercise image - always show
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: widget.exercise.imageUrl.isNotEmpty
+                            ? _buildExerciseImage(widget.exercise.imageUrl, colorScheme)
+                            : Container(
+                                color: colorScheme.surfaceVariant,
+                                child: Icon(
+                                  Icons.fitness_center,
+                                  size: 64,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
                       ),
-                      const SizedBox(height: 24),
-                    ],
+                    ),
+                    const SizedBox(height: 24),
                     // Stats Cards
                     if (!isLoadingHistory) ...[
                       GridView.count(
