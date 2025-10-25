@@ -847,6 +847,19 @@ class _ExerciseInfoSheet extends StatelessWidget {
                       textTheme: textTheme,
                     ),
                     const SizedBox(height: 16),
+                    // Muscle Group
+                    if (exercise.rawData['muscle_group'] != null &&
+                        (exercise.rawData['muscle_group'] as String).isNotEmpty)
+                      _InfoSection(
+                        icon: Icons.accessibility_new,
+                        title: 'Muscle Group',
+                        content: exercise.rawData['muscle_group'] as String,
+                        colorScheme: colorScheme,
+                        textTheme: textTheme,
+                      ),
+                    if (exercise.rawData['muscle_group'] != null &&
+                        (exercise.rawData['muscle_group'] as String).isNotEmpty)
+                      const SizedBox(height: 16),
                     // Instructions
                     _InfoSection(
                       icon: (exercise.rawData['instructions'] as String?)?.isNotEmpty ?? false
@@ -861,7 +874,48 @@ class _ExerciseInfoSheet extends StatelessWidget {
                       colorScheme: colorScheme,
                       textTheme: textTheme,
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
+                    // Description
+                    if (exercise.rawData['description'] != null &&
+                        (exercise.rawData['description'] as String).isNotEmpty)
+                      _InfoSection(
+                        icon: Icons.description,
+                        title: 'Description',
+                        content: exercise.rawData['description'] as String,
+                        colorScheme: colorScheme,
+                        textTheme: textTheme,
+                      ),
+                    if (exercise.rawData['description'] != null &&
+                        (exercise.rawData['description'] as String).isNotEmpty)
+                      const SizedBox(height: 16),
+                    // Video URL indicator
+                    if (exercise.videoUrl != null && exercise.videoUrl!.isNotEmpty) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: colorScheme.primary.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.play_circle_outline, color: colorScheme.primary, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Video demonstration available',
+                                style: textTheme.bodyMedium?.copyWith(
+                                  color: colorScheme.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    const SizedBox(height: 8),
                   ],
                 ),
               ),
