@@ -704,7 +704,7 @@ class _ExerciseInfoSheetState extends State<_ExerciseInfoSheet> {
       if (exerciseData['id'] != null) {
         final history = await SupabaseService.instance.getLatestExerciseSetsForExercise(
           exerciseData['id'] as String,
-          limit: 50,
+          historyLimit: 50,
         );
 
         if (mounted) {
