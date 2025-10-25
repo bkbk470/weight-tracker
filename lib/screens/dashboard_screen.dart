@@ -825,18 +825,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       },
                       splashColor: Colors.transparent,
                       highlightColor: Colors.transparent,
-                      child: ListTile(
-                        leading: Icon(Icons.folder, color: color, size: 28),
-                        title: Text(
-                          (folder['name'] as String?) ?? 'Workout Plan',
-                          style: textTheme.titleMedium,
-                        ),
-                        subtitle: Text(
-                          '${workouts.length} workout${workouts.length != 1 ? 's' : ''}',
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
+                      child: SizedBox(
+                        height: 72, // Fixed height to prevent layout issues during drag
+                        child: Row(
                           children: [
+                            const SizedBox(width: 16),
+                            Icon(Icons.folder, color: color, size: 28),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    (folder['name'] as String?) ?? 'Workout Plan',
+                                    style: textTheme.titleMedium,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${workouts.length} workout${workouts.length != 1 ? 's' : ''}',
+                                    style: textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                             Tooltip(
                               message: folderId == null ? 'Plan id missing' : 'Drag to reorder',
                               child: folderId == null
@@ -858,6 +872,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               duration: const Duration(milliseconds: 200),
                               child: const Icon(Icons.expand_more),
                             ),
+                            const SizedBox(width: 16),
                           ],
                         ),
                       ),
