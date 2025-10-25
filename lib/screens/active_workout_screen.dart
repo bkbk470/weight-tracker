@@ -2064,12 +2064,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                           borderRadius: BorderRadius.circular(8),
                           child: Stack(
                             children: [
-                              // Rest timer progress bar (full width background) with smooth fade out
-                              AnimatedOpacity(
-                                opacity: (set.isResting && set.restStartTime > 0) ? 1.0 : 0.0,
-                                duration: const Duration(milliseconds: 500),
-                                curve: Curves.easeOut,
-                                child: Positioned.fill(
+                              // Rest timer progress bar (full width background)
+                              if (set.isResting && set.restStartTime > 0)
+                                Positioned.fill(
                                   child: Align(
                                     alignment: Alignment.centerLeft,
                                     child: FractionallySizedBox(
@@ -2085,7 +2082,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                     ),
                                   ),
                                 ),
-                              ),
                               // Content container
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
