@@ -31,10 +31,14 @@ class WorkoutDetailScreen extends StatefulWidget {
 class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
   List<WorkoutExercise> exercises = [];
   bool isEditMode = false;
+  late TextEditingController _workoutNameController;
+  String _currentWorkoutName = '';
 
   @override
   void initState() {
     super.initState();
+    _currentWorkoutName = widget.workoutName;
+    _workoutNameController = TextEditingController(text: _currentWorkoutName);
     final provided = widget.initialExercises;
     if (provided != null && provided.isNotEmpty) {
       exercises = provided.map((e) => e.copy()).toList();
@@ -94,6 +98,78 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
     }
   }
 
+  @override
+  void dispose() {
+    _workoutNameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _showEditWorkoutNameDialog() async {
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        final controller = TextEditingController(text: _currentWorkoutName);
+        return AlertDialog(
+          title: const Text('Edit Workout Name'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              labelText: 'Workout Name',
+              hintText: 'e.g., Push Day, Full Body',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final newName = controller.text.trim();
+                if (newName.isNotEmpty) {
+                  Navigator.pop(context, newName);
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != null && result != _currentWorkoutName) {
+      setState(() {
+        _currentWorkoutName = result;
+        _workoutNameController.text = result;
+      });
+
+      // Update in database if workout has an ID
+      if (widget.workoutId != null) {
+        try {
+          await SupabaseService.instance.updateWorkoutName(widget.workoutId!, result);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Workout name updated'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error updating name: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      }
+    }
+  }
+
   void startWorkout() {
     // Convert exercises to the format expected by active workout screen
     final exercisesData = exercises.asMap().entries.map((entry) {
@@ -122,7 +198,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
     // Pass exercises data when navigating
     final payload = <String, dynamic>{
       'exercises': exercisesData,
-      'workoutName': widget.workoutName,
+      'workoutName': _currentWorkoutName,
     };
     if (widget.workoutId != null) {
       payload['workoutId'] = widget.workoutId;
@@ -314,7 +390,22 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              title: Text(widget.workoutName),
+              title: GestureDetector(
+                onTap: _showEditWorkoutNameDialog,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        _currentWorkoutName,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.edit, size: 16),
+                  ],
+                ),
+              ),
               background: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(

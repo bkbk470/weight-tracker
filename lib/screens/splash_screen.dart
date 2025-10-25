@@ -94,49 +94,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 opacity: _fadeAnimation.value,
                 child: Transform.scale(
                   scale: _scaleAnimation.value,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // App Icon
-                      Icon(
-                        Icons.fitness_center,
-                        size: 96,
-                        color: foregroundColor,
-                      ),
-                      const SizedBox(height: 32),
-                      // App Name
-                      Text(
-                        'FitTrack',
-                        style: TextStyle(
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
-                          color: foregroundColor,
-                          letterSpacing: 2,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // Tagline
-                      Text(
-                        'Track Your Progress',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: foregroundColor.withOpacity(0.7),
-                          letterSpacing: 1,
-                        ),
-                      ),
-                      const SizedBox(height: 48),
-                      // Loading indicator
-                      SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 3,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            foregroundColor,
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: Icon(
+                    Icons.fitness_center,
+                    size: 120,
+                    color: foregroundColor,
                   ),
                 ),
               );

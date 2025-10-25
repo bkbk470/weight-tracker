@@ -757,6 +757,17 @@ class SupabaseService {
     await client.from('workouts').update(updates).eq('id', workoutId);
   }
 
+  // Update workout name
+  Future<void> updateWorkoutName(String workoutId, String newName) async {
+    if (currentUserId == null) throw Exception('Not authenticated');
+
+    await client
+        .from('workouts')
+        .update({'name': newName})
+        .eq('id', workoutId)
+        .eq('user_id', currentUserId!);
+  }
+
   // Delete workout
   Future<void> deleteWorkout(String workoutId) async {
     if (currentUserId == null) throw Exception('Not authenticated');
