@@ -249,6 +249,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         }
       }
 
+      print('📊 Loading ${records.length} previous sets for ${exercise.name}');
       final createdAt = records.first['created_at'] as String?;
       setState(() {
         exercise.previousDate = createdAt != null ? DateTime.tryParse(createdAt) : exercise.previousDate;
@@ -259,17 +260,21 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
             final weightValue = record['weight_lbs'];
             final previousWeight = weightValue is num ? weightValue.toDouble() : double.tryParse(weightValue?.toString() ?? '');
             set.previousWeight = previousWeight;
-            
+
             // Auto-fill weight with previous weight if current weight is 0
             if (set.weight == 0 && previousWeight != null && previousWeight > 0) {
               set.weight = previousWeight.round();
+              print('✅ Auto-filled set ${i+1} with weight ${set.weight} from previous workout');
+            } else {
+              print('⚠️  Set ${i+1}: current weight=${set.weight}, previous weight=$previousWeight (not auto-filling)');
             }
-            
+
             final repsValue = record['reps'];
             set.previousReps = repsValue is int ? repsValue : int.tryParse(repsValue?.toString() ?? '');
           } else {
             set.previousWeight = null;
             set.previousReps = null;
+            print('❌ No previous data for set ${i+1}');
           }
         }
       });
@@ -555,6 +560,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           // Save any set that has data (weight or reps > 0) OR is marked as completed
           final hasData = set.weight > 0 || set.reps > 0;
           if (set.completed || hasData) {
+            print('💾 Saving set ${i+1} for ${exercise.name}: weight=${set.weight}, reps=${set.reps}, completed=${set.completed}');
             await SupabaseService.instance.addExerciseSet(
               workoutLogId: workoutLog['id'],
               exerciseId: exerciseId,
@@ -566,6 +572,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               restTimeSeconds: set.plannedRestSeconds > 0 ? set.plannedRestSeconds : exercise.restTime,
               notes: exercise.notes.isEmpty ? null : exercise.notes,
             );
+          } else {
+            print('⏭️  Skipping set ${i+1} for ${exercise.name}: no data (weight=${set.weight}, reps=${set.reps}, completed=${set.completed})');
           }
         }
       }
