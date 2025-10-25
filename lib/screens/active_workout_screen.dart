@@ -437,9 +437,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                     await _maybePromptSaveTemplate();
                   }
 
+                  // Note: Navigation happens when user closes the completion screen
                   _timerService.reset();
                   widget.onWorkoutStateChanged?.call(false, 0);
-                  widget.onNavigate('dashboard');
                 },
                 icon: const Icon(Icons.check),
                 label: const Text('Finish Anyway'),
@@ -488,9 +488,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                   await _maybePromptSaveTemplate();
                 }
 
+                // Note: Navigation happens when user closes the completion screen
                 _timerService.reset();
                 widget.onWorkoutStateChanged?.call(false, 0);
-                widget.onNavigate('dashboard');
               },
               child: const Text('Finish'),
             ),
@@ -897,7 +897,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                     ),
                     const SizedBox(height: 24),
                     FilledButton.icon(
-                      onPressed: () => Navigator.of(sheetContext).pop(),
+                      onPressed: () {
+                        Navigator.of(sheetContext).pop();
+                        widget.onNavigate('dashboard');
+                      },
                       icon: const Icon(Icons.check_circle_outline),
                       label: const Text('Continue'),
                       style: FilledButton.styleFrom(
@@ -911,6 +914,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                     OutlinedButton.icon(
                       onPressed: () {
                         Navigator.of(sheetContext).pop();
+                        widget.onNavigate('dashboard');
                         // Could navigate to progress/stats screen here in the future
                       },
                       icon: Icon(Icons.insights, color: colorScheme.primary),
