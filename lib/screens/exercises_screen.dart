@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
+import 'package:fl_chart/fl_chart.dart';
 import '../constants/exercise_assets.dart';
 import '../services/local_storage_service.dart';
 import '../services/supabase_service.dart';
@@ -662,12 +663,125 @@ class _ExerciseCard extends StatelessWidget {
 }
 
 // Bottom sheet for exercise details
-class _ExerciseInfoSheet extends StatelessWidget {
+class _ExerciseInfoSheet extends StatefulWidget {
   final Exercise exercise;
 
   const _ExerciseInfoSheet({
     required this.exercise,
   });
+
+  @override
+  State<_ExerciseInfoSheet> createState() => _ExerciseInfoSheetState();
+}
+
+class _ExerciseInfoSheetState extends State<_ExerciseInfoSheet> {
+  String selectedPeriod = '3M';
+  final periods = ['1M', '3M', '6M', '1Y', 'All'];
+  List<Map<String, dynamic>> exerciseHistory = [];
+  bool isLoadingHistory = true;
+
+  // Stats
+  String? personalRecord;
+  String? lastPerformed;
+  String? totalVolume;
+  int? totalSets;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExerciseHistory();
+  }
+
+  Future<void> _loadExerciseHistory() async {
+    try {
+      // Get exercise ID from database
+      final exercises = await SupabaseService.instance.getExercises();
+      final exerciseData = exercises.firstWhere(
+        (e) => (e['name'] as String).toLowerCase() == widget.exercise.name.toLowerCase(),
+        orElse: () => <String, dynamic>{},
+      );
+
+      if (exerciseData['id'] != null) {
+        final history = await SupabaseService.instance.getLatestExerciseSetsForExercise(
+          exerciseData['id'] as String,
+          limit: 50,
+        );
+
+        if (mounted) {
+          setState(() {
+            exerciseHistory = history;
+            _calculateStats();
+            isLoadingHistory = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            isLoadingHistory = false;
+          });
+        }
+      }
+    } catch (e) {
+      print('Error loading exercise history: $e');
+      if (mounted) {
+        setState(() {
+          isLoadingHistory = false;
+        });
+      }
+    }
+  }
+
+  void _calculateStats() {
+    if (exerciseHistory.isEmpty) return;
+
+    // Personal Record (highest weight)
+    double maxWeight = 0;
+    int totalVolumeLbs = 0;
+    int setCount = 0;
+    DateTime? lastDate;
+
+    for (final set in exerciseHistory) {
+      final weight = (set['weight_lbs'] as num?)?.toDouble() ?? 0;
+      final reps = (set['reps'] as num?)?.toInt() ?? 0;
+      final createdAt = set['created_at'] as String?;
+
+      if (weight > maxWeight) {
+        maxWeight = weight;
+      }
+
+      totalVolumeLbs += (weight * reps).toInt();
+      setCount++;
+
+      if (createdAt != null) {
+        final date = DateTime.parse(createdAt);
+        if (lastDate == null || date.isAfter(lastDate)) {
+          lastDate = date;
+        }
+      }
+    }
+
+    personalRecord = maxWeight > 0 ? '${maxWeight.toInt()} lbs' : 'No data';
+    totalVolume = totalVolumeLbs > 0 ? '${totalVolumeLbs.toString()} lbs' : 'No data';
+    totalSets = setCount;
+
+    if (lastDate != null) {
+      final now = DateTime.now();
+      final difference = now.difference(lastDate);
+      if (difference.inDays == 0) {
+        lastPerformed = 'Today';
+      } else if (difference.inDays == 1) {
+        lastPerformed = 'Yesterday';
+      } else if (difference.inDays < 7) {
+        lastPerformed = '${difference.inDays} days ago';
+      } else if (difference.inDays < 30) {
+        lastPerformed = '${(difference.inDays / 7).floor()} weeks ago';
+      } else {
+        lastPerformed = '${(difference.inDays / 30).floor()} months ago';
+      }
+    } else {
+      lastPerformed = 'Never';
+    }
+  }
 
   bool _needsSignedUrl(String path) {
     return path.isNotEmpty &&
@@ -796,7 +910,7 @@ class _ExerciseInfoSheet extends StatelessWidget {
                   children: [
                     // Exercise name
                     Text(
-                      exercise.name,
+                      widget.exercise.name,
                       style: textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -808,19 +922,19 @@ class _ExerciseInfoSheet extends StatelessWidget {
                       runSpacing: 8,
                       children: [
                         Chip(
-                          label: Text(exercise.category),
+                          label: Text(widget.exercise.category),
                           backgroundColor: colorScheme.primaryContainer,
                           labelStyle: TextStyle(
                             color: colorScheme.onPrimaryContainer,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        if (exercise.difficulty.isNotEmpty)
+                        if (widget.exercise.difficulty.isNotEmpty)
                           Chip(
-                            label: Text(exercise.difficulty),
-                            backgroundColor: _getDifficultyColor(exercise.difficulty, colorScheme).withOpacity(0.2),
+                            label: Text(widget.exercise.difficulty),
+                            backgroundColor: _getDifficultyColor(widget.exercise.difficulty, colorScheme).withOpacity(0.2),
                             labelStyle: TextStyle(
-                              color: _getDifficultyColor(exercise.difficulty, colorScheme),
+                              color: _getDifficultyColor(widget.exercise.difficulty, colorScheme),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -828,13 +942,55 @@ class _ExerciseInfoSheet extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     // Exercise image
-                    if (exercise.imageUrl.isNotEmpty && exercise.imageUrl != kExercisePlaceholderImage) ...[
+                    if (widget.exercise.imageUrl.isNotEmpty && widget.exercise.imageUrl != kExercisePlaceholderImage) ...[
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: AspectRatio(
                           aspectRatio: 16 / 9,
-                          child: _buildExerciseImage(exercise.imageUrl, colorScheme),
+                          child: _buildExerciseImage(widget.exercise.imageUrl, colorScheme),
                         ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                    // Stats Cards
+                    if (!isLoadingHistory) ...[
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 1.3,
+                        children: [
+                          _StatCard(
+                            icon: Icons.emoji_events,
+                            label: 'Personal Record',
+                            value: personalRecord ?? 'No data',
+                            colorScheme: colorScheme,
+                            textTheme: textTheme,
+                          ),
+                          _StatCard(
+                            icon: Icons.calendar_today,
+                            label: 'Last Performed',
+                            value: lastPerformed ?? 'Never',
+                            colorScheme: colorScheme,
+                            textTheme: textTheme,
+                          ),
+                          _StatCard(
+                            icon: Icons.bar_chart,
+                            label: 'Total Volume',
+                            value: totalVolume ?? 'No data',
+                            colorScheme: colorScheme,
+                            textTheme: textTheme,
+                          ),
+                          _StatCard(
+                            icon: Icons.fitness_center,
+                            label: 'Total Sets',
+                            value: totalSets?.toString() ?? '0',
+                            colorScheme: colorScheme,
+                            textTheme: textTheme,
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 24),
                     ],
@@ -842,54 +998,54 @@ class _ExerciseInfoSheet extends StatelessWidget {
                     _InfoSection(
                       icon: Icons.sports_gymnastics,
                       title: 'Equipment',
-                      content: exercise.equipment.isEmpty ? 'Bodyweight' : exercise.equipment,
+                      content: widget.exercise.equipment.isEmpty ? 'Bodyweight' : widget.exercise.equipment,
                       colorScheme: colorScheme,
                       textTheme: textTheme,
                     ),
                     const SizedBox(height: 16),
                     // Muscle Group
-                    if (exercise.rawData['muscle_group'] != null &&
-                        (exercise.rawData['muscle_group'] as String).isNotEmpty)
+                    if (widget.exercise.rawData['muscle_group'] != null &&
+                        (widget.exercise.rawData['muscle_group'] as String).isNotEmpty)
                       _InfoSection(
                         icon: Icons.accessibility_new,
                         title: 'Muscle Group',
-                        content: exercise.rawData['muscle_group'] as String,
+                        content: widget.exercise.rawData['muscle_group'] as String,
                         colorScheme: colorScheme,
                         textTheme: textTheme,
                       ),
-                    if (exercise.rawData['muscle_group'] != null &&
-                        (exercise.rawData['muscle_group'] as String).isNotEmpty)
+                    if (widget.exercise.rawData['muscle_group'] != null &&
+                        (widget.exercise.rawData['muscle_group'] as String).isNotEmpty)
                       const SizedBox(height: 16),
                     // Instructions
                     _InfoSection(
-                      icon: (exercise.rawData['instructions'] as String?)?.isNotEmpty ?? false
+                      icon: (widget.exercise.rawData['instructions'] as String?)?.isNotEmpty ?? false
                           ? Icons.article
                           : Icons.info_outline,
-                      title: (exercise.rawData['instructions'] as String?)?.isNotEmpty ?? false
+                      title: (widget.exercise.rawData['instructions'] as String?)?.isNotEmpty ?? false
                           ? 'Instructions'
                           : 'About',
-                      content: (exercise.rawData['instructions'] as String?)?.isNotEmpty ?? false
-                          ? exercise.rawData['instructions'] as String
-                          : 'This is a ${exercise.category} exercise. Focus on proper form and controlled movements.',
+                      content: (widget.exercise.rawData['instructions'] as String?)?.isNotEmpty ?? false
+                          ? widget.exercise.rawData['instructions'] as String
+                          : 'This is a ${widget.exercise.category} exercise. Focus on proper form and controlled movements.',
                       colorScheme: colorScheme,
                       textTheme: textTheme,
                     ),
                     const SizedBox(height: 16),
                     // Description
-                    if (exercise.rawData['description'] != null &&
-                        (exercise.rawData['description'] as String).isNotEmpty)
+                    if (widget.exercise.rawData['description'] != null &&
+                        (widget.exercise.rawData['description'] as String).isNotEmpty)
                       _InfoSection(
                         icon: Icons.description,
                         title: 'Description',
-                        content: exercise.rawData['description'] as String,
+                        content: widget.exercise.rawData['description'] as String,
                         colorScheme: colorScheme,
                         textTheme: textTheme,
                       ),
-                    if (exercise.rawData['description'] != null &&
-                        (exercise.rawData['description'] as String).isNotEmpty)
+                    if (widget.exercise.rawData['description'] != null &&
+                        (widget.exercise.rawData['description'] as String).isNotEmpty)
                       const SizedBox(height: 16),
                     // Video URL indicator
-                    if (exercise.videoUrl != null && exercise.videoUrl!.isNotEmpty) ...[
+                    if (widget.exercise.videoUrl != null && widget.exercise.videoUrl!.isNotEmpty) ...[
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
@@ -970,6 +1126,65 @@ class _InfoSection extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// Stat card widget for displaying exercise statistics
+class _StatCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+
+  const _StatCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.colorScheme,
+    required this.textTheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: colorScheme.surfaceVariant.withOpacity(0.5),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: colorScheme.primary,
+              size: 24,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
