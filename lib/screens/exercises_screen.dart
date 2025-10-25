@@ -848,22 +848,19 @@ class _ExerciseInfoSheet extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     // Instructions
-                    if (exercise.instructions.isNotEmpty)
-                      _InfoSection(
-                        icon: Icons.article,
-                        title: 'Instructions',
-                        content: exercise.instructions,
-                        colorScheme: colorScheme,
-                        textTheme: textTheme,
-                      )
-                    else
-                      _InfoSection(
-                        icon: Icons.info_outline,
-                        title: 'About',
-                        content: 'This is a ${exercise.category} exercise. Focus on proper form and controlled movements.',
-                        colorScheme: colorScheme,
-                        textTheme: textTheme,
-                      ),
+                    _InfoSection(
+                      icon: (exercise.rawData['instructions'] as String?)?.isNotEmpty ?? false
+                          ? Icons.article
+                          : Icons.info_outline,
+                      title: (exercise.rawData['instructions'] as String?)?.isNotEmpty ?? false
+                          ? 'Instructions'
+                          : 'About',
+                      content: (exercise.rawData['instructions'] as String?)?.isNotEmpty ?? false
+                          ? exercise.rawData['instructions'] as String
+                          : 'This is a ${exercise.category} exercise. Focus on proper form and controlled movements.',
+                      colorScheme: colorScheme,
+                      textTheme: textTheme,
+                    ),
                     const SizedBox(height: 24),
                   ],
                 ),
