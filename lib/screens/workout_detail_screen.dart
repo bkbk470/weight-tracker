@@ -40,10 +40,15 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
     _currentWorkoutName = widget.workoutName;
     _workoutNameController = TextEditingController(text: _currentWorkoutName);
     final provided = widget.initialExercises;
-    if (provided != null && provided.isNotEmpty) {
+
+    if (provided != null) {
+      // If initialExercises is provided (even if empty), use it
       exercises = provided.map((e) => e.copy()).toList();
+    } else if (widget.workoutId != null) {
+      // If workout has an ID but no exercises provided, it's an empty workout
+      exercises = [];
     } else {
-      // Sample exercises for the workout
+      // No workout ID and no exercises = show sample exercises for demo
       exercises = [
         WorkoutExercise(
           name: 'Bench Press',

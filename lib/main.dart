@@ -687,7 +687,7 @@ class _AppNavigatorState extends State<AppNavigator> {
   List<WorkoutExercise>? _buildWorkoutExercises(Map<String, dynamic>? workout) {
     if (workout == null) return null;
     final rawExercises = workout['workout_exercises'] as List<dynamic>? ?? [];
-    if (rawExercises.isEmpty) return null;
+    if (rawExercises.isEmpty) return []; // Return empty list for workouts with no exercises
 
     return List<WorkoutExercise>.generate(rawExercises.length, (index) {
       final exerciseMap = rawExercises[index] as Map<String, dynamic>;
