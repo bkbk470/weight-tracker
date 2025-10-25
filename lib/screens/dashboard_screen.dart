@@ -809,6 +809,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               return Card(
                 key: ValueKey(folderId ?? 'plan-$index'),
                 margin: const EdgeInsets.only(bottom: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                clipBehavior: Clip.antiAlias,
                 child: Column(
                   children: [
                     InkWell(
