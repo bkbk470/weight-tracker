@@ -837,46 +837,66 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
                 ],
               ),
             ),
-            // Reorderable list
+            // Reorderable list with explicit constraints
             ...[
-              ReorderableListView(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                onReorder: _reorderPlans,
-                children: folders.map((folder) {
-                  final folderId = folder['id'] as String?;
-                  if (folderId == null) {
-                    // Skip folders without IDs during reordering
-                    return const SizedBox.shrink(key: ValueKey('empty'));
-                  }
-                  final workouts = workoutsByFolder[folderId] ?? [];
-                  final folderName = folder['name'] as String? ?? 'Unnamed';
-                  final folderColor = folder['color'] as String?;
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  // Calculate height based on number of folders
+                  final itemHeight = 80.0; // Card height + margin
+                  final listHeight = (folders.length * itemHeight).clamp(
+                    100.0, // Minimum height
+                    MediaQuery.of(context).size.height * 0.6, // Maximum 60% of screen
+                  );
 
-                  return Card(
-                    key: ValueKey(folderId),
-                    margin: const EdgeInsets.only(bottom: 16),
-                    child: ListTile(
-                      leading: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.drag_handle,
-                            color: colorScheme.onSurfaceVariant,
+                  return SizedBox(
+                    height: listHeight,
+                    child: ReorderableListView.builder(
+                      itemCount: folders.length,
+                      onReorder: _reorderPlans,
+                      buildDefaultDragHandles: false, // Custom drag handle
+                      itemBuilder: (context, index) {
+                        final folder = folders[index];
+                        final folderId = folder['id'] as String?;
+
+                        // Skip invalid folders
+                        if (folderId == null) {
+                          return SizedBox.shrink(key: ValueKey('empty_$index'));
+                        }
+
+                        final workouts = workoutsByFolder[folderId] ?? [];
+                        final folderName = folder['name'] as String? ?? 'Unnamed';
+                        final folderColor = folder['color'] as String?;
+
+                        return ReorderableDragStartListener(
+                          key: ValueKey(folderId),
+                          index: index,
+                          child: Card(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            child: ListTile(
+                              leading: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.drag_handle,
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Icon(
+                                    Icons.folder,
+                                    color: _getColorFromString(folderColor),
+                                    size: 32,
+                                  ),
+                                ],
+                              ),
+                              title: Text(folderName, style: textTheme.titleMedium),
+                              subtitle: Text('${workouts.length} workout${workouts.length != 1 ? 's' : ''}'),
+                            ),
                           ),
-                          const SizedBox(width: 8),
-                          Icon(
-                            Icons.folder,
-                            color: _getColorFromString(folderColor),
-                            size: 32,
-                          ),
-                        ],
-                      ),
-                      title: Text(folderName, style: textTheme.titleMedium),
-                      subtitle: Text('${workouts.length} workout${workouts.length != 1 ? 's' : ''}'),
+                        );
+                      },
                     ),
                   );
-                }).toList(),
+                },
               ),
             ],
           ] else ...[
