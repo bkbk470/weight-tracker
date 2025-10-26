@@ -2416,6 +2416,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
             icon: const Icon(Icons.check),
             label: const Text('Finish Workout'),
           ),
+
+          // Bottom padding for iPhone home indicator and safe area
+          SizedBox(height: MediaQuery.of(context).padding.bottom + 24),
         ],
       ),
       ),
