@@ -134,7 +134,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
   }
 
   void _onTimerUpdate(int seconds) {
-    if (mounted) {
+    if (mounted && workoutTime != seconds) {
       setState(() {
         workoutTime = seconds;
       });
