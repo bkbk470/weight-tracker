@@ -1291,9 +1291,6 @@ class _CompactPlanWorkoutTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: colorScheme.surfaceVariant.withOpacity(0.28),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: colorScheme.outlineVariant.withOpacity(0.2),
-          ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
