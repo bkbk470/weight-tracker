@@ -619,8 +619,8 @@ class _AppNavigatorState extends State<AppNavigator> {
           initialTab: initialTab,
         );
       case 'active-workout':
-        // Return existing workout screen if it exists - ALWAYS return cached instance
-        if (_activeWorkoutScreen != null) {
+        // Return existing workout screen if it exists, otherwise create new one
+        if (_activeWorkoutScreen != null && hasActiveWorkout) {
           return _activeWorkoutScreen!;
         }
 
