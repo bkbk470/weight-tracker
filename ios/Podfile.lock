@@ -5,6 +5,8 @@ PODS:
     - Flutter
     - ReachabilitySwift
   - Flutter (1.0.0)
+  - flutter_dynamic_icon (0.0.1):
+    - Flutter
   - flutter_local_notifications (0.0.1):
     - Flutter
   - path_provider_foundation (0.0.1):
@@ -24,6 +26,7 @@ DEPENDENCIES:
   - app_links (from `.symlinks/plugins/app_links/ios`)
   - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
   - Flutter (from `Flutter`)
+  - flutter_dynamic_icon (from `.symlinks/plugins/flutter_dynamic_icon/ios`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -41,6 +44,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/connectivity_plus/ios"
   Flutter:
     :path: Flutter
+  flutter_dynamic_icon:
+    :path: ".symlinks/plugins/flutter_dynamic_icon/ios"
   flutter_local_notifications:
     :path: ".symlinks/plugins/flutter_local_notifications/ios"
   path_provider_foundation:
@@ -56,6 +61,7 @@ SPEC CHECKSUMS:
   app_links: 585674be3c6661708e6cd794ab4f39fb9d8356f9
   connectivity_plus: bf0076dd84a130856aa636df1c71ccaff908fa1d
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  flutter_dynamic_icon: fb0cd2f84c817c1a0ddbbc383fbebec3cd5e88d8
   flutter_local_notifications: 4cde75091f6327eb8517fa068a0a5950212d2086
   path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
   ReachabilitySwift: 32793e867593cfc1177f5d16491e3a197d2fccda
