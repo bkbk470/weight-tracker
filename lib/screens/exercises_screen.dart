@@ -189,12 +189,25 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Exercises',
-                      style: textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: -0.5,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Exercises',
+                            style: textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        OutlinedButton.icon(
+                          onPressed: () => widget.onNavigate('create-exercise'),
+                          icon: const Icon(Icons.add),
+                          label: const Text('New Exercise'),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -330,11 +343,6 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
                   ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => widget.onNavigate('create-exercise'),
-        icon: const Icon(Icons.add),
-        label: const Text('Create Exercise'),
       ),
     );
   }
