@@ -25,6 +25,7 @@ class WorkoutSessionService {
     required String? workoutName,
     required String? workoutId,
     required List<Map<String, dynamic>>? exercises,
+    DateTime? startTime,
   }) async {
     await _ensureInitialized();
 
@@ -48,8 +49,22 @@ class WorkoutSessionService {
       await _prefs!.remove(_keyWorkoutExercises);
     }
 
-    // Save the start time
-    await _prefs!.setInt(_keyWorkoutStartTime, DateTime.now().millisecondsSinceEpoch);
+    // Save the start time (use provided startTime or current time for initial save)
+    final timeToSave = startTime ?? DateTime.now();
+    await _prefs!.setInt(_keyWorkoutStartTime, timeToSave.millisecondsSinceEpoch);
+  }
+
+  /// Update the workout session with current exercise state (for live updates)
+  Future<void> updateWorkoutSession({
+    required List<Map<String, dynamic>> exercises,
+  }) async {
+    await _ensureInitialized();
+
+    // Only update exercises if workout is active
+    final isActive = _prefs!.getBool(_keyWorkoutActive) ?? false;
+    if (!isActive) return;
+
+    await _prefs!.setString(_keyWorkoutExercises, jsonEncode(exercises));
   }
 
   /// Load the saved workout session

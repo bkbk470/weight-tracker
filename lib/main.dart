@@ -584,10 +584,14 @@ class _AppNavigatorState extends State<AppNavigator> {
           }
         });
         // Save workout session when it starts
+        // Calculate start time based on current elapsed time
+        final elapsedSeconds = WorkoutTimerService.instance.elapsedSeconds;
+        final startTime = DateTime.now().subtract(Duration(seconds: elapsedSeconds));
         WorkoutSessionService.instance.saveWorkoutSession(
           workoutName: _activeWorkoutName,
           workoutId: _activeWorkoutId,
           exercises: _lastWorkoutExercises,
+          startTime: startTime,
         );
       }
     });

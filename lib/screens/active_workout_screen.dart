@@ -5,6 +5,7 @@ import '../services/local_storage_service.dart';
 import '../services/workout_timer_service.dart';
 import '../services/supabase_service.dart';
 import '../services/notification_service.dart';
+import '../services/workout_session_service.dart';
 import '../widgets/editable_number_field.dart';
 import '../utils/safe_dialog_helpers.dart';
 
@@ -64,6 +65,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
             final weightRaw = set is Map ? set['weight'] : null;
             final repsRaw = set is Map ? set['reps'] : null;
             final restRaw = set is Map ? (set['rest'] ?? set['restTime'] ?? set['rest_seconds']) : null;
+            final completedRaw = set is Map ? set['completed'] : null;
             final weight = weightRaw is num
                 ? weightRaw.toInt()
                 : int.tryParse('$weightRaw') ?? 0;
@@ -73,7 +75,12 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
             final rest = restRaw is num
                 ? restRaw.toInt()
                 : int.tryParse('$restRaw') ?? (ex['restTime'] ?? 120);
-            final exerciseSet = ExerciseSet(weight: weight, reps: reps);
+            final completed = completedRaw is bool ? completedRaw : false;
+            final exerciseSet = ExerciseSet(
+              weight: weight,
+              reps: reps,
+              completed: completed, // Restore completion state
+            );
             exerciseSet.plannedRestSeconds = rest;
             exerciseSet.restStartTime = rest;
             exerciseSet.currentRestTime = rest;
@@ -1555,6 +1562,43 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
         }
       }
     });
+
+    // Save workout session state after completing/uncompleting a set
+    _saveWorkoutSessionState();
+  }
+
+  /// Convert current exercise state to JSON format for persistence
+  List<Map<String, dynamic>> _serializeExercises() {
+    return exercises.map((exercise) {
+      return {
+        'name': exercise.name,
+        'sets': exercise.sets.length,
+        'reps': exercise.sets.isNotEmpty ? exercise.sets.first.reps : 10,
+        'restTime': exercise.restTime,
+        'notes': exercise.notes,
+        'workoutExerciseId': exercise.workoutExerciseId,
+        'exerciseId': exercise.supabaseExerciseId,
+        'orderIndex': exercise.orderIndex,
+        'setDetails': exercise.sets.map((set) {
+          return {
+            'weight': set.weight,
+            'reps': set.reps,
+            'rest': set.plannedRestSeconds > 0 ? set.plannedRestSeconds : exercise.restTime,
+            'completed': set.completed, // Save completion state
+          };
+        }).toList(),
+      };
+    }).toList();
+  }
+
+  /// Save the current workout session state to persistent storage
+  void _saveWorkoutSessionState() {
+    if (isWorkoutActive) {
+      final serializedExercises = _serializeExercises();
+      WorkoutSessionService.instance.updateWorkoutSession(
+        exercises: serializedExercises,
+      );
+    }
   }
 
   void removeSet(String exerciseId, int setIndex) {
