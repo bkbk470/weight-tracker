@@ -3,16 +3,25 @@ import '../services/supabase_service.dart';
 
 class WorkoutBuilderScreen extends StatefulWidget {
   final Function(String) onNavigate;
+  final String? workoutId;
+  final String? workoutName;
+  final List<WorkoutExercise>? initialExercises;
 
-  const WorkoutBuilderScreen({super.key, required this.onNavigate});
+  const WorkoutBuilderScreen({
+    super.key,
+    required this.onNavigate,
+    this.workoutId,
+    this.workoutName,
+    this.initialExercises,
+  });
 
   @override
   State<WorkoutBuilderScreen> createState() => _WorkoutBuilderScreenState();
 }
 
 class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
-  final TextEditingController workoutNameController = TextEditingController();
-  final List<WorkoutExercise> exercises = [];
+  late TextEditingController workoutNameController;
+  late List<WorkoutExercise> exercises;
   String selectedCategory = 'All';
   final categories = ['All', 'Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'];
 
@@ -33,6 +42,14 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     {'name': 'Planks', 'category': 'Core', 'icon': Icons.fitness_center},
     {'name': 'Crunches', 'category': 'Core', 'icon': Icons.fitness_center},
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize with workout data if editing, otherwise start fresh
+    workoutNameController = TextEditingController(text: widget.workoutName ?? '');
+    exercises = widget.initialExercises?.map((e) => e.copy()).toList() ?? [];
+  }
 
   @override
   void dispose() {
