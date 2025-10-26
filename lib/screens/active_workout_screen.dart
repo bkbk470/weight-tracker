@@ -2213,8 +2213,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
                                     ),
                                   ),
                                 ),
-                              // Content container
-                              Container(
+                              // Content container with smooth animation
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                                 decoration: BoxDecoration(
                                   color: set.completed
