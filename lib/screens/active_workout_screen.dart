@@ -1587,8 +1587,16 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
   void _saveWorkoutSessionState() {
     if (isWorkoutActive) {
       final serializedExercises = _serializeExercises();
-      WorkoutSessionService.instance.updateWorkoutSession(
+      // Calculate start time based on elapsed workout time
+      final elapsedSeconds = _timerService.elapsedSeconds;
+      final startTime = DateTime.now().subtract(Duration(seconds: elapsedSeconds));
+
+      // Use full save to ensure all data is persisted
+      WorkoutSessionService.instance.saveWorkoutSession(
+        workoutName: widget.workoutName,
+        workoutId: widget.workoutId,
         exercises: serializedExercises,
+        startTime: startTime,
       );
     }
   }
