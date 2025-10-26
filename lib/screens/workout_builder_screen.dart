@@ -119,13 +119,40 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
         (total, ex) => total + (ex.sets.length * 2),
       );
 
-      // Create workout template in database
-      final workout = await SupabaseService.instance.createWorkout(
-        name: workoutNameController.text.trim(),
-        description: 'Custom workout with ${exercises.length} exercises',
-        difficulty: 'Intermediate',
-        estimatedDurationMinutes: estimatedMinutes,
-      );
+      final String workoutId;
+      final bool isEditing = widget.workoutId != null;
+
+      if (isEditing) {
+        // Update existing workout
+        workoutId = widget.workoutId!;
+        await SupabaseService.instance.updateWorkout(
+          workoutId,
+          {
+            'name': workoutNameController.text.trim(),
+            'description': 'Custom workout with ${exercises.length} exercises',
+            'estimated_duration_minutes': estimatedMinutes,
+          },
+        );
+
+        // Delete all existing workout_exercises for this workout
+        final existingWorkoutExercises = await SupabaseService.instance.client
+            .from('workout_exercises')
+            .select('id')
+            .eq('workout_id', workoutId);
+
+        for (final row in existingWorkoutExercises) {
+          await SupabaseService.instance.removeExerciseFromWorkout(row['id']);
+        }
+      } else {
+        // Create new workout
+        final workout = await SupabaseService.instance.createWorkout(
+          name: workoutNameController.text.trim(),
+          description: 'Custom workout with ${exercises.length} exercises',
+          difficulty: 'Intermediate',
+          estimatedDurationMinutes: estimatedMinutes,
+        );
+        workoutId = workout['id'];
+      }
 
       // Add each exercise to the workout
       for (int i = 0; i < exercises.length; i++) {
@@ -153,15 +180,34 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
             exerciseId = newExercise['id'];
           }
 
-          // Add exercise to workout
+          // Add exercise to workout with set details
+          final setDetails = exercise.sets.map((set) => {
+            'weight': set.weight,
+            'reps': set.reps,
+            'rest_time': exercise.restTime,
+          }).toList();
+
           await SupabaseService.instance.addExerciseToWorkout(
-            workoutId: workout['id'],
+            workoutId: workoutId,
             exerciseId: exerciseId,
             orderIndex: i,
             targetSets: exercise.sets.length,
             targetReps: exercise.sets.isNotEmpty ? exercise.sets.first.reps : 0,
             restTimeSeconds: exercise.restTime,
           );
+
+          // Update with set_details JSON
+          final workoutExerciseRow = await SupabaseService.instance.getWorkoutExerciseRow(
+            workoutId: workoutId,
+            exerciseId: exerciseId,
+          );
+
+          if (workoutExerciseRow != null) {
+            await SupabaseService.instance.client
+                .from('workout_exercises')
+                .update({'set_details': setDetails})
+                .eq('id', workoutExerciseRow['id']);
+          }
         } catch (e) {
           print('Error adding exercise ${exercise.name}: $e');
         }
@@ -170,7 +216,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${workoutNameController.text} saved successfully!'),
+            content: Text('${workoutNameController.text} ${isEditing ? 'updated' : 'saved'} successfully!'),
             backgroundColor: Colors.green,
           ),
         );
