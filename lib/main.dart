@@ -6,6 +6,7 @@ import 'services/local_storage_service.dart';
 import 'services/supabase_service.dart';
 import 'services/sync_service.dart';
 import 'services/notification_service.dart';
+import 'services/workout_session_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/welcome_screen.dart';
@@ -340,9 +341,47 @@ class _AppNavigatorState extends State<AppNavigator> {
   Map<String, dynamic>? _selectedExercise;
 
   @override
+  void initState() {
+    super.initState();
+    _loadPersistedWorkoutSession();
+  }
+
+  @override
   void dispose() {
     _bannerUpdateTimer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _loadPersistedWorkoutSession() async {
+    final session = await WorkoutSessionService.instance.loadWorkoutSession();
+
+    if (session != null && mounted) {
+      setState(() {
+        hasActiveWorkout = true;
+        _activeWorkoutName = session['workoutName'] as String?;
+        _activeWorkoutId = session['workoutId'] as String?;
+        _lastWorkoutName = _activeWorkoutName;
+        _lastWorkoutId = _activeWorkoutId;
+
+        final exercises = session['exercises'] as List<Map<String, dynamic>>?;
+        if (exercises != null) {
+          _lastWorkoutExercises = exercises;
+          _workoutExercises = List<Map<String, dynamic>>.from(exercises);
+        }
+
+        // Restore the timer service state if we have a start time
+        final startTime = session['startTime'] as DateTime?;
+        if (startTime != null) {
+          final elapsedSeconds = DateTime.now().difference(startTime).inSeconds;
+          WorkoutTimerService.instance.start();
+          // Set the elapsed time based on how long ago the workout started
+          activeWorkoutTime = elapsedSeconds;
+        }
+      });
+
+      // Navigate to the active workout screen
+      navigate('active-workout');
+    }
   }
 
   void navigate(String screen, [BuildContext? context, Map<String, dynamic>? data]) {
@@ -522,6 +561,8 @@ class _AppNavigatorState extends State<AppNavigator> {
         _activeWorkoutId = null;
         _activeWorkoutName = null;
         _selectedWorkout = null;
+        // Clear persisted workout session
+        WorkoutSessionService.instance.clearWorkoutSession();
       } else if (_bannerUpdateTimer == null) {
         // Start a timer to update the banner every second
         _bannerUpdateTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -533,6 +574,12 @@ class _AppNavigatorState extends State<AppNavigator> {
             timer.cancel();
           }
         });
+        // Save workout session when it starts
+        WorkoutSessionService.instance.saveWorkoutSession(
+          workoutName: _activeWorkoutName,
+          workoutId: _activeWorkoutId,
+          exercises: _lastWorkoutExercises,
+        );
       }
     });
   }
