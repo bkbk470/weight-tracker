@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_dynamic_icon/flutter_dynamic_icon.dart';
 import '../services/supabase_service.dart';
 import '../services/local_storage_service.dart';
-import '../services/notification_service.dart';
 
 class _ProfileIconDefinition {
   final String key;
@@ -709,39 +708,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   title: 'Notifications',
                   subtitle: 'Manage your notification preferences',
                   onTap: () => widget.onNavigate('notifications'),
-                ),
-                Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: ListTile(
-                    leading: const Icon(Icons.notification_add),
-                    title: const Text('Test Notification'),
-                    subtitle: const Text('Schedule a test notification in 10 seconds'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () async {
-                      try {
-                        await NotificationService.instance.scheduleTestNotification();
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Test notification scheduled for 10 seconds! Lock your phone to test.'),
-                              duration: Duration(seconds: 3),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Error scheduling notification: $e'),
-                              duration: const Duration(seconds: 3),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      }
-                    },
-                  ),
                 ),
                 _SettingsTile(
                   icon: Icons.history,
