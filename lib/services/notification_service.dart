@@ -124,6 +124,63 @@ class NotificationService {
     }
   }
 
+  /// Test notification - schedules a notification for 10 seconds from now
+  Future<void> scheduleTestNotification() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      // Cancel any existing test notifications
+      await _notifications.cancel(999);
+
+      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+        'test_channel',
+        'Test Notifications',
+        channelDescription: 'Test notifications to verify notification settings',
+        importance: Importance.max,
+        priority: Priority.max,
+        playSound: true,
+        enableVibration: true,
+        fullScreenIntent: true,
+      );
+
+      const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+        sound: 'default',
+        interruptionLevel: InterruptionLevel.timeSensitive,
+        presentBanner: true,
+        presentList: true,
+      );
+
+      const NotificationDetails notificationDetails = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
+
+      // Schedule notification for 10 seconds from now
+      final scheduledTime = tz.TZDateTime.now(tz.local).add(const Duration(seconds: 10));
+
+      await _notifications.zonedSchedule(
+        999, // Notification ID for test
+        'Test Notification',
+        'If you see this, notifications are working! Lock your phone to test lock screen.',
+        scheduledTime,
+        notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+
+      debugPrint('Test notification scheduled for 10 seconds from now');
+    } catch (e) {
+      debugPrint('Error scheduling test notification: $e');
+      rethrow; // Re-throw so UI can show error
+    }
+  }
+
   /// Show a notification when rest timer completes (immediate)
   Future<void> showRestTimerCompleteNotification() async {
     if (!_isInitialized) {
