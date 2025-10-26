@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../services/supabase_service.dart';
+import '../services/workout_session_service.dart';
 
 class SplashScreen extends StatefulWidget {
   final Function(String) onNavigate;
@@ -49,15 +50,24 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   Future<void> _checkAuthAndNavigate() async {
     await Future.delayed(const Duration(milliseconds: 2500));
-    
+
     if (!mounted) return;
 
     // Check if user is already logged in
     try {
       final user = SupabaseService.instance.currentUser;
       if (user != null) {
-        // User is logged in, go to dashboard
-        widget.onNavigate('dashboard');
+        // User is logged in
+        // Check if there's an active workout session before navigating
+        final hasActiveWorkout = await WorkoutSessionService.instance.hasActiveWorkout();
+
+        if (hasActiveWorkout) {
+          // There's an active workout, go directly to it
+          widget.onNavigate('active-workout');
+        } else {
+          // No active workout, go to dashboard
+          widget.onNavigate('dashboard');
+        }
       } else {
         // Not logged in, go to login
         widget.onNavigate('login');

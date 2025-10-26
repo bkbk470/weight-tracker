@@ -385,8 +385,11 @@ class _AppNavigatorState extends State<AppNavigator> {
         }
       });
 
-      // Navigate to the active workout screen
-      navigate('active-workout');
+      // Only navigate if we're not already on active-workout or splash screen
+      // (splash screen will handle navigation to active-workout)
+      if (currentScreen != 'active-workout' && currentScreen != 'splash') {
+        navigate('active-workout');
+      }
     }
   }
 
