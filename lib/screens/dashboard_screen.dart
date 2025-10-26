@@ -855,13 +855,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 ],
                               ),
                             ),
-                            Icon(
-                              Icons.drag_indicator,
-                              size: 24,
-                              color: folderId == null
-                                  ? colorScheme.onSurfaceVariant.withOpacity(0.3)
-                                  : colorScheme.onSurfaceVariant,
-                            ),
+                            // Drag handle - only this triggers reordering
+                            if (folderId != null)
+                              ReorderableDragStartListener(
+                                index: index,
+                                child: Icon(
+                                  Icons.drag_indicator,
+                                  size: 24,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              )
+                            else
+                              Icon(
+                                Icons.drag_indicator,
+                                size: 24,
+                                color: colorScheme.onSurfaceVariant.withOpacity(0.3),
+                              ),
                             const SizedBox(width: 8),
                             SizedBox(
                               width: 24,
@@ -939,15 +948,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
               );
-
-              // Wrap with ReorderableDragStartListener only for folders (not unorganized workouts)
-              if (folderId != null) {
-                return ReorderableDragStartListener(
-                  key: ValueKey('drag-$index'),
-                  index: index,
-                  child: cardContent,
-                );
-              }
 
               return cardContent;
             },
