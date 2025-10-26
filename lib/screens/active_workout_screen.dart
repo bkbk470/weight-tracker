@@ -1312,8 +1312,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
   void addExercise() {
     final parentContext = context;
     FocusManager.instance.primaryFocus?.unfocus();
-    showSafeDialog(
+    showSafeModalBottomSheet(
       context: parentContext,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (dialogContext) => _SelectExerciseDialog(
         onAdd: (name, category) async {
           final newExerciseIndex = exercises.length;
@@ -2887,27 +2889,47 @@ class _SelectExerciseDialogState extends State<_SelectExerciseDialog> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Dialog(
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.9,
-        height: MediaQuery.of(context).size.height * 0.8,
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Add Exercise',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.9,
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // Drag handle
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
+              ),
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Add Exercise',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
             const SizedBox(height: 16),
             // Search bar
             TextField(
@@ -3003,6 +3025,7 @@ class _SelectExerciseDialogState extends State<_SelectExerciseDialog> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
