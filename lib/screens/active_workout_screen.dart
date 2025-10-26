@@ -1815,6 +1815,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
           ),
           title: Text(
             (sessionName ?? '').isNotEmpty ? sessionName! : 'New Workout',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           centerTitle: true,
         ),
@@ -1908,6 +1910,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
                   Text(
                     sessionName!,
                     style: textTheme.headlineSmall,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
