@@ -36,16 +36,12 @@ class ProfileScreen extends StatefulWidget {
   final Function(String) onNavigate;
   final Function(ThemeMode) onThemeChanged;
   final ThemeMode currentThemeMode;
-  final Function(Locale?) onLocaleChanged;
-  final Locale? currentLocale;
 
   const ProfileScreen({
     super.key,
     required this.onNavigate,
     required this.onThemeChanged,
     required this.currentThemeMode,
-    required this.onLocaleChanged,
-    required this.currentLocale,
   });
 
   @override
@@ -317,80 +313,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: () {
                   Navigator.pop(context);
                   _changeAppIcon(iconName);
-                },
-              );
-            }).toList(),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  String _getLanguageName(Locale? locale) {
-    if (locale == null) {
-      return 'System default';
-    }
-
-    switch (locale.languageCode) {
-      case 'en':
-        return 'English';
-      case 'es':
-        return 'Spanish / Español';
-      case 'de':
-        return 'German / Deutsch';
-      default:
-        return 'System default';
-    }
-  }
-
-  void _showLanguageDialog(BuildContext context) {
-    final languages = [
-      {'code': null, 'label': 'System default', 'icon': Icons.phone_android},
-      {'code': 'en', 'label': 'English', 'icon': Icons.language},
-      {'code': 'es', 'label': 'Spanish / Español', 'icon': Icons.language},
-      {'code': 'de', 'label': 'German / Deutsch', 'icon': Icons.language},
-    ];
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Choose Language'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: languages.map((language) {
-              final code = language['code'] as String?;
-              final label = language['label'] as String;
-              final icon = language['icon'] as IconData;
-              final isSelected = (code == null && widget.currentLocale == null) ||
-                  (code != null && widget.currentLocale?.languageCode == code);
-
-              return ListTile(
-                leading: Icon(icon),
-                title: Text(label),
-                trailing: isSelected ? const Icon(Icons.check, color: Colors.green) : null,
-                onTap: () {
-                  Navigator.pop(context);
-
-                  // Change the locale
-                  final newLocale = code != null ? Locale(code) : null;
-                  widget.onLocaleChanged(newLocale);
-
-                  // Show confirmation
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Language changed to $label'),
-                        duration: const Duration(seconds: 2),
-                      ),
-                    );
-                  }
                 },
               );
             }).toList(),
@@ -747,16 +669,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onTap: () => _showAppIconDialog(context),
                     ),
                   ),
-                Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: ListTile(
-                    leading: const Icon(Icons.language),
-                    title: const Text('Language'),
-                    subtitle: Text(_getLanguageName(widget.currentLocale)),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => _showLanguageDialog(context),
-                  ),
-                ),
                 _SettingsTile(
                   icon: Icons.straighten,
                   title: 'Body Measurements',

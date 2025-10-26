@@ -206,18 +206,6 @@ class _WeightTrackerAppState extends State<WeightTrackerApp> {
       title: 'FitTrack',
       debugShowCheckedModeBanner: false,
       navigatorObservers: [UnfocusOnNavigateObserver()],
-      locale: _locale,
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('en'), // English
-        Locale('es'), // Spanish
-        Locale('de'), // German
-      ],
       builder: (context, child) {
         return GestureDetector(
           onTap: () {
@@ -312,8 +300,6 @@ class _WeightTrackerAppState extends State<WeightTrackerApp> {
         onThemeChanged: setThemeMode,
         currentThemeMode: _themeMode,
         onThemeReload: _syncThemeFromSupabase,
-        onLocaleChanged: setLocale,
-        currentLocale: _locale,
       ),
     );
   }
@@ -323,16 +309,12 @@ class AppNavigator extends StatefulWidget {
   final Function(ThemeMode) onThemeChanged;
   final ThemeMode currentThemeMode;
   final VoidCallback onThemeReload;
-  final Function(Locale?) onLocaleChanged;
-  final Locale? currentLocale;
 
   const AppNavigator({
     super.key,
     required this.onThemeChanged,
     required this.currentThemeMode,
     required this.onThemeReload,
-    required this.onLocaleChanged,
-    required this.currentLocale,
   });
 
   @override
@@ -648,8 +630,6 @@ class _AppNavigatorState extends State<AppNavigator> {
           onNavigate: (screen) => navigate(screen, context),
           onThemeChanged: widget.onThemeChanged,
           currentThemeMode: widget.currentThemeMode,
-          onLocaleChanged: widget.onLocaleChanged,
-          currentLocale: widget.currentLocale,
         );
       case 'about':
         return AboutScreen(onNavigate: (screen) => navigate(screen, context));

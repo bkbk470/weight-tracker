@@ -9,8 +9,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_localizations:
-    sdk: flutter
   cupertino_icons: ^1.0.6
   fl_chart: ^0.66.0
   shared_preferences: ^2.2.2
@@ -21,7 +19,7 @@ dependencies:
   video_player: ^2.8.6
   connectivity_plus: ^5.0.0
   http: ^1.2.0
-  intl: ^0.20.2
+  intl: ^0.18.0
   flutter_local_notifications: ^17.0.0
   flutter_dynamic_icon: ^2.1.0
 
@@ -33,7 +31,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  generate: true
   assets:
     - assets/gifs/
     - assets/icon/
