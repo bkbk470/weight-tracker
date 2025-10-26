@@ -49,5 +49,53 @@
 	<array>
 		<string>audio</string>
 	</array>
+	<key>CFBundleIcons</key>
+	<dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array>
+				<string>AppIcon</string>
+			</array>
+		</dict>
+		<key>CFBundleAlternateIcons</key>
+		<dict>
+			<key>AppIcon-red</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>AppIcon-red</string>
+				</array>
+			</dict>
+			<key>AppIcon-green</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>AppIcon-green</string>
+				</array>
+			</dict>
+			<key>AppIcon-orange</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>AppIcon-orange</string>
+				</array>
+			</dict>
+			<key>AppIcon-purple</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>AppIcon-purple</string>
+				</array>
+			</dict>
+			<key>AppIcon-dark</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>AppIcon-dark</string>
+				</array>
+			</dict>
+		</dict>
+	</dict>
 </dict>
 </plist>
