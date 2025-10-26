@@ -1445,6 +1445,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
           if (isResting) {
             isResting = false;
             restTimerInstance?.cancel();
+            NotificationService.instance.cancelRestTimerNotification();
           }
         } else {
           // Add haptic feedback when completing a set
@@ -1453,6 +1454,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
           // Stop and reset any previous rest timer
           if (isResting) {
             restTimerInstance?.cancel();
+            NotificationService.instance.cancelRestTimerNotification();
             // Find and reset the previously resting set
             for (var ex in exercises) {
               for (var s in ex.sets) {
@@ -1480,6 +1482,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
           restTimer = plannedRest;
           maxRestTime = plannedRest;
           isResting = true;
+
+          // CRITICAL: Schedule notification NOW for when timer expires - works even when phone is locked!
+          NotificationService.instance.scheduleRestTimerNotification(plannedRest);
 
           restTimerInstance?.cancel();
           restTimerInstance = Timer.periodic(const Duration(seconds: 1), (timer) {

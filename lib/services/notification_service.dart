@@ -58,7 +58,73 @@ class NotificationService {
     return true; // Android doesn't need runtime permission for local notifications
   }
 
-  /// Show a notification when rest timer completes
+  /// Schedule a notification for when rest timer completes (works in background!)
+  Future<void> scheduleRestTimerNotification(int durationSeconds) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      // Cancel any existing rest timer notifications first
+      await _notifications.cancel(0);
+
+      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+        'rest_timer_channel',
+        'Rest Timer',
+        channelDescription: 'Notifications for rest timer completion',
+        importance: Importance.max,
+        priority: Priority.max,
+        playSound: true,
+        enableVibration: true,
+        fullScreenIntent: true,
+      );
+
+      const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+        sound: 'default',
+        interruptionLevel: InterruptionLevel.timeSensitive,
+        presentBanner: true,
+        presentList: true,
+      );
+
+      const NotificationDetails notificationDetails = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
+
+      // Schedule notification for exact time in the future - THIS WORKS EVEN WHEN PHONE IS LOCKED!
+      final scheduledTime = tz.TZDateTime.now(tz.local).add(Duration(seconds: durationSeconds));
+
+      await _notifications.zonedSchedule(
+        0, // Notification ID
+        'Rest Time Complete!',
+        'Your rest period is over. Ready for the next set?',
+        scheduledTime,
+        notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+
+      debugPrint('Rest timer notification scheduled for ${durationSeconds}s from now (${scheduledTime})');
+    } catch (e) {
+      debugPrint('Error scheduling rest timer notification: $e');
+    }
+  }
+
+  /// Cancel the scheduled rest timer notification
+  Future<void> cancelRestTimerNotification() async {
+    try {
+      await _notifications.cancel(0);
+      debugPrint('Rest timer notification cancelled');
+    } catch (e) {
+      debugPrint('Error cancelling rest timer notification: $e');
+    }
+  }
+
+  /// Show a notification when rest timer completes (immediate)
   Future<void> showRestTimerCompleteNotification() async {
     if (!_isInitialized) {
       await initialize();
