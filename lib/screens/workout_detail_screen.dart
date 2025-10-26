@@ -396,9 +396,21 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                _currentWorkoutName,
-                overflow: TextOverflow.ellipsis,
+              title: GestureDetector(
+                onTap: _showEditWorkoutNameDialog,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        _currentWorkoutName,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.edit, size: 16),
+                  ],
+                ),
               ),
               background: Container(
                 decoration: BoxDecoration(
