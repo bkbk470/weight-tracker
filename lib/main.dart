@@ -610,18 +610,27 @@ class _AppNavigatorState extends State<AppNavigator> {
         if (_activeWorkoutScreen != null && hasActiveWorkout) {
           return _activeWorkoutScreen!;
         }
-        
+
+        // When restoring a workout session, use the exercises and workout data
+        final exercisesToUse = _workoutExercises ?? _lastWorkoutExercises;
+        final workoutIdToUse = _activeWorkoutId ?? _lastWorkoutId;
+        final workoutNameToUse = _activeWorkoutName ?? _lastWorkoutName;
+
         _activeWorkoutScreen = WorkoutScreen(
           onNavigate: (screen) => navigate(screen, context),
           autoStart: autoStartWorkout,
-          workoutName: _activeWorkoutName,
-          workoutId: _activeWorkoutId,
+          workoutName: workoutNameToUse,
+          workoutId: workoutIdToUse,
           onWorkoutStateChanged: setActiveWorkout,
-          preloadedExercises: _workoutExercises,
+          preloadedExercises: exercisesToUse,
         );
-        // Clear the exercises after using them
-        _workoutExercises = null;
-        _activeWorkoutId = null;
+
+        // Only clear if not restoring from a persisted session
+        if (!hasActiveWorkout) {
+          _workoutExercises = null;
+          _activeWorkoutId = null;
+        }
+
         return _activeWorkoutScreen!;
       case 'progress':
         return ProgressScreen(onNavigate: (screen) => navigate(screen, context));
