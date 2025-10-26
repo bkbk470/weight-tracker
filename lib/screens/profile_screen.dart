@@ -36,12 +36,16 @@ class ProfileScreen extends StatefulWidget {
   final Function(String) onNavigate;
   final Function(ThemeMode) onThemeChanged;
   final ThemeMode currentThemeMode;
+  final Function(Locale?) onLocaleChanged;
+  final Locale? currentLocale;
 
   const ProfileScreen({
     super.key,
     required this.onNavigate,
     required this.onThemeChanged,
     required this.currentThemeMode,
+    required this.onLocaleChanged,
+    required this.currentLocale,
   });
 
   @override
@@ -669,6 +673,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onTap: () => _showAppIconDialog(context),
                     ),
                   ),
+                Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: ListTile(
+                    leading: const Icon(Icons.language),
+                    title: const Text('Language'),
+                    subtitle: Text(_getLanguageName(widget.currentLocale)),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _showLanguageDialog(context),
+                  ),
+                ),
                 _SettingsTile(
                   icon: Icons.straighten,
                   title: 'Body Measurements',

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'services/local_storage_service.dart';
 import 'services/supabase_service.dart';
 import 'services/sync_service.dart';
@@ -70,11 +72,13 @@ class WeightTrackerApp extends StatefulWidget {
 class _WeightTrackerAppState extends State<WeightTrackerApp> {
   ThemeMode _themeMode = ThemeMode.system;
   bool _isLoadingTheme = true;
+  Locale? _locale;
 
   @override
   void initState() {
     super.initState();
     _loadThemePreference();
+    _loadLocalePreference();
   }
 
   Future<void> _loadThemePreference() async {
@@ -200,12 +204,53 @@ class _WeightTrackerAppState extends State<WeightTrackerApp> {
     }
   }
 
+  Future<void> _loadLocalePreference() async {
+    try {
+      final localeCode = LocalStorageService.instance.getSetting('locale') as String?;
+      if (localeCode != null && mounted) {
+        setState(() {
+          _locale = Locale(localeCode);
+        });
+      }
+    } catch (e) {
+      print('Error loading locale preference: $e');
+    }
+  }
+
+  void setLocale(Locale? locale) async {
+    setState(() {
+      _locale = locale;
+    });
+
+    try {
+      if (locale != null) {
+        await LocalStorageService.instance.saveSetting('locale', locale.languageCode);
+      } else {
+        await LocalStorageService.instance.saveSetting('locale', null);
+      }
+    } catch (e) {
+      print('Error saving locale: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'FitTrack',
       debugShowCheckedModeBanner: false,
       navigatorObservers: [UnfocusOnNavigateObserver()],
+      locale: _locale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'), // English
+        Locale('es'), // Spanish
+        Locale('de'), // German
+      ],
       builder: (context, child) {
         return GestureDetector(
           onTap: () {
@@ -300,6 +345,8 @@ class _WeightTrackerAppState extends State<WeightTrackerApp> {
         onThemeChanged: setThemeMode,
         currentThemeMode: _themeMode,
         onThemeReload: _syncThemeFromSupabase,
+        onLocaleChanged: setLocale,
+        currentLocale: _locale,
       ),
     );
   }
@@ -309,12 +356,16 @@ class AppNavigator extends StatefulWidget {
   final Function(ThemeMode) onThemeChanged;
   final ThemeMode currentThemeMode;
   final VoidCallback onThemeReload;
+  final Function(Locale?) onLocaleChanged;
+  final Locale? currentLocale;
 
   const AppNavigator({
     super.key,
     required this.onThemeChanged,
     required this.currentThemeMode,
     required this.onThemeReload,
+    required this.onLocaleChanged,
+    required this.currentLocale,
   });
 
   @override
@@ -630,6 +681,8 @@ class _AppNavigatorState extends State<AppNavigator> {
           onNavigate: (screen) => navigate(screen, context),
           onThemeChanged: widget.onThemeChanged,
           currentThemeMode: widget.currentThemeMode,
+          onLocaleChanged: widget.onLocaleChanged,
+          currentLocale: widget.currentLocale,
         );
       case 'about':
         return AboutScreen(onNavigate: (screen) => navigate(screen, context));
