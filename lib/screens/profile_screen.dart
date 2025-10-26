@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_dynamic_icon/flutter_dynamic_icon.dart';
 import '../services/supabase_service.dart';
 import '../services/local_storage_service.dart';
 
@@ -59,6 +61,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _lengthUnit = 'in';
   bool _unitsLoading = true;
   bool _updatingUnits = false;
+  String _currentAppIcon = 'default';
 
   IconData get _currentProfileIcon {
     final key = _profileIconKey;
@@ -217,10 +220,119 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Future<void> _loadCurrentAppIcon() async {
+    if (kIsWeb) return; // App icon changing not supported on web
+
+    try {
+      final currentIcon = await FlutterDynamicIcon.getAlternateIconName();
+      if (mounted) {
+        setState(() {
+          _currentAppIcon = currentIcon ?? 'default';
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading current app icon: $e');
+    }
+  }
+
+  Future<void> _changeAppIcon(String iconName) async {
+    if (kIsWeb) return; // App icon changing not supported on web
+
+    try {
+      if (iconName == 'default') {
+        await FlutterDynamicIcon.setAlternateIconName(null);
+      } else {
+        await FlutterDynamicIcon.setAlternateIconName(iconName);
+      }
+
+      if (mounted) {
+        setState(() {
+          _currentAppIcon = iconName;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('App icon changed successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to change app icon: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showAppIconDialog(BuildContext context) {
+    final icons = [
+      {'name': 'default', 'label': 'Blue (Default)', 'color': const Color(0xFF1976D2)},
+      {'name': 'AppIcon-red', 'label': 'Red', 'color': const Color(0xFFD32F2F)},
+      {'name': 'AppIcon-green', 'label': 'Green', 'color': const Color(0xFF388E3C)},
+      {'name': 'AppIcon-orange', 'label': 'Orange', 'color': const Color(0xFFF57C00)},
+      {'name': 'AppIcon-purple', 'label': 'Purple', 'color': const Color(0xFF7B1FA2)},
+      {'name': 'AppIcon-dark', 'label': 'Dark', 'color': const Color(0xFF212121)},
+    ];
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Choose App Icon'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: icons.map((icon) {
+              final iconName = icon['name'] as String;
+              final label = icon['label'] as String;
+              final color = icon['color'] as Color;
+              final isSelected = _currentAppIcon == iconName;
+
+              return ListTile(
+                leading: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(12),
+                    border: isSelected
+                        ? Border.all(color: Theme.of(context).colorScheme.primary, width: 3)
+                        : null,
+                  ),
+                  child: const Icon(
+                    Icons.fitness_center,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                title: Text(label),
+                trailing: isSelected ? const Icon(Icons.check, color: Colors.green) : null,
+                onTap: () {
+                  Navigator.pop(context);
+                  _changeAppIcon(iconName);
+                },
+              );
+            }).toList(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _loadCurrentAppIcon();
   }
 
   Future<void> _loadUserData() async {
@@ -541,6 +653,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       },
                   ),
                 ),
+                if (!kIsWeb)
+                  Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: ListTile(
+                      leading: const Icon(Icons.apps_outlined),
+                      title: const Text('App Icon'),
+                      subtitle: Text(_currentAppIcon == 'default'
+                          ? 'Blue (Default)'
+                          : _currentAppIcon.replaceAll('AppIcon-', '').replaceFirst(
+                                _currentAppIcon.replaceAll('AppIcon-', '')[0],
+                                _currentAppIcon.replaceAll('AppIcon-', '')[0].toUpperCase(),
+                              )),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _showAppIconDialog(context),
+                    ),
+                  ),
                 _SettingsTile(
                   icon: Icons.straighten,
                   title: 'Body Measurements',
