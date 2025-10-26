@@ -104,6 +104,8 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: const Text('Create Workout Plan'),
+          contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -113,36 +115,48 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
                   onTapOutside: (_) => FocusScope.of(context).unfocus(),
                   decoration: const InputDecoration(
                     labelText: 'Plan Name',
-                    hintText: 'e.g., Strength Training, Cardio Mix',
+                    hintText: 'e.g., Strength Training',
+                    isDense: true,
                   ),
                   autofocus: true,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 TextField(
                   controller: descriptionController,
                   onTapOutside: (_) => FocusScope.of(context).unfocus(),
                   decoration: const InputDecoration(
                     labelText: 'Description (Optional)',
-                    hintText: 'Brief description of this plan',
+                    hintText: 'Brief description',
+                    isDense: true,
                   ),
-                  maxLines: 2,
+                  maxLines: 1,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 // Color selection
-                const Text('Plan Color', style: TextStyle(fontSize: 12)),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Plan Color',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 6),
                 Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
+                  spacing: 4,
+                  runSpacing: 4,
                   children: ['default', 'blue', 'green', 'orange', 'purple', 'red']
                       .map((color) => ChoiceChip(
                             label: Text(
                               color == 'default' ? 'Default' : color,
-                              style: const TextStyle(fontSize: 11),
+                              style: const TextStyle(fontSize: 10),
                             ),
                             selected: selectedColor == color,
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
                             visualDensity: VisualDensity.compact,
+                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             onSelected: (selected) {
                               if (selected) {
                                 setDialogState(() {
@@ -220,6 +234,8 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: const Text('Edit Workout Plan'),
+          contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -229,35 +245,47 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
                   onTapOutside: (_) => FocusScope.of(context).unfocus(),
                   decoration: const InputDecoration(
                     labelText: 'Plan Name',
-                    hintText: 'e.g., Strength Training, Cardio Mix',
+                    hintText: 'e.g., Strength Training',
+                    isDense: true,
                   ),
                   autofocus: true,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 TextField(
                   controller: descriptionController,
                   onTapOutside: (_) => FocusScope.of(context).unfocus(),
                   decoration: const InputDecoration(
                     labelText: 'Description (Optional)',
-                    hintText: 'Brief description of this plan',
+                    hintText: 'Brief description',
+                    isDense: true,
                   ),
-                  maxLines: 2,
+                  maxLines: 1,
                 ),
-                const SizedBox(height: 12),
-                const Text('Plan Color', style: TextStyle(fontSize: 12)),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Plan Color',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 6),
                 Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
+                  spacing: 4,
+                  runSpacing: 4,
                   children: ['default', 'blue', 'green', 'orange', 'purple', 'red']
                       .map((color) => ChoiceChip(
                             label: Text(
                               color == 'default' ? 'Default' : color,
-                              style: const TextStyle(fontSize: 11),
+                              style: const TextStyle(fontSize: 10),
                             ),
                             selected: selectedColor == color,
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
                             visualDensity: VisualDensity.compact,
+                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             onSelected: (selected) {
                               if (selected) {
                                 setDialogState(() {
