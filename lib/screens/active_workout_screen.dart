@@ -133,18 +133,25 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
       setState(() {
         workoutTime = seconds;
       });
-      widget.onWorkoutStateChanged?.call(true, workoutTime);
+      // Only notify parent every 5 seconds to reduce rebuilds from parent
+      if (seconds % 5 == 0) {
+        widget.onWorkoutStateChanged?.call(true, workoutTime);
+      }
     }
   }
 
   @override
   void didUpdateWidget(WorkoutScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Update workout time from service when returning to screen
-    if (mounted) {
-      setState(() {
-        workoutTime = _timerService.elapsedSeconds;
-      });
+    // Only update if the workout props actually changed, not on every parent rebuild
+    if (oldWidget.workoutName != widget.workoutName ||
+        oldWidget.workoutId != widget.workoutId ||
+        oldWidget.autoStart != widget.autoStart) {
+      if (mounted) {
+        setState(() {
+          workoutTime = _timerService.elapsedSeconds;
+        });
+      }
     }
   }
 
