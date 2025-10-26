@@ -1,5 +1,6 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -68,10 +69,11 @@ class NotificationService {
         'rest_timer_channel',
         'Rest Timer',
         channelDescription: 'Notifications for rest timer completion',
-        importance: Importance.high,
-        priority: Priority.high,
+        importance: Importance.max,
+        priority: Priority.max,
         playSound: true,
         enableVibration: true,
+        fullScreenIntent: true,
       );
 
       const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
@@ -79,8 +81,11 @@ class NotificationService {
         presentBadge: true,
         presentSound: true,
         sound: 'default',
-        // These settings ensure notification appears even when phone is locked
+        // Use time sensitive for better lock screen visibility
         interruptionLevel: InterruptionLevel.timeSensitive,
+        // Ensure alert shows immediately
+        presentBanner: true,
+        presentList: true,
       );
 
       const NotificationDetails notificationDetails = NotificationDetails(
@@ -88,16 +93,56 @@ class NotificationService {
         iOS: iosDetails,
       );
 
-      await _notifications.show(
+      // Use zonedSchedule with immediate time - this works better for lock screen on iOS
+      await _notifications.zonedSchedule(
         0, // Notification ID
         'Rest Time Complete!',
         'Your rest period is over. Ready for the next set?',
+        tz.TZDateTime.now(tz.local), // Schedule for right now using timezone
         notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
       );
 
-      debugPrint('Rest timer notification shown');
+      debugPrint('Rest timer notification scheduled');
     } catch (e) {
       debugPrint('Error showing rest timer notification: $e');
+
+      // Fallback to regular show if zonedSchedule fails
+      try {
+        const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+          'rest_timer_channel',
+          'Rest Timer',
+          channelDescription: 'Notifications for rest timer completion',
+          importance: Importance.max,
+          priority: Priority.max,
+          playSound: true,
+          enableVibration: true,
+        );
+
+        const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+          sound: 'default',
+          interruptionLevel: InterruptionLevel.timeSensitive,
+        );
+
+        const NotificationDetails notificationDetails = NotificationDetails(
+          android: androidDetails,
+          iOS: iosDetails,
+        );
+
+        await _notifications.show(
+          0,
+          'Rest Time Complete!',
+          'Your rest period is over. Ready for the next set?',
+          notificationDetails,
+        );
+      } catch (fallbackError) {
+        debugPrint('Fallback notification also failed: $fallbackError');
+      }
     }
   }
 
