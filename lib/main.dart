@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 import 'services/local_storage_service.dart';
 import 'services/supabase_service.dart';
 import 'services/sync_service.dart';
@@ -43,6 +45,10 @@ import 'utils/safe_dialog_helpers.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize timezone database - CRITICAL for scheduled notifications!
+  tz.initializeTimeZones();
+  tz.setLocalLocation(tz.getLocation('America/New_York')); // Or use your timezone
 
   // Initialize Supabase
   await Supabase.initialize(
