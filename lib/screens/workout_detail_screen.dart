@@ -370,11 +370,11 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                 icon: Icon(isEditMode ? Icons.check : Icons.edit_outlined),
                 tooltip: isEditMode ? 'Save changes' : 'Edit workout',
                 onPressed: () async {
-                  final wasEditing = isEditMode;
-                  setState(() {
-                    isEditMode = !isEditMode;
-                  });
-                  if (wasEditing) {
+                  if (isEditMode) {
+                    // Saving changes
+                    setState(() {
+                      isEditMode = false;
+                    });
                     if (widget.workoutId != null) {
                       await _persistWorkoutChanges();
                     } else {
@@ -385,6 +385,12 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                         );
                       }
                     }
+                  } else {
+                    // Entering edit mode - show edit name dialog first
+                    await _showEditWorkoutNameDialog();
+                    setState(() {
+                      isEditMode = true;
+                    });
                   }
                 },
               ),
