@@ -1710,6 +1710,139 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
     }
   }
 
+  void _showEditWorkoutSheet(BuildContext context, ColorScheme colorScheme, TextTheme textTheme) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    showSafeModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: colorScheme.surface,
+      builder: (sheetContext) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.7,
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              children: [
+                // Drag handle
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4,
+                    margin: const EdgeInsets.only(top: 12, bottom: 16),
+                    decoration: BoxDecoration(
+                      color: colorScheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                // Header
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Edit Exercises',
+                        style: textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(sheetContext),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(),
+                // Exercises list
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: exercises.length,
+                    itemBuilder: (context, index) {
+                      final exercise = exercises[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: ListTile(
+                          leading: Icon(
+                            Icons.fitness_center,
+                            color: colorScheme.primary,
+                          ),
+                          title: Text(exercise.name),
+                          subtitle: Text('${exercise.sets.length} sets'),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: Icon(
+                                  exercise.notes.isEmpty ? Icons.note_add : Icons.edit_note,
+                                  color: colorScheme.primary,
+                                ),
+                                tooltip: exercise.notes.isEmpty ? 'Add Notes' : 'Edit Notes',
+                                onPressed: () {
+                                  Navigator.pop(sheetContext);
+                                  _showNotesDialog(context, exercise, colorScheme);
+                                },
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  Icons.delete_outline,
+                                  color: colorScheme.error,
+                                ),
+                                tooltip: 'Delete Exercise',
+                                onPressed: () {
+                                  Navigator.pop(sheetContext);
+                                  FocusManager.instance.primaryFocus?.unfocus();
+                                  showSafeDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text('Delete Exercise'),
+                                      content: Text(
+                                        'Are you sure you want to remove ${exercise.name} from this workout?',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(context),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        FilledButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                            removeExercise(exercise.id);
+                                          },
+                                          style: FilledButton.styleFrom(
+                                            backgroundColor: colorScheme.error,
+                                          ),
+                                          child: const Text('Delete'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _showNotesDialog(BuildContext context, Exercise exercise, ColorScheme colorScheme) {
     final notesController = TextEditingController(text: exercise.notes);
     FocusManager.instance.primaryFocus?.unfocus();
@@ -1911,6 +2044,16 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
           ],
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: 'Edit Exercises',
+            onPressed: () {
+              // Show edit mode or bottom sheet with all exercises
+              _showEditWorkoutSheet(context, colorScheme, textTheme);
+            },
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -2005,66 +2148,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
                               ),
                             ),
                           ),
-                        ),
-                        PopupMenuButton<String>(
-                          icon: const Icon(Icons.more_vert),
-                          onSelected: (value) {
-                            if (value == 'notes') {
-                              _showNotesDialog(context, exercise, colorScheme);
-                            } else if (value == 'delete') {
-                              FocusManager.instance.primaryFocus?.unfocus();
-                              showSafeDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Delete Exercise'),
-                                  content: Text(
-                                    'Are you sure you want to remove ${exercise.name} from this workout?',
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: const Text('Cancel'),
-                                    ),
-                                    FilledButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                        removeExercise(exercise.id);
-                                      },
-                                      style: FilledButton.styleFrom(
-                                        backgroundColor: colorScheme.error,
-                                      ),
-                                      child: const Text('Delete'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
-                          },
-                          itemBuilder: (context) => [
-                            PopupMenuItem(
-                              value: 'notes',
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    exercise.notes.isEmpty ? Icons.note_add : Icons.edit_note,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(exercise.notes.isEmpty ? 'Add Notes' : 'Edit Notes'),
-                                ],
-                              ),
-                            ),
-                            const PopupMenuItem(
-                              value: 'delete',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.delete_outline, size: 20),
-                                  SizedBox(width: 12),
-                                  Text('Delete Exercise'),
-                                ],
-                              ),
-                            ),
-                          ],
                         ),
                       ],
                     ),
