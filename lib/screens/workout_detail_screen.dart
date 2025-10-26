@@ -367,7 +367,8 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
             ),
             actions: [
               IconButton(
-                icon: Icon(isEditMode ? Icons.check : Icons.edit),
+                icon: Icon(isEditMode ? Icons.check : Icons.edit_outlined),
+                tooltip: isEditMode ? 'Save changes' : 'Edit workout',
                 onPressed: () async {
                   final wasEditing = isEditMode;
                   setState(() {
@@ -387,29 +388,11 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                   }
                 },
               ),
-              IconButton(
-                icon: const Icon(Icons.more_vert),
-                onPressed: () {
-                  // Show more options
-                },
-              ),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              title: GestureDetector(
-                onTap: _showEditWorkoutNameDialog,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        _currentWorkoutName,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.edit, size: 16),
-                  ],
-                ),
+              title: Text(
+                _currentWorkoutName,
+                overflow: TextOverflow.ellipsis,
               ),
               background: Container(
                 decoration: BoxDecoration(
