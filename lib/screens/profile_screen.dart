@@ -332,6 +332,80 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  String _getLanguageName(Locale? locale) {
+    if (locale == null) {
+      return 'System default';
+    }
+
+    switch (locale.languageCode) {
+      case 'en':
+        return 'English';
+      case 'es':
+        return 'Spanish / Español';
+      case 'de':
+        return 'German / Deutsch';
+      default:
+        return 'System default';
+    }
+  }
+
+  void _showLanguageDialog(BuildContext context) {
+    final languages = [
+      {'code': null, 'label': 'System default', 'icon': Icons.phone_android},
+      {'code': 'en', 'label': 'English', 'icon': Icons.language},
+      {'code': 'es', 'label': 'Spanish / Español', 'icon': Icons.language},
+      {'code': 'de', 'label': 'German / Deutsch', 'icon': Icons.language},
+    ];
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Choose Language'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: languages.map((language) {
+              final code = language['code'] as String?;
+              final label = language['label'] as String;
+              final icon = language['icon'] as IconData;
+              final isSelected = (code == null && widget.currentLocale == null) ||
+                  (code != null && widget.currentLocale?.languageCode == code);
+
+              return ListTile(
+                leading: Icon(icon),
+                title: Text(label),
+                trailing: isSelected ? const Icon(Icons.check, color: Colors.green) : null,
+                onTap: () {
+                  Navigator.pop(context);
+
+                  // Change the locale
+                  final newLocale = code != null ? Locale(code) : null;
+                  widget.onLocaleChanged(newLocale);
+
+                  // Show confirmation
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Language changed to $label'),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  }
+                },
+              );
+            }).toList(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void initState() {
     super.initState();
