@@ -449,6 +449,12 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
   void startWorkout() {
     setState(() => isWorkoutActive = true);
     _timerService.start();
+
+    // Immediately notify that workout has started and save session
+    widget.onWorkoutStateChanged?.call(true, 0);
+
+    // Save the initial workout state to persistent storage
+    _saveWorkoutSessionState();
   }
 
   void minimizeWorkout() {
