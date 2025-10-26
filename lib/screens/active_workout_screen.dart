@@ -30,7 +30,7 @@ class WorkoutScreen extends StatefulWidget {
   State<WorkoutScreen> createState() => _WorkoutScreenState();
 }
 
-class _WorkoutScreenState extends State<WorkoutScreen> {
+class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserver {
   bool isWorkoutActive = false;
   final WorkoutTimerService _timerService = WorkoutTimerService.instance;
   int workoutTime = 0;
@@ -46,6 +46,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     
     // Set up timer listener
     _timerService.addListener(_onTimerUpdate);
@@ -142,9 +143,80 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timerService.removeListener(_onTimerUpdate);
     restTimerInstance?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // App came back to foreground - check if rest timer should have expired
+      _checkRestTimerOnResume();
+    }
+  }
+
+  void _checkRestTimerOnResume() {
+    if (_restStartTime != null && _restDuration != null && mounted) {
+      final elapsed = DateTime.now().difference(_restStartTime!).inSeconds;
+      final remaining = _restDuration! - elapsed;
+
+      if (remaining <= 0) {
+        // Rest timer expired while app was in background
+        setState(() {
+          isResting = false;
+          restTimer = 0;
+          _restStartTime = null;
+          _restDuration = null;
+          restTimerInstance?.cancel();
+
+          // Update the exercise set state
+          for (int i = 0; i < exercises.length; i++) {
+            for (int j = 0; j < exercises[i].sets.length; j++) {
+              if (exercises[i].sets[j].isResting) {
+                exercises[i].sets[j].isResting = false;
+                final target = exercises[i].sets[j].plannedRestSeconds > 0
+                    ? exercises[i].sets[j].plannedRestSeconds
+                    : exercises[i].restTime;
+                exercises[i].sets[j].restStartTime = target;
+                exercises[i].sets[j].currentRestTime = target;
+              }
+            }
+          }
+        });
+
+        // Show notification immediately if it wasn't shown during background
+        NotificationService.instance.showRestTimerCompleteNotification();
+
+        // Show in-app snackbar
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.timer_off, color: Colors.white, size: 20),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Rest time complete! Ready for next set 🔥',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.orange.shade600,
+              duration: const Duration(seconds: 3),
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+      }
+    }
   }
 
   Future<void> _loadPreviousExerciseData() async {
