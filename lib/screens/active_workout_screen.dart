@@ -41,6 +41,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
   Timer? restTimerInstance;
   DateTime? _restStartTime; // Track when rest started
   int? _restDuration; // Track total rest duration in seconds
+  bool _hasLoadedPreviousData = false; // Flag to prevent repeated data loading
 
   List<Exercise> exercises = [];
 
@@ -118,7 +119,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
       }).toList();
     }
 
-    Future.microtask(() => _loadPreviousExerciseData());
+    // Only load previous data once
+    if (!_hasLoadedPreviousData) {
+      _hasLoadedPreviousData = true;
+      Future.microtask(() => _loadPreviousExerciseData());
+    }
     
     if (widget.autoStart) {
       // Start workout after build completes
