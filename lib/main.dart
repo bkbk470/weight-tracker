@@ -335,6 +335,8 @@ class _AppNavigatorState extends State<AppNavigator> {
   bool hasActiveWorkout = false;
   int activeWorkoutTime = 0;
   WorkoutScreen? _activeWorkoutScreen;
+  WorkoutDetailScreen? _cachedWorkoutDetailScreen;
+  Map<String, dynamic>? _cachedWorkoutDetailData;
   Timer? _bannerUpdateTimer;
   List<Map<String, dynamic>>? _workoutExercises;
   String? _activeWorkoutId;
@@ -449,6 +451,12 @@ class _AppNavigatorState extends State<AppNavigator> {
 
       if (currentScreen != screen) {
         _previousScreen = currentScreen;
+
+        // Clear workout detail cache when leaving that screen
+        if (currentScreen == 'workout-detail') {
+          _cachedWorkoutDetailScreen = null;
+          _cachedWorkoutDetailData = null;
+        }
       }
 
       // Don't reset active workout when navigating to active-workout
@@ -678,6 +686,11 @@ class _AppNavigatorState extends State<AppNavigator> {
           onNavigate: (screen, [data]) => navigate(screen, context, data),
         );
       case 'workout-detail':
+        // Cache the workout detail screen to prevent reloading
+        if (_cachedWorkoutDetailScreen != null && _selectedWorkout == _cachedWorkoutDetailData) {
+          return _cachedWorkoutDetailScreen!;
+        }
+
         final workout = _selectedWorkout;
 
         // Refetch workout from database to get latest set_details
@@ -693,7 +706,7 @@ class _AppNavigatorState extends State<AppNavigator> {
               final workoutExercises = _buildWorkoutExercises(freshWorkout);
               final durationMinutes = freshWorkout['estimated_duration_minutes'] as int?;
 
-              return WorkoutDetailScreen(
+              final screen = WorkoutDetailScreen(
                 onNavigate: (screen, [data]) => navigate(screen, context, data),
                 workoutId: freshWorkout['id'] as String?,
                 workoutName: freshWorkout['name'] as String? ?? 'Workout',
@@ -703,6 +716,12 @@ class _AppNavigatorState extends State<AppNavigator> {
                 initialExercises: workoutExercises,
                 workoutData: freshWorkout,
               );
+
+              // Cache the screen
+              _cachedWorkoutDetailScreen = screen;
+              _cachedWorkoutDetailData = _selectedWorkout;
+
+              return screen;
             },
           );
         }
@@ -710,7 +729,7 @@ class _AppNavigatorState extends State<AppNavigator> {
         // Fallback for workout without ID
         final workoutExercises = _buildWorkoutExercises(workout);
         final durationMinutes = workout?['estimated_duration_minutes'] as int?;
-        return WorkoutDetailScreen(
+        final screen = WorkoutDetailScreen(
           onNavigate: (screen, [data]) => navigate(screen, context, data),
           workoutId: workout?['id'] as String?,
           workoutName: workout?['name'] as String? ?? 'Workout',
@@ -720,6 +739,12 @@ class _AppNavigatorState extends State<AppNavigator> {
           initialExercises: workoutExercises,
           workoutData: workout,
         );
+
+        // Cache the screen
+        _cachedWorkoutDetailScreen = screen;
+        _cachedWorkoutDetailData = _selectedWorkout;
+
+        return screen;
       case 'change-password':
         return ChangePasswordScreen(onNavigate: (screen) => navigate(screen, context));
       case 'measurements':
