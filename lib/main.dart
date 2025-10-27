@@ -40,6 +40,7 @@ import 'screens/test_image_screen.dart';
 import 'screens/storage_browser_screen.dart';
 import 'screens/workout_folders_screen.dart';
 import 'screens/comprehensive_debug_screen.dart';
+import 'screens/exercise_debug_screen.dart';
 import 'services/workout_timer_service.dart';
 import 'utils/navigation_observers.dart';
 import 'utils/safe_dialog_helpers.dart';
@@ -777,6 +778,8 @@ class _AppNavigatorState extends State<AppNavigator> {
         return const StorageBrowserScreen();
       case 'comprehensive-debug':
         return const ComprehensiveImageDebugScreen();
+      case 'exercise-debug':
+        return const ExerciseDebugScreen();
       default:
         return LoginScreen(onNavigate: (screen) => navigate(screen, context));
     }

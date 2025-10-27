@@ -741,6 +741,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   subtitle: 'Read our privacy policy',
                   onTap: () => widget.onNavigate('privacy-policy'),
                 ),
+                _SettingsTile(
+                  icon: Icons.bug_report,
+                  title: 'Exercise Debug Tool',
+                  subtitle: 'Diagnose exercise loading issues',
+                  onTap: () => widget.onNavigate('exercise-debug'),
+                ),
                 const SizedBox(height: 32),
 
                 // Logout
