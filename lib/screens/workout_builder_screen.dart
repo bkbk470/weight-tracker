@@ -107,46 +107,22 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     }
   }
 
-  void _editSetWeight(int exerciseIndex, int setIndex) async {
-    final currentWeight = exercises[exerciseIndex].sets[setIndex].weight;
-    final result = await _showNumberDialog(
-      title: 'Set Weight',
-      label: 'Weight (lbs)',
-      initialValue: currentWeight,
-    );
-    if (result != null) {
-      setState(() {
-        exercises[exerciseIndex].sets[setIndex].weight = result;
-      });
-    }
+  void _updateSetWeight(int exerciseIndex, int setIndex, int value) {
+    setState(() {
+      exercises[exerciseIndex].sets[setIndex].weight = value;
+    });
   }
 
-  void _editSetReps(int exerciseIndex, int setIndex) async {
-    final currentReps = exercises[exerciseIndex].sets[setIndex].reps;
-    final result = await _showNumberDialog(
-      title: 'Set Reps',
-      label: 'Reps',
-      initialValue: currentReps,
-    );
-    if (result != null) {
-      setState(() {
-        exercises[exerciseIndex].sets[setIndex].reps = result;
-      });
-    }
+  void _updateSetReps(int exerciseIndex, int setIndex, int value) {
+    setState(() {
+      exercises[exerciseIndex].sets[setIndex].reps = value;
+    });
   }
 
-  void _editRestTime(int exerciseIndex) async {
-    final currentRest = exercises[exerciseIndex].restTime;
-    final result = await _showNumberDialog(
-      title: 'Rest Time',
-      label: 'Rest (seconds)',
-      initialValue: currentRest,
-    );
-    if (result != null) {
-      setState(() {
-        exercises[exerciseIndex].restTime = result;
-      });
-    }
+  void _updateRestTime(int exerciseIndex, int value) {
+    setState(() {
+      exercises[exerciseIndex].restTime = value;
+    });
   }
 
   void _addSet(int exerciseIndex) {
@@ -167,46 +143,6 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     setState(() {
       exercises[exerciseIndex].sets.removeAt(setIndex);
     });
-  }
-
-  Future<int?> _showNumberDialog({
-    required String title,
-    required String label,
-    required int initialValue,
-  }) async {
-    final controller = TextEditingController(text: initialValue.toString());
-    final result = await showDialog<int>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            labelText: label,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final value = int.tryParse(controller.text);
-              Navigator.pop(context, value);
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
-    return result;
   }
 
   Future<void> saveWorkout() async {
@@ -471,181 +407,19 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
 
                       final exercise = exercises[index];
 
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Exercise header
-                              Row(
-                                children: [
-                                  Icon(Icons.drag_handle, color: colorScheme.onSurfaceVariant),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      exercise.name,
-                                      style: textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.edit_outlined),
-                                    onPressed: () => editExercise(index),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline),
-                                    onPressed: () => removeExercise(index),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-
-                              // Sets list
-                              ...List.generate(exercise.sets.length, (setIndex) {
-                                final set = exercise.sets[setIndex];
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 8),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: colorScheme.surfaceVariant.withOpacity(0.3),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                            child: Row(
-                                              children: [
-                                                Container(
-                                                  width: 32,
-                                                  height: 32,
-                                                  decoration: BoxDecoration(
-                                                    color: colorScheme.primary.withOpacity(0.1),
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                  child: Center(
-                                                    child: Text(
-                                                      '${setIndex + 1}',
-                                                      style: textTheme.labelLarge?.copyWith(
-                                                        color: colorScheme.primary,
-                                                        fontWeight: FontWeight.bold,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 16),
-                                                Expanded(
-                                                  child: Row(
-                                                    children: [
-                                                      InkWell(
-                                                        onTap: () => _editSetWeight(index, setIndex),
-                                                        borderRadius: BorderRadius.circular(8),
-                                                        child: Padding(
-                                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                          child: Row(
-                                                            mainAxisSize: MainAxisSize.min,
-                                                            children: [
-                                                              Icon(Icons.fitness_center, size: 16, color: colorScheme.onSurfaceVariant),
-                                                              const SizedBox(width: 4),
-                                                              Text(
-                                                                '${set.weight} lbs',
-                                                                style: textTheme.bodyMedium?.copyWith(
-                                                                  color: colorScheme.primary,
-                                                                  fontWeight: FontWeight.w500,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      const SizedBox(width: 8),
-                                                      InkWell(
-                                                        onTap: () => _editSetReps(index, setIndex),
-                                                        borderRadius: BorderRadius.circular(8),
-                                                        child: Padding(
-                                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                          child: Row(
-                                                            mainAxisSize: MainAxisSize.min,
-                                                            children: [
-                                                              Icon(Icons.repeat, size: 16, color: colorScheme.onSurfaceVariant),
-                                                              const SizedBox(width: 4),
-                                                              Text(
-                                                                '${set.reps} reps',
-                                                                style: textTheme.bodyMedium?.copyWith(
-                                                                  color: colorScheme.primary,
-                                                                  fontWeight: FontWeight.w500,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                        if (exercise.sets.length > 1)
-                                          IconButton(
-                                            icon: Icon(Icons.remove_circle_outline, color: colorScheme.error),
-                                            onPressed: () => _removeSet(index, setIndex),
-                                            padding: const EdgeInsets.all(8),
-                                            constraints: const BoxConstraints(),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              }),
-
-                              // Add Set button
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  const SizedBox(width: 44),
-                                  TextButton.icon(
-                                    onPressed: () => _addSet(index),
-                                    icon: const Icon(Icons.add_circle_outline, size: 18),
-                                    label: const Text('Add Set'),
-                                    style: TextButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              // Rest time
-                              const SizedBox(height: 8),
-                              InkWell(
-                                onTap: () => _editRestTime(index),
-                                borderRadius: BorderRadius.circular(8),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 44, vertical: 8),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.timer_outlined, size: 16, color: colorScheme.onSurfaceVariant),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Rest: ${exercise.restTime}s',
-                                        style: textTheme.bodySmall?.copyWith(
-                                          color: colorScheme.primary,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      return _ExerciseBuilderCard(
+                        key: ValueKey('exercise_$index'),
+                        exercise: exercise,
+                        exerciseIndex: index,
+                        colorScheme: colorScheme,
+                        textTheme: textTheme,
+                        onUpdateWeight: (setIndex, value) => _updateSetWeight(index, setIndex, value),
+                        onUpdateReps: (setIndex, value) => _updateSetReps(index, setIndex, value),
+                        onUpdateRestTime: (value) => _updateRestTime(index, value),
+                        onAddSet: () => _addSet(index),
+                        onRemoveSet: (setIndex) => _removeSet(index, setIndex),
+                        onEdit: () => editExercise(index),
+                        onDelete: () => removeExercise(index),
                       );
                     },
                   ),
@@ -1264,6 +1038,366 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ExerciseBuilderCard extends StatefulWidget {
+  final WorkoutExercise exercise;
+  final int exerciseIndex;
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+  final void Function(int setIndex, int value) onUpdateWeight;
+  final void Function(int setIndex, int value) onUpdateReps;
+  final void Function(int value) onUpdateRestTime;
+  final VoidCallback onAddSet;
+  final void Function(int setIndex) onRemoveSet;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _ExerciseBuilderCard({
+    super.key,
+    required this.exercise,
+    required this.exerciseIndex,
+    required this.colorScheme,
+    required this.textTheme,
+    required this.onUpdateWeight,
+    required this.onUpdateReps,
+    required this.onUpdateRestTime,
+    required this.onAddSet,
+    required this.onRemoveSet,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  State<_ExerciseBuilderCard> createState() => _ExerciseBuilderCardState();
+}
+
+class _ExerciseBuilderCardState extends State<_ExerciseBuilderCard> {
+  late List<TextEditingController> weightControllers;
+  late List<TextEditingController> repsControllers;
+  late TextEditingController restTimeController;
+
+  @override
+  void initState() {
+    super.initState();
+    _initControllers();
+  }
+
+  void _initControllers() {
+    weightControllers = widget.exercise.sets
+        .map((set) => TextEditingController(text: set.weight.toString()))
+        .toList();
+    repsControllers = widget.exercise.sets
+        .map((set) => TextEditingController(text: set.reps.toString()))
+        .toList();
+    restTimeController = TextEditingController(text: widget.exercise.restTime.toString());
+  }
+
+  void _disposeSetControllers() {
+    for (final controller in weightControllers) {
+      controller.dispose();
+    }
+    for (final controller in repsControllers) {
+      controller.dispose();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _ExerciseBuilderCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (weightControllers.length != widget.exercise.sets.length) {
+      _disposeSetControllers();
+      weightControllers = widget.exercise.sets
+          .map((set) => TextEditingController(text: set.weight.toString()))
+          .toList();
+      repsControllers = widget.exercise.sets
+          .map((set) => TextEditingController(text: set.reps.toString()))
+          .toList();
+    } else {
+      for (int i = 0; i < widget.exercise.sets.length; i++) {
+        final newWeight = widget.exercise.sets[i].weight.toString();
+        if (weightControllers[i].text != newWeight) {
+          weightControllers[i].value = TextEditingValue(
+            text: newWeight,
+            selection: TextSelection.collapsed(offset: newWeight.length),
+          );
+        }
+
+        final newReps = widget.exercise.sets[i].reps.toString();
+        if (repsControllers[i].text != newReps) {
+          repsControllers[i].value = TextEditingValue(
+            text: newReps,
+            selection: TextSelection.collapsed(offset: newReps.length),
+          );
+        }
+      }
+    }
+
+    final newRestTime = widget.exercise.restTime.toString();
+    if (restTimeController.text != newRestTime) {
+      restTimeController.value = TextEditingValue(
+        text: newRestTime,
+        selection: TextSelection.collapsed(offset: newRestTime.length),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _disposeSetControllers();
+    restTimeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final exercise = widget.exercise;
+    final colorScheme = widget.colorScheme;
+    final textTheme = widget.textTheme;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Exercise header
+            Row(
+              children: [
+                Icon(Icons.drag_handle, color: colorScheme.onSurfaceVariant),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    exercise.name,
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined),
+                  onPressed: widget.onEdit,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: widget.onDelete,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Column headers
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 50,
+                    child: Text(
+                      '#',
+                      style: textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Weight',
+                      style: textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Reps',
+                      style: textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(width: 40),
+                ],
+              ),
+            ),
+
+            // Sets list with TextFormFields
+            ...exercise.sets.asMap().entries.map((entry) {
+              final setIndex = entry.key;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  color: colorScheme.surfaceContainerHighest,
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 28,
+                      child: Text(
+                        '${setIndex + 1}',
+                        style: textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: TextFormField(
+                        controller: weightControllers[setIndex],
+                        textAlign: TextAlign.center,
+                        keyboardType: TextInputType.number,
+                        maxLength: 5,
+                        maxLines: 1,
+                        style: textTheme.bodyMedium?.copyWith(fontSize: 14),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          counterText: '',
+                        ),
+                        onTap: () {
+                          weightControllers[setIndex].selection = TextSelection(
+                            baseOffset: 0,
+                            extentOffset: weightControllers[setIndex].text.length,
+                          );
+                        },
+                        onChanged: (value) {
+                          final parsed = int.tryParse(value);
+                          if (parsed != null && parsed != exercise.sets[setIndex].weight) {
+                            widget.onUpdateWeight(setIndex, parsed);
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: TextFormField(
+                        controller: repsControllers[setIndex],
+                        textAlign: TextAlign.center,
+                        keyboardType: TextInputType.number,
+                        maxLength: 4,
+                        maxLines: 1,
+                        style: textTheme.bodyMedium?.copyWith(fontSize: 14),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          counterText: '',
+                        ),
+                        onTap: () {
+                          repsControllers[setIndex].selection = TextSelection(
+                            baseOffset: 0,
+                            extentOffset: repsControllers[setIndex].text.length,
+                          );
+                        },
+                        onChanged: (value) {
+                          final parsed = int.tryParse(value);
+                          if (parsed != null && parsed != exercise.sets[setIndex].reps) {
+                            widget.onUpdateReps(setIndex, parsed);
+                          }
+                        },
+                      ),
+                    ),
+                    if (exercise.sets.length > 1) ...[
+                      const SizedBox(width: 4),
+                      SizedBox(
+                        width: 32,
+                        height: 32,
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          icon: const Icon(Icons.close, size: 18),
+                          color: colorScheme.error,
+                          onPressed: () => widget.onRemoveSet(setIndex),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            }).toList(),
+
+            // Add Set button
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: widget.onAddSet,
+                icon: const Icon(Icons.add),
+                label: const Text('Add Set'),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Rest time field
+            Row(
+              children: [
+                Icon(Icons.timer_outlined, size: 16, color: colorScheme.onSurfaceVariant),
+                const SizedBox(width: 8),
+                Text(
+                  'Rest:',
+                  style: textTheme.labelMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                SizedBox(
+                  width: 80,
+                  child: TextFormField(
+                    controller: restTimeController,
+                    textAlign: TextAlign.center,
+                    keyboardType: TextInputType.number,
+                    maxLength: 4,
+                    style: textTheme.bodyMedium?.copyWith(fontSize: 14),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      counterText: '',
+                      suffix: Text('s', style: textTheme.bodySmall),
+                    ),
+                    onTap: () {
+                      restTimeController.selection = TextSelection(
+                        baseOffset: 0,
+                        extentOffset: restTimeController.text.length,
+                      );
+                    },
+                    onChanged: (value) {
+                      final parsed = int.tryParse(value);
+                      if (parsed != null && parsed != exercise.restTime) {
+                        widget.onUpdateRestTime(parsed);
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
