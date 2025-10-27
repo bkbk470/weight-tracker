@@ -94,8 +94,19 @@ class SupabaseService {
 
   // Get all exercises (default + custom)
   Future<List<Map<String, dynamic>>> getExercises() async {
-    if (currentUserId == null) return [];
+    // If not logged in, return only default exercises
+    if (currentUserId == null) {
+      final response = await client
+          .from('exercises')
+          .select()
+          .eq('is_default', true)
+          .order('name')
+          .limit(10000);
 
+      return List<Map<String, dynamic>>.from(response);
+    }
+
+    // If logged in, return default exercises + user's custom exercises
     final response = await client
         .from('exercises')
         .select()
@@ -109,8 +120,20 @@ class SupabaseService {
   // Get exercises by category
   Future<List<Map<String, dynamic>>> getExercisesByCategory(
       String category) async {
-    if (currentUserId == null) return [];
+    // If not logged in, return only default exercises
+    if (currentUserId == null) {
+      final response = await client
+          .from('exercises')
+          .select()
+          .eq('category', category)
+          .eq('is_default', true)
+          .order('name')
+          .limit(10000);
 
+      return List<Map<String, dynamic>>.from(response);
+    }
+
+    // If logged in, return default exercises + user's custom exercises
     final response = await client
         .from('exercises')
         .select()
