@@ -78,9 +78,8 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
         name: exercise['name'] as String,
         sets: List.generate(
           3,
-          (index) => WorkoutExerciseSet(weight: 0, reps: 10),
+          (index) => WorkoutExerciseSet(weight: 0, reps: 10, restSeconds: 120),
         ),
-        restTime: 120,
       ));
     });
   }
@@ -119,9 +118,15 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     });
   }
 
-  void _updateRestTime(int exerciseIndex, int value) {
+  void _updateRestTime(int exerciseIndex, int setIndex, int value) {
     setState(() {
-      exercises[exerciseIndex].restTime = value;
+      exercises[exerciseIndex].sets[setIndex].restSeconds = value;
+    });
+  }
+
+  void _updateNotes(int exerciseIndex, String value) {
+    setState(() {
+      exercises[exerciseIndex].notes = value;
     });
   }
 
@@ -130,10 +135,11 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
       final exercise = exercises[exerciseIndex];
       final template = exercise.sets.isNotEmpty
           ? exercise.sets.last
-          : WorkoutExerciseSet(weight: 0, reps: 10);
+          : WorkoutExerciseSet(weight: 0, reps: 10, restSeconds: 90);
       exercise.sets.add(WorkoutExerciseSet(
         weight: template.weight,
         reps: template.reps,
+        restSeconds: template.restSeconds,
       ));
     });
   }
@@ -237,8 +243,10 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
           final setDetails = exercise.sets.map((set) => {
             'weight': set.weight,
             'reps': set.reps,
-            'rest_time': exercise.restTime,
+            'rest_time': set.restSeconds,
           }).toList();
+
+          final restTimeSeconds = exercise.sets.isNotEmpty ? exercise.sets.first.restSeconds : 90;
 
           await SupabaseService.instance.addExerciseToWorkout(
             workoutId: workoutId,
@@ -246,7 +254,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
             orderIndex: i,
             targetSets: exercise.sets.length,
             targetReps: exercise.sets.isNotEmpty ? exercise.sets.first.reps : 0,
-            restTimeSeconds: exercise.restTime,
+            restTimeSeconds: restTimeSeconds,
           );
 
           // Update with set_details JSON
@@ -415,7 +423,8 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
                         textTheme: textTheme,
                         onUpdateWeight: (setIndex, value) => _updateSetWeight(index, setIndex, value),
                         onUpdateReps: (setIndex, value) => _updateSetReps(index, setIndex, value),
-                        onUpdateRestTime: (value) => _updateRestTime(index, value),
+                        onUpdateRestTime: (setIndex, value) => _updateRestTime(index, setIndex, value),
+                        onUpdateNotes: (value) => _updateNotes(index, value),
                         onAddSet: () => _addSet(index),
                         onRemoveSet: (setIndex) => _removeSet(index, setIndex),
                         onDelete: () => removeExercise(index),
@@ -634,19 +643,19 @@ class _AddExerciseModalState extends State<_AddExerciseModal> {
 class WorkoutExercise {
   final String name;
   List<WorkoutExerciseSet> sets;
-  int restTime;
+  String notes;
 
   WorkoutExercise({
     required this.name,
     required List<WorkoutExerciseSet> sets,
-    required this.restTime,
+    this.notes = '',
   }) : sets = sets.map((set) => set.copy()).toList();
 
   WorkoutExercise copy() {
     return WorkoutExercise(
       name: name,
       sets: sets.map((set) => set.copy()).toList(),
-      restTime: restTime,
+      notes: notes,
     );
   }
 }
@@ -654,13 +663,19 @@ class WorkoutExercise {
 class WorkoutExerciseSet {
   int weight;
   int reps;
+  int restSeconds;
 
   WorkoutExerciseSet({
     required this.weight,
     required this.reps,
+    this.restSeconds = 90,
   });
 
-  WorkoutExerciseSet copy() => WorkoutExerciseSet(weight: weight, reps: reps);
+  WorkoutExerciseSet copy() => WorkoutExerciseSet(
+    weight: weight,
+    reps: reps,
+    restSeconds: restSeconds,
+  );
 }
 
 class ExerciseEditorScreen extends StatefulWidget {
@@ -1049,7 +1064,8 @@ class _ExerciseBuilderCard extends StatefulWidget {
   final TextTheme textTheme;
   final void Function(int setIndex, int value) onUpdateWeight;
   final void Function(int setIndex, int value) onUpdateReps;
-  final void Function(int value) onUpdateRestTime;
+  final void Function(int setIndex, int value) onUpdateRestTime;
+  final ValueChanged<String> onUpdateNotes;
   final VoidCallback onAddSet;
   final void Function(int setIndex) onRemoveSet;
   final VoidCallback onDelete;
@@ -1063,6 +1079,7 @@ class _ExerciseBuilderCard extends StatefulWidget {
     required this.onUpdateWeight,
     required this.onUpdateReps,
     required this.onUpdateRestTime,
+    required this.onUpdateNotes,
     required this.onAddSet,
     required this.onRemoveSet,
     required this.onDelete,
@@ -1075,7 +1092,8 @@ class _ExerciseBuilderCard extends StatefulWidget {
 class _ExerciseBuilderCardState extends State<_ExerciseBuilderCard> {
   late List<TextEditingController> weightControllers;
   late List<TextEditingController> repsControllers;
-  late TextEditingController restTimeController;
+  late List<TextEditingController> restControllers;
+  late TextEditingController notesController;
 
   @override
   void initState() {
@@ -1090,7 +1108,10 @@ class _ExerciseBuilderCardState extends State<_ExerciseBuilderCard> {
     repsControllers = widget.exercise.sets
         .map((set) => TextEditingController(text: set.reps.toString()))
         .toList();
-    restTimeController = TextEditingController(text: widget.exercise.restTime.toString());
+    restControllers = widget.exercise.sets
+        .map((set) => TextEditingController(text: set.restSeconds.toString()))
+        .toList();
+    notesController = TextEditingController(text: widget.exercise.notes);
   }
 
   void _disposeSetControllers() {
@@ -1098,6 +1119,9 @@ class _ExerciseBuilderCardState extends State<_ExerciseBuilderCard> {
       controller.dispose();
     }
     for (final controller in repsControllers) {
+      controller.dispose();
+    }
+    for (final controller in restControllers) {
       controller.dispose();
     }
   }
@@ -1113,6 +1137,9 @@ class _ExerciseBuilderCardState extends State<_ExerciseBuilderCard> {
           .toList();
       repsControllers = widget.exercise.sets
           .map((set) => TextEditingController(text: set.reps.toString()))
+          .toList();
+      restControllers = widget.exercise.sets
+          .map((set) => TextEditingController(text: set.restSeconds.toString()))
           .toList();
     } else {
       for (int i = 0; i < widget.exercise.sets.length; i++) {
@@ -1131,14 +1158,21 @@ class _ExerciseBuilderCardState extends State<_ExerciseBuilderCard> {
             selection: TextSelection.collapsed(offset: newReps.length),
           );
         }
+
+        final newRest = widget.exercise.sets[i].restSeconds.toString();
+        if (restControllers[i].text != newRest) {
+          restControllers[i].value = TextEditingValue(
+            text: newRest,
+            selection: TextSelection.collapsed(offset: newRest.length),
+          );
+        }
       }
     }
 
-    final newRestTime = widget.exercise.restTime.toString();
-    if (restTimeController.text != newRestTime) {
-      restTimeController.value = TextEditingValue(
-        text: newRestTime,
-        selection: TextSelection.collapsed(offset: newRestTime.length),
+    if (notesController.text != widget.exercise.notes) {
+      notesController.value = TextEditingValue(
+        text: widget.exercise.notes,
+        selection: TextSelection.collapsed(offset: widget.exercise.notes.length),
       );
     }
   }
@@ -1146,7 +1180,7 @@ class _ExerciseBuilderCardState extends State<_ExerciseBuilderCard> {
   @override
   void dispose() {
     _disposeSetControllers();
-    restTimeController.dispose();
+    notesController.dispose();
     super.dispose();
   }
 
@@ -1201,7 +1235,8 @@ class _ExerciseBuilderCardState extends State<_ExerciseBuilderCard> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Expanded(
+                  SizedBox(
+                    width: 70,
                     child: Text(
                       'Weight',
                       style: textTheme.labelSmall?.copyWith(
@@ -1212,7 +1247,8 @@ class _ExerciseBuilderCardState extends State<_ExerciseBuilderCard> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Expanded(
+                  SizedBox(
+                    width: 60,
                     child: Text(
                       'Reps',
                       style: textTheme.labelSmall?.copyWith(
@@ -1222,7 +1258,19 @@ class _ExerciseBuilderCardState extends State<_ExerciseBuilderCard> {
                       textAlign: TextAlign.center,
                     ),
                   ),
-                  const SizedBox(width: 40),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 70,
+                    child: Text(
+                      'Rest',
+                      style: textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const Spacer(),
                 ],
               ),
             ),
@@ -1252,6 +1300,7 @@ class _ExerciseBuilderCardState extends State<_ExerciseBuilderCard> {
                     ),
                     const SizedBox(width: 4),
                     Expanded(
+                      flex: 3,
                       child: TextFormField(
                         controller: weightControllers[setIndex],
                         textAlign: TextAlign.center,
@@ -1283,6 +1332,7 @@ class _ExerciseBuilderCardState extends State<_ExerciseBuilderCard> {
                     ),
                     const SizedBox(width: 4),
                     Expanded(
+                      flex: 2,
                       child: TextFormField(
                         controller: repsControllers[setIndex],
                         textAlign: TextAlign.center,
@@ -1308,6 +1358,34 @@ class _ExerciseBuilderCardState extends State<_ExerciseBuilderCard> {
                           final parsed = int.tryParse(value);
                           if (parsed != null && parsed != exercise.sets[setIndex].reps) {
                             widget.onUpdateReps(setIndex, parsed);
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      flex: 2,
+                      child: TextFormField(
+                        controller: restControllers[setIndex],
+                        textAlign: TextAlign.center,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                        onTap: () {
+                          restControllers[setIndex].selection = TextSelection(
+                            baseOffset: 0,
+                            extentOffset: restControllers[setIndex].text.length,
+                          );
+                        },
+                        onChanged: (value) {
+                          final parsed = int.tryParse(value);
+                          if (parsed != null && parsed != exercise.sets[setIndex].restSeconds) {
+                            widget.onUpdateRestTime(setIndex, parsed);
                           }
                         },
                       ),
