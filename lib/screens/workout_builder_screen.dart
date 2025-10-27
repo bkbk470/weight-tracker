@@ -369,32 +369,111 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
                       }
 
                       final exercise = exercises[index];
-                      final repsSummary = exercise.sets.isEmpty
-                          ? 'No reps configured'
-                          : exercise.sets.map((set) => set.reps).toSet().length == 1
-                              ? '${exercise.sets.first.reps} reps'
-                              : 'Reps: ${exercise.sets.map((set) => set.reps).join(', ')}';
-                      final weightSummary = exercise.sets.any((set) => set.weight > 0)
-                          ? ' • Weights: ${exercise.sets.map((set) => set.weight).join(', ')} lbs'
-                          : '';
+
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
-                        child: ListTile(
-                          leading: const Icon(Icons.drag_handle),
-                          title: Text(exercise.name),
-                          subtitle: Text(
-                            '${exercise.sets.length} sets • $repsSummary • ${exercise.restTime}s rest$weightSummary',
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              IconButton(
-                                icon: const Icon(Icons.edit_outlined),
-                                onPressed: () => editExercise(index),
+                              // Exercise header
+                              Row(
+                                children: [
+                                  Icon(Icons.drag_handle, color: colorScheme.onSurfaceVariant),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      exercise.name,
+                                      style: textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.edit_outlined),
+                                    onPressed: () => editExercise(index),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline),
+                                    onPressed: () => removeExercise(index),
+                                  ),
+                                ],
                               ),
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline),
-                                onPressed: () => removeExercise(index),
+                              const SizedBox(height: 12),
+
+                              // Sets list
+                              ...List.generate(exercise.sets.length, (setIndex) {
+                                final set = exercise.sets[setIndex];
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.surfaceVariant.withOpacity(0.3),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 32,
+                                          height: 32,
+                                          decoration: BoxDecoration(
+                                            color: colorScheme.primary.withOpacity(0.1),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              '${setIndex + 1}',
+                                              style: textTheme.labelLarge?.copyWith(
+                                                color: colorScheme.primary,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: Row(
+                                            children: [
+                                              if (set.weight > 0) ...[
+                                                Icon(Icons.fitness_center, size: 16, color: colorScheme.onSurfaceVariant),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  '${set.weight} lbs',
+                                                  style: textTheme.bodyMedium,
+                                                ),
+                                                const SizedBox(width: 16),
+                                              ],
+                                              Icon(Icons.repeat, size: 16, color: colorScheme.onSurfaceVariant),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                '${set.reps} reps',
+                                                style: textTheme.bodyMedium,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }),
+
+                              // Rest time
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  const SizedBox(width: 44),
+                                  Icon(Icons.timer_outlined, size: 16, color: colorScheme.onSurfaceVariant),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Rest: ${exercise.restTime}s',
+                                    style: textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
