@@ -108,6 +108,108 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     }
   }
 
+  void _editSetWeight(int exerciseIndex, int setIndex) async {
+    final currentWeight = exercises[exerciseIndex].sets[setIndex].weight;
+    final result = await _showNumberDialog(
+      title: 'Set Weight',
+      label: 'Weight (lbs)',
+      initialValue: currentWeight,
+    );
+    if (result != null) {
+      setState(() {
+        exercises[exerciseIndex].sets[setIndex].weight = result;
+      });
+    }
+  }
+
+  void _editSetReps(int exerciseIndex, int setIndex) async {
+    final currentReps = exercises[exerciseIndex].sets[setIndex].reps;
+    final result = await _showNumberDialog(
+      title: 'Set Reps',
+      label: 'Reps',
+      initialValue: currentReps,
+    );
+    if (result != null) {
+      setState(() {
+        exercises[exerciseIndex].sets[setIndex].reps = result;
+      });
+    }
+  }
+
+  void _editRestTime(int exerciseIndex) async {
+    final currentRest = exercises[exerciseIndex].restTime;
+    final result = await _showNumberDialog(
+      title: 'Rest Time',
+      label: 'Rest (seconds)',
+      initialValue: currentRest,
+    );
+    if (result != null) {
+      setState(() {
+        exercises[exerciseIndex].restTime = result;
+      });
+    }
+  }
+
+  void _addSet(int exerciseIndex) {
+    setState(() {
+      final exercise = exercises[exerciseIndex];
+      final template = exercise.sets.isNotEmpty
+          ? exercise.sets.last
+          : WorkoutExerciseSet(weight: 0, reps: 10);
+      exercise.sets.add(WorkoutExerciseSet(
+        weight: template.weight,
+        reps: template.reps,
+      ));
+    });
+  }
+
+  void _removeSet(int exerciseIndex, int setIndex) {
+    if (exercises[exerciseIndex].sets.length <= 1) return;
+    setState(() {
+      exercises[exerciseIndex].sets.removeAt(setIndex);
+    });
+  }
+
+  Future<int?> _showNumberDialog({
+    required String title,
+    required String label,
+    required int initialValue,
+  }) async {
+    final controller = TextEditingController(text: initialValue.toString());
+    final result = await showDialog<int>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            labelText: label,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = int.tryParse(controller.text);
+              Navigator.pop(context, value);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    return result;
+  }
+
   Future<void> saveWorkout() async {
     if (workoutNameController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -408,72 +510,139 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 8),
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                     decoration: BoxDecoration(
                                       color: colorScheme.surfaceVariant.withOpacity(0.3),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Row(
                                       children: [
-                                        Container(
-                                          width: 32,
-                                          height: 32,
-                                          decoration: BoxDecoration(
-                                            color: colorScheme.primary.withOpacity(0.1),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Center(
-                                            child: Text(
-                                              '${setIndex + 1}',
-                                              style: textTheme.labelLarge?.copyWith(
-                                                color: colorScheme.primary,
-                                                fontWeight: FontWeight.bold,
-                                              ),
+                                        Expanded(
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                            child: Row(
+                                              children: [
+                                                Container(
+                                                  width: 32,
+                                                  height: 32,
+                                                  decoration: BoxDecoration(
+                                                    color: colorScheme.primary.withOpacity(0.1),
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: Center(
+                                                    child: Text(
+                                                      '${setIndex + 1}',
+                                                      style: textTheme.labelLarge?.copyWith(
+                                                        color: colorScheme.primary,
+                                                        fontWeight: FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 16),
+                                                Expanded(
+                                                  child: Row(
+                                                    children: [
+                                                      InkWell(
+                                                        onTap: () => _editSetWeight(index, setIndex),
+                                                        borderRadius: BorderRadius.circular(8),
+                                                        child: Padding(
+                                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                          child: Row(
+                                                            mainAxisSize: MainAxisSize.min,
+                                                            children: [
+                                                              Icon(Icons.fitness_center, size: 16, color: colorScheme.onSurfaceVariant),
+                                                              const SizedBox(width: 4),
+                                                              Text(
+                                                                '${set.weight} lbs',
+                                                                style: textTheme.bodyMedium?.copyWith(
+                                                                  color: colorScheme.primary,
+                                                                  fontWeight: FontWeight.w500,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      InkWell(
+                                                        onTap: () => _editSetReps(index, setIndex),
+                                                        borderRadius: BorderRadius.circular(8),
+                                                        child: Padding(
+                                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                          child: Row(
+                                                            mainAxisSize: MainAxisSize.min,
+                                                            children: [
+                                                              Icon(Icons.repeat, size: 16, color: colorScheme.onSurfaceVariant),
+                                                              const SizedBox(width: 4),
+                                                              Text(
+                                                                '${set.reps} reps',
+                                                                style: textTheme.bodyMedium?.copyWith(
+                                                                  color: colorScheme.primary,
+                                                                  fontWeight: FontWeight.w500,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
                                         ),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: Row(
-                                            children: [
-                                              if (set.weight > 0) ...[
-                                                Icon(Icons.fitness_center, size: 16, color: colorScheme.onSurfaceVariant),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  '${set.weight} lbs',
-                                                  style: textTheme.bodyMedium,
-                                                ),
-                                                const SizedBox(width: 16),
-                                              ],
-                                              Icon(Icons.repeat, size: 16, color: colorScheme.onSurfaceVariant),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                '${set.reps} reps',
-                                                style: textTheme.bodyMedium,
-                                              ),
-                                            ],
+                                        if (exercise.sets.length > 1)
+                                          IconButton(
+                                            icon: Icon(Icons.remove_circle_outline, color: colorScheme.error),
+                                            onPressed: () => _removeSet(index, setIndex),
+                                            padding: const EdgeInsets.all(8),
+                                            constraints: const BoxConstraints(),
                                           ),
-                                        ),
                                       ],
                                     ),
                                   ),
                                 );
                               }),
 
-                              // Rest time
+                              // Add Set button
                               const SizedBox(height: 4),
                               Row(
                                 children: [
                                   const SizedBox(width: 44),
-                                  Icon(Icons.timer_outlined, size: 16, color: colorScheme.onSurfaceVariant),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Rest: ${exercise.restTime}s',
-                                    style: textTheme.bodySmall?.copyWith(
-                                      color: colorScheme.onSurfaceVariant,
+                                  TextButton.icon(
+                                    onPressed: () => _addSet(index),
+                                    icon: const Icon(Icons.add_circle_outline, size: 18),
+                                    label: const Text('Add Set'),
+                                    style: TextButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     ),
                                   ),
                                 ],
+                              ),
+
+                              // Rest time
+                              const SizedBox(height: 8),
+                              InkWell(
+                                onTap: () => _editRestTime(index),
+                                borderRadius: BorderRadius.circular(8),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 44, vertical: 8),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.timer_outlined, size: 16, color: colorScheme.onSurfaceVariant),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Rest: ${exercise.restTime}s',
+                                        style: textTheme.bodySmall?.copyWith(
+                                          color: colorScheme.primary,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ],
                           ),
