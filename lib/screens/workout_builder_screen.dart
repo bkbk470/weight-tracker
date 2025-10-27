@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/supabase_service.dart';
 import '../services/local_storage_service.dart';
 import '../services/exercise_cache_service.dart';
+import '../widgets/storage_image.dart';
 
 class WorkoutBuilderScreen extends StatefulWidget {
   final Function(String) onNavigate;
@@ -436,54 +437,12 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
                             child: ListTile(
                               leading: ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
-                                child: exercise['image_url'] != null && (exercise['image_url'] as String).isNotEmpty
-                                    ? Image.network(
-                                        exercise['image_url'] as String,
-                                        width: 56,
-                                        height: 56,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return Container(
-                                            width: 56,
-                                            height: 56,
-                                            color: colorScheme.surfaceVariant,
-                                            child: Icon(
-                                              Icons.fitness_center,
-                                              color: colorScheme.primary,
-                                            ),
-                                          );
-                                        },
-                                        loadingBuilder: (context, child, loadingProgress) {
-                                          if (loadingProgress == null) return child;
-                                          return Container(
-                                            width: 56,
-                                            height: 56,
-                                            color: colorScheme.surfaceVariant,
-                                            child: Center(
-                                              child: SizedBox(
-                                                width: 24,
-                                                height: 24,
-                                                child: CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                  value: loadingProgress.expectedTotalBytes != null
-                                                      ? loadingProgress.cumulativeBytesLoaded /
-                                                          loadingProgress.expectedTotalBytes!
-                                                      : null,
-                                                ),
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      )
-                                    : Container(
-                                        width: 56,
-                                        height: 56,
-                                        color: colorScheme.surfaceVariant,
-                                        child: Icon(
-                                          Icons.fitness_center,
-                                          color: colorScheme.primary,
-                                        ),
-                                      ),
+                                child: StorageImage(
+                                  imageUrl: exercise['image_url'] as String?,
+                                  width: 56,
+                                  height: 56,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                               title: Text(exercise['name'] as String),
                               subtitle: Text(
