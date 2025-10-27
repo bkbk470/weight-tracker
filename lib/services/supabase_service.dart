@@ -100,7 +100,8 @@ class SupabaseService {
         .from('exercises')
         .select()
         .or('is_default.eq.true,user_id.eq.$currentUserId')
-        .order('name');
+        .order('name')
+        .limit(10000); // Explicit limit to override Supabase default of 1000
 
     return List<Map<String, dynamic>>.from(response);
   }
@@ -115,7 +116,8 @@ class SupabaseService {
         .select()
         .eq('category', category)
         .or('is_default.eq.true,user_id.eq.$currentUserId')
-        .order('name');
+        .order('name')
+        .limit(10000); // Explicit limit to override Supabase default of 1000
 
     return List<Map<String, dynamic>>.from(response);
   }
