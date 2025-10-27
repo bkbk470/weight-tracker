@@ -696,9 +696,9 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
     super.initState();
     sets = widget.exercise.sets.map((set) => set.copy()).toList();
     if (sets.isEmpty) {
-      sets = [WorkoutExerciseSet(weight: 0, reps: 10)];
+      sets = [WorkoutExerciseSet(weight: 0, reps: 10, restSeconds: 90)];
     }
-    restTime = widget.exercise.restTime;
+    restTime = sets.isNotEmpty ? sets.first.restSeconds : 90;
   }
 
   void _updateSet(int index, {int? weight, int? reps}) {
@@ -715,13 +715,21 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
   void _updateRest(int value) {
     setState(() {
       restTime = value;
+      // Update all sets with the new rest time
+      for (var set in sets) {
+        set.restSeconds = value;
+      }
     });
   }
 
   void _addSet() {
     setState(() {
-      final template = sets.isNotEmpty ? sets.last : WorkoutExerciseSet(weight: 0, reps: 10);
-      sets.add(template.copy());
+      final template = sets.isNotEmpty ? sets.last : WorkoutExerciseSet(weight: 0, reps: 10, restSeconds: restTime);
+      sets.add(WorkoutExerciseSet(
+        weight: template.weight,
+        reps: template.reps,
+        restSeconds: restTime,
+      ));
     });
   }
 
@@ -795,7 +803,7 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
       WorkoutExercise(
         name: widget.exercise.name,
         sets: sets.map((set) => set.copy()).toList(),
-        restTime: restTime,
+        notes: widget.exercise.notes,
       ),
     );
   }
