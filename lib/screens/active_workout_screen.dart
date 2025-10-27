@@ -931,7 +931,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
     }
 
     FocusManager.instance.primaryFocus?.unfocus();
-    showSafeModalBottomSheet<void>(
+    showSafeModalBottomSheet<String?>(
       context: context,
       isScrollControlled: true,
       backgroundColor: colorScheme.surface,
@@ -1059,7 +1059,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
                         // Clear workout state BEFORE navigating
                         _timerService.reset();
                         widget.onWorkoutStateChanged?.call(false, 0);
-                        Navigator.of(sheetContext).pop();
+                        Navigator.of(sheetContext).pop('continue');
                         widget.onNavigate('dashboard');
                       },
                       icon: const Icon(Icons.check_circle_outline),
@@ -1077,7 +1077,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
                         // Clear workout state BEFORE navigating
                         _timerService.reset();
                         widget.onWorkoutStateChanged?.call(false, 0);
-                        Navigator.of(sheetContext).pop();
+                        Navigator.of(sheetContext).pop('progress');
                         widget.onNavigate('progress');
                       },
                       icon: Icon(Icons.insights, color: colorScheme.primary),
@@ -1094,10 +1094,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
           ),
         );
       },
-    ).then((_) {
+    ).then((result) {
       // Handle modal dismissal (e.g., swiping down)
-      // Clear workout state and navigate to dashboard
-      if (mounted) {
+      // Only navigate to dashboard if user swiped down (result is null)
+      if (mounted && result == null) {
         _timerService.reset();
         widget.onWorkoutStateChanged?.call(false, 0);
         widget.onNavigate('dashboard');
