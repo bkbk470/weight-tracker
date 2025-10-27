@@ -531,15 +531,19 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
                     });
                   }
 
-                  // Save workout to Supabase
-                  final saved = await _saveWorkoutToDatabase();
-                  if (saved) {
-                    await _maybePromptSaveTemplate();
-                  }
-
-                  // Note: Navigation happens when user closes the completion screen
+                  // Show completion screen immediately
                   _timerService.reset();
                   widget.onWorkoutStateChanged?.call(false, 0);
+
+                  // Save workout to Supabase in the background (don't await)
+                  _saveWorkoutToDatabase().then((saved) {
+                    if (saved) {
+                      _maybePromptSaveTemplate();
+                    }
+                  }).catchError((error) {
+                    print('Error saving workout in background: $error');
+                    // Could show a snackbar here if needed
+                  });
                 },
                 icon: const Icon(Icons.check),
                 label: const Text('Finish Anyway'),
@@ -582,15 +586,19 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
               onPressed: () async {
                 Navigator.pop(dialogContext);
 
-                // Save workout to Supabase
-                final saved = await _saveWorkoutToDatabase();
-                if (saved) {
-                  await _maybePromptSaveTemplate();
-                }
-
-                // Note: Navigation happens when user closes the completion screen
+                // Show completion screen immediately
                 _timerService.reset();
                 widget.onWorkoutStateChanged?.call(false, 0);
+
+                // Save workout to Supabase in the background (don't await)
+                _saveWorkoutToDatabase().then((saved) {
+                  if (saved) {
+                    _maybePromptSaveTemplate();
+                  }
+                }).catchError((error) {
+                  print('Error saving workout in background: $error');
+                  // Could show a snackbar here if needed
+                });
               },
               child: const Text('Finish'),
             ),
