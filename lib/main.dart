@@ -417,7 +417,13 @@ class _AppNavigatorState extends State<AppNavigator> {
       }
       return;
     }
-    
+
+    // If navigating to active-workout while already on it, don't rebuild
+    if (screen == 'active-workout' && currentScreen == 'active-workout') {
+      print('⏩ Already on active-workout screen, skipping navigation');
+      return;
+    }
+
     setState(() {
       if (data != null) {
         // Check for selectedTab in data
