@@ -653,23 +653,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       },
                   ),
                 ),
-                // App Icon changing feature is disabled for App Store builds
-                // if (!kIsWeb)
-                //   Card(
-                //     margin: const EdgeInsets.only(bottom: 12),
-                //     child: ListTile(
-                //       leading: const Icon(Icons.apps_outlined),
-                //       title: const Text('App Icon'),
-                //       subtitle: Text(_currentAppIcon == 'default'
-                //           ? 'Blue (Default)'
-                //           : _currentAppIcon.replaceAll('AppIcon-', '').replaceFirst(
-                //                 _currentAppIcon.replaceAll('AppIcon-', '')[0],
-                //                 _currentAppIcon.replaceAll('AppIcon-', '')[0].toUpperCase(),
-                //               )),
-                //       trailing: const Icon(Icons.chevron_right),
-                //       onTap: () => _showAppIconDialog(context),
-                //     ),
-                //   ),
+                // App Icon
+                if (!kIsWeb)
+                  Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: ListTile(
+                      leading: const Icon(Icons.apps_outlined),
+                      title: const Text('App Icon'),
+                      subtitle: Text(_currentAppIcon == 'default'
+                          ? 'Blue (Default)'
+                          : _currentAppIcon.replaceAll('AppIcon-', '').replaceFirst(
+                                _currentAppIcon.replaceAll('AppIcon-', '')[0],
+                                _currentAppIcon.replaceAll('AppIcon-', '')[0].toUpperCase(),
+                              )),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _showAppIconDialog(context),
+                    ),
+                  ),
                 _SettingsTile(
                   icon: Icons.straighten,
                   title: 'Body Measurements',

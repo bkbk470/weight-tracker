@@ -1078,8 +1078,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
                         _timerService.reset();
                         widget.onWorkoutStateChanged?.call(false, 0);
                         Navigator.of(sheetContext).pop();
-                        widget.onNavigate('dashboard');
-                        // Could navigate to progress/stats screen here in the future
+                        widget.onNavigate('progress');
                       },
                       icon: Icon(Icons.insights, color: colorScheme.primary),
                       label: Text('View Progress', style: TextStyle(color: colorScheme.primary)),
