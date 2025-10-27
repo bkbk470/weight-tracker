@@ -23,8 +23,10 @@ class WorkoutBuilderScreen extends StatefulWidget {
 
 class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
   late TextEditingController workoutNameController;
+  late TextEditingController searchController;
   late List<WorkoutExercise> exercises;
   String selectedCategory = 'All';
+  String searchQuery = '';
   final categories = ['All', 'Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Cardio', 'Other'];
 
   // Load all exercises from database
@@ -36,6 +38,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     super.initState();
     // Initialize with workout data if editing, otherwise start fresh
     workoutNameController = TextEditingController(text: widget.workoutName ?? '');
+    searchController = TextEditingController();
     exercises = widget.initialExercises?.map((e) => e.copy()).toList() ?? [];
     _loadAllExercises();
   }
@@ -64,6 +67,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
   @override
   void dispose() {
     workoutNameController.dispose();
+    searchController.dispose();
     super.dispose();
   }
 
@@ -249,9 +253,12 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    final filteredExercises = selectedCategory == 'All'
-        ? allExercises
-        : allExercises.where((e) => e['category'] == selectedCategory).toList();
+    final filteredExercises = allExercises.where((e) {
+      final matchesCategory = selectedCategory == 'All' || e['category'] == selectedCategory;
+      final matchesSearch = searchQuery.isEmpty ||
+          (e['name'] as String).toLowerCase().contains(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    }).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -354,6 +361,32 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
               ),
             ),
           ],
+
+          // Search Field
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: TextField(
+              controller: searchController,
+              onChanged: (value) => setState(() => searchQuery = value),
+              decoration: InputDecoration(
+                hintText: 'Search exercises...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          searchController.clear();
+                          setState(() => searchQuery = '');
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+            ),
+          ),
 
           // Category Filter
           Container(
