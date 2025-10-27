@@ -250,6 +250,22 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     }
   }
 
+  void _showAddExerciseModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _AddExerciseModal(
+        allExercises: allExercises,
+        isLoadingExercises: isLoadingExercises,
+        onAddExercise: (exercise) {
+          addExercise(exercise);
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -295,173 +311,97 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
             ),
           ),
 
-          // Selected Exercises
-          if (exercises.isNotEmpty) ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Selected Exercises (${exercises.length})',
-                    style: textTheme.titleMedium,
-                  ),
-                  TextButton(
-                    onPressed: () => setState(() => exercises.clear()),
-                    child: const Text('Clear All'),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(
-              height: 200,
-              child: ReorderableListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: exercises.length,
-                onReorder: (oldIndex, newIndex) {
-                  setState(() {
-                    if (newIndex > oldIndex) newIndex--;
-                    final item = exercises.removeAt(oldIndex);
-                    exercises.insert(newIndex, item);
-                  });
-                },
-                itemBuilder: (context, index) {
-                  final exercise = exercises[index];
-                  final repsSummary = exercise.sets.isEmpty
-                      ? 'No reps configured'
-                      : exercise.sets.map((set) => set.reps).toSet().length == 1
-                          ? '${exercise.sets.first.reps} reps'
-                          : 'Reps: ${exercise.sets.map((set) => set.reps).join(', ')}';
-                  final weightSummary = exercise.sets.any((set) => set.weight > 0)
-                      ? ' • Weights: ${exercise.sets.map((set) => set.weight).join(', ')} lbs'
-                      : '';
-                  return Card(
-                    key: ValueKey(exercise.name + index.toString()),
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      leading: const Icon(Icons.drag_handle),
-                      title: Text(exercise.name),
-                      subtitle: Text(
-                        '${exercise.sets.length} sets • $repsSummary • ${exercise.restTime}s rest$weightSummary',
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit_outlined),
-                            onPressed: () => editExercise(index),
+          // Empty state or Add Exercise button
+          Expanded(
+            child: exercises.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.fitness_center,
+                          size: 80,
+                          color: colorScheme.primary.withOpacity(0.3),
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'No exercises added yet',
+                          style: textTheme.titleLarge?.copyWith(
+                            color: colorScheme.onSurface.withOpacity(0.6),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline),
-                            onPressed: () => removeExercise(index),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Tap the button below to add exercises',
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurface.withOpacity(0.4),
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 32),
+                        ElevatedButton.icon(
+                          onPressed: _showAddExerciseModal,
+                          icon: const Icon(Icons.add),
+                          label: const Text('Add Exercise'),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                          ),
+                        ),
+                      ],
                     ),
-                  );
-                },
-              ),
-            ),
-          ],
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: exercises.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == exercises.length) {
+                        // Add Exercise button at the end
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: OutlinedButton.icon(
+                            onPressed: _showAddExerciseModal,
+                            icon: const Icon(Icons.add),
+                            label: const Text('Add Another Exercise'),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                          ),
+                        );
+                      }
 
-          // Search Field
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: TextField(
-              controller: searchController,
-              onChanged: (value) => setState(() => searchQuery = value),
-              decoration: InputDecoration(
-                hintText: 'Search exercises...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          searchController.clear();
-                          setState(() => searchQuery = '');
-                        },
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
-            ),
-          ),
-
-          // Category Filter
-          Container(
-            height: 60,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: categories.length,
-              itemBuilder: (context, index) {
-                final category = categories[index];
-                final isSelected = category == selectedCategory;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: FilterChip(
-                    label: Text(category),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() => selectedCategory = category);
+                      final exercise = exercises[index];
+                      final repsSummary = exercise.sets.isEmpty
+                          ? 'No reps configured'
+                          : exercise.sets.map((set) => set.reps).toSet().length == 1
+                              ? '${exercise.sets.first.reps} reps'
+                              : 'Reps: ${exercise.sets.map((set) => set.reps).join(', ')}';
+                      final weightSummary = exercise.sets.any((set) => set.weight > 0)
+                          ? ' • Weights: ${exercise.sets.map((set) => set.weight).join(', ')} lbs'
+                          : '';
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: ListTile(
+                          leading: const Icon(Icons.drag_handle),
+                          title: Text(exercise.name),
+                          subtitle: Text(
+                            '${exercise.sets.length} sets • $repsSummary • ${exercise.restTime}s rest$weightSummary',
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit_outlined),
+                                onPressed: () => editExercise(index),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline),
+                                onPressed: () => removeExercise(index),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
                     },
                   ),
-                );
-              },
-            ),
-          ),
-
-          // Exercise Library
-          Expanded(
-            child: isLoadingExercises
-                ? const Center(child: CircularProgressIndicator())
-                : filteredExercises.isEmpty
-                    ? Center(
-                        child: Text(
-                          'No exercises found in this category',
-                          style: textTheme.bodyLarge,
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: filteredExercises.length,
-                        itemBuilder: (context, index) {
-                          final exercise = filteredExercises[index];
-                          final count = exercises.where((e) => e.name == exercise['name']).length;
-
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            child: ListTile(
-                              leading: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: StorageImage(
-                                  imageUrl: exercise['image_url'] as String?,
-                                  width: 56,
-                                  height: 56,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                              title: Text(exercise['name'] as String),
-                              subtitle: Text(
-                                count > 0
-                                    ? '${exercise['category']} • Added $count time${count > 1 ? 's' : ''}'
-                                    : exercise['category'] as String,
-                              ),
-                              trailing: IconButton(
-                                icon: Icon(
-                                  count > 0 ? Icons.add_circle : Icons.add_circle_outline,
-                                  color: count > 0 ? colorScheme.primary : null,
-                                ),
-                                onPressed: () => addExercise(exercise),
-                              ),
-                              onTap: () => addExercise(exercise),
-                            ),
-                          );
-                        },
-                      ),
           ),
         ],
       ),
@@ -472,6 +412,201 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
               label: const Text('Save Workout'),
             )
           : null,
+    );
+  }
+}
+
+class _AddExerciseModal extends StatefulWidget {
+  final List<Map<String, dynamic>> allExercises;
+  final bool isLoadingExercises;
+  final Function(Map<String, dynamic>) onAddExercise;
+
+  const _AddExerciseModal({
+    required this.allExercises,
+    required this.isLoadingExercises,
+    required this.onAddExercise,
+  });
+
+  @override
+  State<_AddExerciseModal> createState() => _AddExerciseModalState();
+}
+
+class _AddExerciseModalState extends State<_AddExerciseModal> {
+  final searchController = TextEditingController();
+  String selectedCategory = 'All';
+  String searchQuery = '';
+  final categories = ['All', 'Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Cardio', 'Other'];
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  List<Map<String, dynamic>> get filteredExercises {
+    return widget.allExercises.where((e) {
+      final matchesCategory = selectedCategory == 'All' || e['category'] == selectedCategory;
+      final matchesSearch = searchQuery.isEmpty ||
+          (e['name'] as String).toLowerCase().contains(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.9,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // Drag handle
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colorScheme.onSurface.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+
+              // Header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Add Exercise',
+                      style: textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Search Field
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: TextField(
+                  controller: searchController,
+                  onChanged: (value) => setState(() => searchQuery = value),
+                  decoration: InputDecoration(
+                    hintText: 'Search exercises...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              searchController.clear();
+                              setState(() => searchQuery = '');
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
+              ),
+
+              // Category Filter
+              Container(
+                height: 60,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: categories.length,
+                  itemBuilder: (context, index) {
+                    final category = categories[index];
+                    final isSelected = category == selectedCategory;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: FilterChip(
+                        label: Text(category),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setState(() => selectedCategory = category);
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              // Exercise count
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '${filteredExercises.length} exercises',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Exercise Library
+              Expanded(
+                child: widget.isLoadingExercises
+                    ? const Center(child: CircularProgressIndicator())
+                    : filteredExercises.isEmpty
+                        ? Center(
+                            child: Text(
+                              'No exercises found',
+                              style: textTheme.bodyLarge,
+                            ),
+                          )
+                        : ListView.builder(
+                            controller: scrollController,
+                            padding: const EdgeInsets.all(16),
+                            itemCount: filteredExercises.length,
+                            itemBuilder: (context, index) {
+                              final exercise = filteredExercises[index];
+
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                child: ListTile(
+                                  leading: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: StorageImage(
+                                      imageUrl: exercise['image_url'] as String?,
+                                      width: 56,
+                                      height: 56,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  title: Text(exercise['name'] as String),
+                                  subtitle: Text(exercise['category'] as String),
+                                  trailing: const Icon(Icons.add_circle_outline),
+                                  onTap: () => widget.onAddExercise(exercise),
+                                ),
+                              );
+                            },
+                          ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
