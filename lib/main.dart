@@ -218,12 +218,11 @@ class _WeightTrackerAppState extends State<WeightTrackerApp> {
       debugShowCheckedModeBanner: false,
       navigatorObservers: [UnfocusOnNavigateObserver()],
       builder: (context, child) {
-        return GestureDetector(
-          onTap: () {
-            // Global unfocus on any tap
+        return Listener(
+          onPointerDown: (_) {
+            // Dismiss keyboard when tapping anywhere
             FocusManager.instance.primaryFocus?.unfocus();
           },
-          behavior: HitTestBehavior.translucent,
           child: child,
         );
       },
