@@ -665,14 +665,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         const SizedBox(height: 16),
 
                         // Show exercises if available
-                        FutureBuilder<List<Map<String, dynamic>>>(
-                          future: _supabaseService.getWorkoutExercises(workout['id']),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState == ConnectionState.waiting) {
-                              return const Center(child: CircularProgressIndicator());
-                            }
+                        Builder(
+                          builder: (context) {
+                            final exercises = (workout['workout_exercises'] as List?) ?? [];
 
-                            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                            if (exercises.isEmpty) {
                               return Card(
                                 child: Padding(
                                   padding: const EdgeInsets.all(24),
@@ -688,9 +685,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               );
                             }
 
-                            final exercises = snapshot.data!;
                             return Column(
-                              children: exercises.map((exercise) {
+                              children: exercises.map<Widget>((exercise) {
+                                final exerciseData = exercise as Map<String, dynamic>;
+                                final exerciseName = exerciseData['exercise_name'] ??
+                                                    exerciseData['exercises']?['name'] ??
+                                                    'Exercise';
+                                final sets = exerciseData['sets'] as List? ?? [];
+                                final targetSets = exerciseData['target_sets'] ?? sets.length;
+
                                 return Card(
                                   margin: const EdgeInsets.only(bottom: 12),
                                   child: Padding(
@@ -715,12 +718,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                exercise['exercise_name'] ?? 'Exercise',
+                                                exerciseName,
                                                 style: textTheme.titleMedium,
                                               ),
                                               const SizedBox(height: 4),
                                               Text(
-                                                '${exercise['sets']?.length ?? 0} sets',
+                                                '$targetSets sets',
                                                 style: textTheme.bodySmall?.copyWith(
                                                   color: colorScheme.onSurfaceVariant,
                                                 ),
