@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/supabase_service.dart';
-import '../services/local_storage_service.dart';
 import '../services/exercise_cache_service.dart';
 import '../widgets/storage_image.dart';
 
