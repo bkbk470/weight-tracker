@@ -219,10 +219,12 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
       final existingExercises = await ExerciseCacheService.instance.getExercises();
       print('✅ Fetched ${existingExercises.length} exercises from cache');
 
-      // Add each exercise to the workout
+      // Prepare all workout_exercises data for batch insert
+      print('📦 Preparing ${exercises.length} exercises for batch save...');
+      final workoutExercisesData = <Map<String, dynamic>>[];
+
       for (int i = 0; i < exercises.length; i++) {
         final exercise = exercises[i];
-        print('💾 Saving exercise ${i + 1}/${exercises.length}: ${exercise.name}');
 
         try {
           // Find the exercise in the already-fetched list
@@ -235,7 +237,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
           if (matchingExercise.isNotEmpty && matchingExercise['id'] != null) {
             exerciseId = matchingExercise['id'];
           } else {
-            // Create the exercise if it doesn't exist
+            // Create the exercise if it doesn't exist (these are rare, so OK to do sequentially)
             final newExercise = await SupabaseService.instance.createExercise(
               name: exercise.name,
               category: 'Other',
@@ -243,11 +245,10 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
               equipment: 'Various',
             );
             exerciseId = newExercise['id'];
-            // Add to cache for future lookups in this save operation
             existingExercises.add(newExercise);
           }
 
-          // Add exercise to workout with set details
+          // Prepare set details
           final setDetails = exercise.sets.map((set) => {
             'weight': set.weight,
             'reps': set.reps,
@@ -256,28 +257,28 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
 
           final restTimeSeconds = exercise.sets.isNotEmpty ? exercise.sets.first.restSeconds : 90;
 
-          // Add exercise to workout - returns the inserted row
-          final workoutExerciseRow = await SupabaseService.instance.addExerciseToWorkout(
-            workoutId: workoutId,
-            exerciseId: exerciseId,
-            orderIndex: i,
-            targetSets: exercise.sets.length,
-            targetReps: exercise.sets.isNotEmpty ? exercise.sets.first.reps : 0,
-            restTimeSeconds: restTimeSeconds,
-          );
-
-          // Update with set_details JSON using the returned row
-          if (workoutExerciseRow['id'] != null) {
-            await SupabaseService.instance.client
-                .from('workout_exercises')
-                .update({'set_details': setDetails})
-                .eq('id', workoutExerciseRow['id']);
-          }
-
-          print('✅ Saved ${exercise.name}');
+          // Add to batch data
+          workoutExercisesData.add({
+            'workout_id': workoutId,
+            'exercise_id': exerciseId,
+            'order_index': i,
+            'target_sets': exercise.sets.length,
+            'target_reps': exercise.sets.isNotEmpty ? exercise.sets.first.reps : 0,
+            'rest_time_seconds': restTimeSeconds,
+            'set_details': setDetails,  // Include set_details in the initial insert!
+          });
         } catch (e) {
-          print('❌ Error adding exercise ${exercise.name}: $e');
+          print('❌ Error preparing exercise ${exercise.name}: $e');
         }
+      }
+
+      // Batch insert all workout_exercises in a SINGLE database call
+      if (workoutExercisesData.isNotEmpty) {
+        print('💾 Saving ${workoutExercisesData.length} exercises in one batch...');
+        await SupabaseService.instance.client
+            .from('workout_exercises')
+            .insert(workoutExercisesData);
+        print('✅ All exercises saved!');
       }
 
       if (mounted) {
