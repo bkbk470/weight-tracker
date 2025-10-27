@@ -1094,7 +1094,15 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
           ),
         );
       },
-    );
+    ).then((_) {
+      // Handle modal dismissal (e.g., swiping down)
+      // Clear workout state and navigate to dashboard
+      if (mounted) {
+        _timerService.reset();
+        widget.onWorkoutStateChanged?.call(false, 0);
+        widget.onNavigate('dashboard');
+      }
+    });
   }
 
   Future<void> _syncAllWorkoutExercises() async {
