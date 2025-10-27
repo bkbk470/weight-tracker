@@ -17,7 +17,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
-  String _loadingStatus = 'Loading...';
 
   @override
   void initState() {
@@ -52,10 +51,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   Future<void> _checkAuthAndNavigate() async {
     // Start preloading exercises in parallel with splash animation
-    if (mounted) {
-      setState(() => _loadingStatus = 'Loading exercises...');
-    }
-
     final exercisePreloadFuture = ExerciseCacheService.instance.getExercises();
 
     // Wait for minimum splash duration
@@ -76,15 +71,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
             return <Map<String, dynamic>>[];
           },
         );
-        if (mounted) {
-          setState(() => _loadingStatus = 'Ready! ${exercises.length} exercises loaded');
-        }
         print('✅ Exercises preloaded: ${ExerciseCacheService.instance.getCacheStats()}');
       } catch (e) {
         print('⚠️ Exercise preload error (non-critical): $e');
-        if (mounted) {
-          setState(() => _loadingStatus = 'Ready!');
-        }
         // Continue anyway - exercises will load on demand
       }
 
@@ -144,37 +133,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         size: 120,
                         color: foregroundColor,
                       ),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 32),
-              AnimatedBuilder(
-                animation: _controller,
-                builder: (context, child) {
-                  return Opacity(
-                    opacity: _fadeAnimation.value,
-                    child: Column(
-                      children: [
-                        SizedBox(
-                          width: 200,
-                          child: LinearProgressIndicator(
-                            backgroundColor: foregroundColor.withOpacity(0.1),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              colorScheme.primary,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          _loadingStatus,
-                          style: TextStyle(
-                            color: foregroundColor.withOpacity(0.6),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ],
                     ),
                   );
                 },
