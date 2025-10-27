@@ -1531,20 +1531,12 @@ class _WorkoutCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.fitness_center,
-              size: 28,
-              color: colorScheme.onPrimaryContainer,
-            ),
+          Icon(
+            Icons.fitness_center,
+            size: 24,
+            color: colorScheme.primary,
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
