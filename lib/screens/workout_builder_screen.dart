@@ -213,13 +213,19 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
         workoutId = workout['id'];
       }
 
+      // Fetch all exercises once, outside the loop for better performance
+      // Use ExerciseCacheService for faster loading
+      print('⏱️  Fetching exercises list...');
+      final existingExercises = await ExerciseCacheService.instance.getExercises();
+      print('✅ Fetched ${existingExercises.length} exercises from cache');
+
       // Add each exercise to the workout
       for (int i = 0; i < exercises.length; i++) {
         final exercise = exercises[i];
-        
-        // First, try to find the exercise in the database
+        print('💾 Saving exercise ${i + 1}/${exercises.length}: ${exercise.name}');
+
         try {
-          final existingExercises = await SupabaseService.instance.getExercises();
+          // Find the exercise in the already-fetched list
           final matchingExercise = existingExercises.firstWhere(
             (e) => e['name'] == exercise.name,
             orElse: () => {},
@@ -237,6 +243,8 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
               equipment: 'Various',
             );
             exerciseId = newExercise['id'];
+            // Add to cache for future lookups in this save operation
+            existingExercises.add(newExercise);
           }
 
           // Add exercise to workout with set details
@@ -248,7 +256,8 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
 
           final restTimeSeconds = exercise.sets.isNotEmpty ? exercise.sets.first.restSeconds : 90;
 
-          await SupabaseService.instance.addExerciseToWorkout(
+          // Add exercise to workout - returns the inserted row
+          final workoutExerciseRow = await SupabaseService.instance.addExerciseToWorkout(
             workoutId: workoutId,
             exerciseId: exerciseId,
             orderIndex: i,
@@ -257,20 +266,17 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
             restTimeSeconds: restTimeSeconds,
           );
 
-          // Update with set_details JSON
-          final workoutExerciseRow = await SupabaseService.instance.getWorkoutExerciseRow(
-            workoutId: workoutId,
-            exerciseId: exerciseId,
-          );
-
-          if (workoutExerciseRow != null) {
+          // Update with set_details JSON using the returned row
+          if (workoutExerciseRow['id'] != null) {
             await SupabaseService.instance.client
                 .from('workout_exercises')
                 .update({'set_details': setDetails})
                 .eq('id', workoutExerciseRow['id']);
           }
+
+          print('✅ Saved ${exercise.name}');
         } catch (e) {
-          print('Error adding exercise ${exercise.name}: $e');
+          print('❌ Error adding exercise ${exercise.name}: $e');
         }
       }
 
