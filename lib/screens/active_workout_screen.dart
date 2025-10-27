@@ -2779,6 +2779,7 @@ class _SelectExerciseDialogState extends State<_SelectExerciseDialog> {
   String selectedCategory = 'All';
   String searchQuery = '';
   List<Map<String, String>> customExercises = [];
+  bool isLoadingExercises = true;
 
   final categories = ['All', 'Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Cardio', 'Other'];
 
@@ -2798,6 +2799,7 @@ class _SelectExerciseDialogState extends State<_SelectExerciseDialog> {
           'name': e['name'] as String,
           'category': e['category'] as String,
         }).toList();
+        isLoadingExercises = false;
       });
     } catch (e) {
       print('Failed to load from Supabase: $e');
@@ -2811,6 +2813,7 @@ class _SelectExerciseDialogState extends State<_SelectExerciseDialog> {
           'name': e['name'] as String,
           'category': e['category'] as String,
         }).toList();
+        isLoadingExercises = false;
       });
     }
   }
@@ -2942,33 +2945,35 @@ class _SelectExerciseDialogState extends State<_SelectExerciseDialog> {
             const SizedBox(height: 8),
             // Exercise list
             Expanded(
-              child: filteredExercises.isEmpty
-                  ? const Center(
-                      child: Text('No exercises found'),
-                    )
-                  : ListView.builder(
-                      itemCount: filteredExercises.length,
-                      itemBuilder: (context, index) {
-                        final exercise = filteredExercises[index];
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          child: ListTile(
-                            leading: Icon(
-                              Icons.fitness_center,
-                              color: colorScheme.primary,
-                            ),
-                            title: Text(exercise['name']!),
-                            subtitle: Text(exercise['category']!),
-                            trailing: const Icon(Icons.add_circle_outline),
-                            onTap: () async {
-                              final success = await widget.onAdd(
-                                exercise['name']!,
-                                exercise['category']!,
-                              );
-                              if (success && mounted) {
-                                Navigator.pop(context);
-                              }
-                            },
+              child: isLoadingExercises
+                  ? const Center(child: CircularProgressIndicator())
+                  : filteredExercises.isEmpty
+                      ? const Center(
+                          child: Text('No exercises found'),
+                        )
+                      : ListView.builder(
+                          itemCount: filteredExercises.length,
+                          itemBuilder: (context, index) {
+                            final exercise = filteredExercises[index];
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              child: ListTile(
+                                leading: Icon(
+                                  Icons.fitness_center,
+                                  color: colorScheme.primary,
+                                ),
+                                title: Text(exercise['name']!),
+                                subtitle: Text(exercise['category']!),
+                                trailing: const Icon(Icons.add_circle_outline),
+                                onTap: () async {
+                                  final success = await widget.onAdd(
+                                    exercise['name']!,
+                                    exercise['category']!,
+                                  );
+                                  if (success && mounted) {
+                                    Navigator.pop(context);
+                                  }
+                                },
                           ),
                         );
                       },
