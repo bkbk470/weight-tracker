@@ -123,6 +123,7 @@ class ExerciseCacheService {
     // Don't await - run in background
     getExercises().catchError((error) {
       print('Preload exercises failed: $error');
+      return <Map<String, dynamic>>[];
     });
   }
 
