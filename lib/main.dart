@@ -346,6 +346,7 @@ class _AppNavigatorState extends State<AppNavigator> {
   String? _activeWorkoutId;
   String? _activeWorkoutName;
   Map<String, dynamic>? _selectedWorkout;
+  DateTime? _lastNavigationTime;
   List<Map<String, dynamic>>? _lastWorkoutExercises;
   String? _lastWorkoutId;
   String? _lastWorkoutName;
@@ -410,6 +411,14 @@ class _AppNavigatorState extends State<AppNavigator> {
   }
 
   void navigate(String screen, [BuildContext? context, Map<String, dynamic>? data]) {
+    // Debounce: Prevent rapid repeated navigation calls (within 300ms)
+    final now = DateTime.now();
+    if (_lastNavigationTime != null &&
+        now.difference(_lastNavigationTime!).inMilliseconds < 300) {
+      return;
+    }
+    _lastNavigationTime = now;
+
     // Check if trying to start a new workout while one is active
     if (screen == 'active-workout-start' && hasActiveWorkout) {
       if (context != null) {
@@ -420,7 +429,6 @@ class _AppNavigatorState extends State<AppNavigator> {
 
     // If navigating to active-workout while already on it, don't rebuild
     if (screen == 'active-workout' && currentScreen == 'active-workout') {
-      print('⏩ Already on active-workout screen, skipping navigation');
       return;
     }
 
@@ -649,7 +657,6 @@ class _AppNavigatorState extends State<AppNavigator> {
       case 'active-workout':
         // Return existing workout screen if it exists, otherwise create new one
         if (_activeWorkoutScreen != null && hasActiveWorkout) {
-          print('♻️  Reusing existing active workout screen');
           return _activeWorkoutScreen!;
         }
 
@@ -658,7 +665,6 @@ class _AppNavigatorState extends State<AppNavigator> {
         final workoutIdToUse = _activeWorkoutId ?? _lastWorkoutId;
         final workoutNameToUse = _activeWorkoutName ?? _lastWorkoutName;
 
-        print('🆕 Creating new active workout screen - autoStart: $autoStartWorkout');
         _activeWorkoutScreen = WorkoutScreen(
           key: const ValueKey('active-workout-screen'), // Add key to preserve state
           onNavigate: (screen) => navigate(screen, context),
