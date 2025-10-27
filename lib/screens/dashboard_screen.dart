@@ -545,6 +545,209 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  void _showWorkoutDetailModal(BuildContext context, Map<String, dynamic> workout) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    showSafeModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.9,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
+              ),
+              child: Column(
+                children: [
+                  // Drag handle
+                  Container(
+                    margin: const EdgeInsets.only(top: 12, bottom: 8),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: colorScheme.onSurfaceVariant.withOpacity(0.4),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  // Content
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      padding: const EdgeInsets.all(24),
+                      children: [
+                        // Header with workout name
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Icon(
+                                Icons.fitness_center,
+                                size: 32,
+                                color: colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    workout['name'] ?? 'Workout',
+                                    style: textTheme.headlineSmall?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  if (workout['description'] != null && workout['description'].toString().isNotEmpty)
+                                    Text(
+                                      workout['description'],
+                                      style: textTheme.bodyMedium?.copyWith(
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Action buttons
+                        FilledButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            widget.onNavigate('workout-detail', {'workout': workout});
+                          },
+                          icon: const Icon(Icons.play_arrow),
+                          label: const Text('Start Workout'),
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            widget.onNavigate('workout-detail', {'workout': workout});
+                          },
+                          icon: const Icon(Icons.edit_outlined),
+                          label: const Text('View & Edit'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+
+                        // Exercises section
+                        Text(
+                          'Exercises',
+                          style: textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Show exercises if available
+                        FutureBuilder<List<Map<String, dynamic>>>(
+                          future: _supabaseService.getWorkoutExercises(workout['id']),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return const Center(child: CircularProgressIndicator());
+                            }
+
+                            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                              return Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(24),
+                                  child: Center(
+                                    child: Text(
+                                      'No exercises in this workout yet',
+                                      style: textTheme.bodyMedium?.copyWith(
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+
+                            final exercises = snapshot.data!;
+                            return Column(
+                              children: exercises.map((exercise) {
+                                return Card(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: colorScheme.primaryContainer,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            Icons.fitness_center,
+                                            size: 20,
+                                            color: colorScheme.onPrimaryContainer,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                exercise['exercise_name'] ?? 'Exercise',
+                                                style: textTheme.titleMedium,
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                '${exercise['sets']?.length ?? 0} sets',
+                                                style: textTheme.bodySmall?.copyWith(
+                                                  color: colorScheme.onSurfaceVariant,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Color _getColorFromString(String? colorName) {
     switch (colorName) {
       case 'blue':
@@ -923,9 +1126,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         hasBeenCompleted: lastDate != null,
                                         colorScheme: colorScheme,
                                         textTheme: textTheme,
-                                        onTap: () => widget.onNavigate('workout-detail', {
-                                          'workout': workout,
-                                        }),
+                                        onTap: () => _showWorkoutDetailModal(context, workout),
                                       ),
                                     ],
                                   );
@@ -1017,9 +1218,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       colorScheme: colorScheme,
                                       textTheme: textTheme,
                                       isInFolder: true,
-                                      onTap: () => widget.onNavigate('workout-detail', {
-                                        'workout': workout,
-                                      }),
+                                      onTap: () => _showWorkoutDetailModal(context, workout),
                                     ),
                                     if (!isLastItem)
                                       Divider(
