@@ -418,7 +418,6 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
                         onUpdateRestTime: (value) => _updateRestTime(index, value),
                         onAddSet: () => _addSet(index),
                         onRemoveSet: (setIndex) => _removeSet(index, setIndex),
-                        onEdit: () => editExercise(index),
                         onDelete: () => removeExercise(index),
                       );
                     },
@@ -1053,7 +1052,6 @@ class _ExerciseBuilderCard extends StatefulWidget {
   final void Function(int value) onUpdateRestTime;
   final VoidCallback onAddSet;
   final void Function(int setIndex) onRemoveSet;
-  final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   const _ExerciseBuilderCard({
@@ -1067,7 +1065,6 @@ class _ExerciseBuilderCard extends StatefulWidget {
     required this.onUpdateRestTime,
     required this.onAddSet,
     required this.onRemoveSet,
-    required this.onEdit,
     required this.onDelete,
   });
 
@@ -1178,10 +1175,6 @@ class _ExerciseBuilderCardState extends State<_ExerciseBuilderCard> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined),
-                  onPressed: widget.onEdit,
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete_outline),
