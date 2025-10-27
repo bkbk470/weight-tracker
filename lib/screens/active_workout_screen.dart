@@ -123,12 +123,17 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
       }).toList();
     }
 
-    // Only load previous data once
-    if (!_hasLoadedPreviousData) {
+    // Only load previous data once, BUT NOT when resuming an active workout
+    // When resuming (autoStart is true), we want to keep the persisted data, not load historical data
+    if (!_hasLoadedPreviousData && !widget.autoStart) {
       _hasLoadedPreviousData = true;
+      print('📊 Loading previous exercise data from history (new workout)');
       Future.microtask(() => _loadPreviousExerciseData());
+    } else if (widget.autoStart) {
+      print('⏩ Skipping historical data load (resuming active workout)');
+      _hasLoadedPreviousData = true; // Mark as loaded to prevent future loads
     }
-    
+
     if (widget.autoStart) {
       // Start workout after build completes
       WidgetsBinding.instance.addPostFrameCallback((_) {
