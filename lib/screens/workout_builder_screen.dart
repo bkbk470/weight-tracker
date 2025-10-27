@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/supabase_service.dart';
+import '../services/local_storage_service.dart';
 
 class WorkoutBuilderScreen extends StatefulWidget {
   final Function(String) onNavigate;
@@ -23,25 +24,11 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
   late TextEditingController workoutNameController;
   late List<WorkoutExercise> exercises;
   String selectedCategory = 'All';
-  final categories = ['All', 'Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'];
+  final categories = ['All', 'Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Cardio', 'Other'];
 
-  final availableExercises = [
-    {'name': 'Bench Press', 'category': 'Chest', 'icon': Icons.fitness_center},
-    {'name': 'Incline Bench Press', 'category': 'Chest', 'icon': Icons.fitness_center},
-    {'name': 'Dumbbell Flyes', 'category': 'Chest', 'icon': Icons.fitness_center},
-    {'name': 'Pull-ups', 'category': 'Back', 'icon': Icons.fitness_center},
-    {'name': 'Barbell Rows', 'category': 'Back', 'icon': Icons.fitness_center},
-    {'name': 'Lat Pulldown', 'category': 'Back', 'icon': Icons.fitness_center},
-    {'name': 'Squats', 'category': 'Legs', 'icon': Icons.fitness_center},
-    {'name': 'Deadlifts', 'category': 'Legs', 'icon': Icons.fitness_center},
-    {'name': 'Leg Press', 'category': 'Legs', 'icon': Icons.fitness_center},
-    {'name': 'Overhead Press', 'category': 'Shoulders', 'icon': Icons.fitness_center},
-    {'name': 'Lateral Raises', 'category': 'Shoulders', 'icon': Icons.fitness_center},
-    {'name': 'Bicep Curls', 'category': 'Arms', 'icon': Icons.fitness_center},
-    {'name': 'Tricep Dips', 'category': 'Arms', 'icon': Icons.fitness_center},
-    {'name': 'Planks', 'category': 'Core', 'icon': Icons.fitness_center},
-    {'name': 'Crunches', 'category': 'Core', 'icon': Icons.fitness_center},
-  ];
+  // Load all exercises from database
+  List<Map<String, dynamic>> allExercises = [];
+  bool isLoadingExercises = true;
 
   @override
   void initState() {
@@ -49,6 +36,38 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     // Initialize with workout data if editing, otherwise start fresh
     workoutNameController = TextEditingController(text: widget.workoutName ?? '');
     exercises = widget.initialExercises?.map((e) => e.copy()).toList() ?? [];
+    _loadAllExercises();
+  }
+
+  void _loadAllExercises() async {
+    // Load ALL exercises from Supabase (both default and custom)
+    try {
+      final supabaseExercises = await SupabaseService.instance.getExercises();
+
+      setState(() {
+        allExercises = supabaseExercises.map((e) => {
+          'name': e['name'] as String,
+          'category': e['category'] as String,
+          'icon': Icons.fitness_center, // Default icon for all exercises
+        }).toList();
+        isLoadingExercises = false;
+      });
+    } catch (e) {
+      print('Failed to load from Supabase: $e');
+
+      // Fall back to local storage
+      final localStorage = LocalStorageService.instance;
+      final saved = localStorage.getAllExercises();
+
+      setState(() {
+        allExercises = saved.map((e) => {
+          'name': e['name'] as String,
+          'category': e['category'] as String,
+          'icon': Icons.fitness_center,
+        }).toList();
+        isLoadingExercises = false;
+      });
+    }
   }
 
   @override
@@ -240,8 +259,8 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     final textTheme = Theme.of(context).textTheme;
 
     final filteredExercises = selectedCategory == 'All'
-        ? availableExercises
-        : availableExercises.where((e) => e['category'] == selectedCategory).toList();
+        ? allExercises
+        : allExercises.where((e) => e['category'] == selectedCategory).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -371,38 +390,47 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
 
           // Exercise Library
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: filteredExercises.length,
-              itemBuilder: (context, index) {
-                final exercise = filteredExercises[index];
-                final count = exercises.where((e) => e.name == exercise['name']).length;
-                
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: ListTile(
-                    leading: Icon(
-                      exercise['icon'] as IconData,
-                      color: colorScheme.primary,
-                    ),
-                    title: Text(exercise['name'] as String),
-                    subtitle: Text(
-                      count > 0
-                          ? '${exercise['category']} • Added $count time${count > 1 ? 's' : ''}'
-                          : exercise['category'] as String,
-                    ),
-                    trailing: IconButton(
-                      icon: Icon(
-                        count > 0 ? Icons.add_circle : Icons.add_circle_outline,
-                        color: count > 0 ? colorScheme.primary : null,
+            child: isLoadingExercises
+                ? const Center(child: CircularProgressIndicator())
+                : filteredExercises.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No exercises found in this category',
+                          style: textTheme.bodyLarge,
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: filteredExercises.length,
+                        itemBuilder: (context, index) {
+                          final exercise = filteredExercises[index];
+                          final count = exercises.where((e) => e.name == exercise['name']).length;
+
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            child: ListTile(
+                              leading: Icon(
+                                exercise['icon'] as IconData,
+                                color: colorScheme.primary,
+                              ),
+                              title: Text(exercise['name'] as String),
+                              subtitle: Text(
+                                count > 0
+                                    ? '${exercise['category']} • Added $count time${count > 1 ? 's' : ''}'
+                                    : exercise['category'] as String,
+                              ),
+                              trailing: IconButton(
+                                icon: Icon(
+                                  count > 0 ? Icons.add_circle : Icons.add_circle_outline,
+                                  color: count > 0 ? colorScheme.primary : null,
+                                ),
+                                onPressed: () => addExercise(exercise),
+                              ),
+                              onTap: () => addExercise(exercise),
+                            ),
+                          );
+                        },
                       ),
-                      onPressed: () => addExercise(exercise),
-                    ),
-                    onTap: () => addExercise(exercise),
-                  ),
-                );
-              },
-            ),
           ),
         ],
       ),

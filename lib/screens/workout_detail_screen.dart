@@ -1303,26 +1303,23 @@ class _AddExerciseDialogState extends State<_AddExerciseDialog> {
   }
 
   void _loadCustomExercises() async {
-    // Try to load from Supabase first
+    // Load ALL exercises from Supabase (both default and custom)
     try {
       final supabaseExercises = await SupabaseService.instance.getExercises();
-      
-      // Filter only custom exercises
-      final customOnly = supabaseExercises.where((e) => e['is_custom'] == true).toList();
-      
+
       setState(() {
-        customExercises = customOnly.map((e) => {
+        customExercises = supabaseExercises.map((e) => {
           'name': e['name'] as String,
           'category': e['category'] as String,
         }).toList();
       });
     } catch (e) {
       print('Failed to load from Supabase: $e');
-      
+
       // Fall back to local storage
       final localStorage = LocalStorageService.instance;
       final saved = localStorage.getAllExercises();
-      
+
       setState(() {
         customExercises = saved.map((e) => {
           'name': e['name'] as String,
@@ -1332,23 +1329,8 @@ class _AddExerciseDialogState extends State<_AddExerciseDialog> {
     }
   }
 
-  final availableExercises = [
-    {'name': 'Bench Press', 'category': 'Chest'},
-    {'name': 'Incline Bench Press', 'category': 'Chest'},
-    {'name': 'Dumbbell Flyes', 'category': 'Chest'},
-    {'name': 'Deadlifts', 'category': 'Back'},
-    {'name': 'Pull-ups', 'category': 'Back'},
-    {'name': 'Barbell Rows', 'category': 'Back'},
-    {'name': 'Squats', 'category': 'Legs'},
-    {'name': 'Leg Press', 'category': 'Legs'},
-    {'name': 'Lunges', 'category': 'Legs'},
-    {'name': 'Overhead Press', 'category': 'Shoulders'},
-    {'name': 'Lateral Raises', 'category': 'Shoulders'},
-    {'name': 'Bicep Curls', 'category': 'Arms'},
-    {'name': 'Tricep Dips', 'category': 'Arms'},
-    {'name': 'Planks', 'category': 'Core'},
-    {'name': 'Crunches', 'category': 'Core'},
-  ];
+  // No longer using hardcoded exercises - all loaded from database
+  final availableExercises = <Map<String, String>>[];
 
   @override
   void dispose() {

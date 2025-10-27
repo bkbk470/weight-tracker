@@ -2789,26 +2789,23 @@ class _SelectExerciseDialogState extends State<_SelectExerciseDialog> {
   }
 
   void _loadCustomExercises() async {
-    // Try to load from Supabase first
+    // Load ALL exercises from Supabase (both default and custom)
     try {
       final supabaseExercises = await SupabaseService.instance.getExercises();
-      
-      // Filter only custom exercises
-      final customOnly = supabaseExercises.where((e) => e['is_custom'] == true).toList();
-      
+
       setState(() {
-        customExercises = customOnly.map((e) => {
+        customExercises = supabaseExercises.map((e) => {
           'name': e['name'] as String,
           'category': e['category'] as String,
         }).toList();
       });
     } catch (e) {
       print('Failed to load from Supabase: $e');
-      
+
       // Fall back to local storage
       final localStorage = LocalStorageService.instance;
       final saved = localStorage.getAllExercises();
-      
+
       setState(() {
         customExercises = saved.map((e) => {
           'name': e['name'] as String,
@@ -2818,59 +2815,8 @@ class _SelectExerciseDialogState extends State<_SelectExerciseDialog> {
     }
   }
 
-  final availableExercises = [
-    {'name': 'Bench Press', 'category': 'Chest'},
-    {'name': 'Incline Bench Press', 'category': 'Chest'},
-    {'name': 'Decline Bench Press', 'category': 'Chest'},
-    {'name': 'Dumbbell Flyes', 'category': 'Chest'},
-    {'name': 'Cable Crossover', 'category': 'Chest'},
-    {'name': 'Push-ups', 'category': 'Chest'},
-    {'name': 'Dips', 'category': 'Chest'},
-    {'name': 'Deadlifts', 'category': 'Back'},
-    {'name': 'Pull-ups', 'category': 'Back'},
-    {'name': 'Barbell Rows', 'category': 'Back'},
-    {'name': 'Lat Pulldown', 'category': 'Back'},
-    {'name': 'Seated Cable Rows', 'category': 'Back'},
-    {'name': 'T-Bar Rows', 'category': 'Back'},
-    {'name': 'Face Pulls', 'category': 'Back'},
-    {'name': 'Squats', 'category': 'Legs'},
-    {'name': 'Front Squats', 'category': 'Legs'},
-    {'name': 'Leg Press', 'category': 'Legs'},
-    {'name': 'Lunges', 'category': 'Legs'},
-    {'name': 'Romanian Deadlifts', 'category': 'Legs'},
-    {'name': 'Leg Curls', 'category': 'Legs'},
-    {'name': 'Leg Extensions', 'category': 'Legs'},
-    {'name': 'Calf Raises', 'category': 'Legs'},
-    {'name': 'Overhead Press', 'category': 'Shoulders'},
-    {'name': 'Dumbbell Shoulder Press', 'category': 'Shoulders'},
-    {'name': 'Lateral Raises', 'category': 'Shoulders'},
-    {'name': 'Front Raises', 'category': 'Shoulders'},
-    {'name': 'Rear Delt Flyes', 'category': 'Shoulders'},
-    {'name': 'Arnold Press', 'category': 'Shoulders'},
-    {'name': 'Upright Rows', 'category': 'Shoulders'},
-    {'name': 'Bicep Curls', 'category': 'Arms'},
-    {'name': 'Hammer Curls', 'category': 'Arms'},
-    {'name': 'Preacher Curls', 'category': 'Arms'},
-    {'name': 'Tricep Dips', 'category': 'Arms'},
-    {'name': 'Tricep Pushdowns', 'category': 'Arms'},
-    {'name': 'Skull Crushers', 'category': 'Arms'},
-    {'name': 'Cable Curls', 'category': 'Arms'},
-    {'name': 'Close-Grip Bench Press', 'category': 'Arms'},
-    {'name': 'Planks', 'category': 'Core'},
-    {'name': 'Crunches', 'category': 'Core'},
-    {'name': 'Russian Twists', 'category': 'Core'},
-    {'name': 'Leg Raises', 'category': 'Core'},
-    {'name': 'Cable Crunches', 'category': 'Core'},
-    {'name': 'Ab Wheel Rollouts', 'category': 'Core'},
-    {'name': 'Hanging Leg Raises', 'category': 'Core'},
-    {'name': 'Mountain Climbers', 'category': 'Core'},
-    {'name': 'Running', 'category': 'Cardio'},
-    {'name': 'Cycling', 'category': 'Cardio'},
-    {'name': 'Jump Rope', 'category': 'Cardio'},
-    {'name': 'Burpees', 'category': 'Cardio'},
-    {'name': 'Rowing', 'category': 'Cardio'},
-    {'name': 'Stair Climbing', 'category': 'Cardio'},
-  ];
+  // No longer using hardcoded exercises - all loaded from database
+  final availableExercises = <Map<String, String>>[];
 
   @override
   void dispose() {
