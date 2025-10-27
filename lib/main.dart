@@ -649,6 +649,7 @@ class _AppNavigatorState extends State<AppNavigator> {
       case 'active-workout':
         // Return existing workout screen if it exists, otherwise create new one
         if (_activeWorkoutScreen != null && hasActiveWorkout) {
+          print('♻️  Reusing existing active workout screen');
           return _activeWorkoutScreen!;
         }
 
@@ -657,7 +658,9 @@ class _AppNavigatorState extends State<AppNavigator> {
         final workoutIdToUse = _activeWorkoutId ?? _lastWorkoutId;
         final workoutNameToUse = _activeWorkoutName ?? _lastWorkoutName;
 
+        print('🆕 Creating new active workout screen - autoStart: $autoStartWorkout');
         _activeWorkoutScreen = WorkoutScreen(
+          key: const ValueKey('active-workout-screen'), // Add key to preserve state
           onNavigate: (screen) => navigate(screen, context),
           autoStart: autoStartWorkout,
           workoutName: workoutNameToUse,
@@ -881,7 +884,12 @@ class _AppNavigatorState extends State<AppNavigator> {
           // Active Workout Banner
           if (showBottomNav() && hasActiveWorkout)
             InkWell(
-              onTap: () => navigate('active-workout', context),
+              onTap: () {
+                // Only navigate if not already on active-workout screen
+                if (currentScreen != 'active-workout') {
+                  navigate('active-workout', context);
+                }
+              },
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
