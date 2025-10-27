@@ -388,8 +388,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                       }
                     }
                   } else {
-                    // Entering edit mode - show edit name dialog first
-                    await _showEditWorkoutNameDialog();
+                    // Entering edit mode
                     setState(() {
                       isEditMode = true;
                     });
