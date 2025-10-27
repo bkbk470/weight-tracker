@@ -1421,51 +1421,18 @@ class _ExerciseBuilderCardState extends State<_ExerciseBuilderCard> {
 
             const SizedBox(height: 12),
 
-            // Rest time field
-            Row(
-              children: [
-                Icon(Icons.timer_outlined, size: 16, color: colorScheme.onSurfaceVariant),
-                const SizedBox(width: 8),
-                Text(
-                  'Rest:',
-                  style: textTheme.labelMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.bold,
-                  ),
+            // Notes field
+            TextFormField(
+              controller: notesController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: 'Notes',
+                hintText: 'Add notes about pacing, cues, etc.',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(width: 12),
-                SizedBox(
-                  width: 80,
-                  child: TextFormField(
-                    controller: restTimeController,
-                    textAlign: TextAlign.center,
-                    keyboardType: TextInputType.number,
-                    maxLength: 4,
-                    style: textTheme.bodyMedium?.copyWith(fontSize: 14),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      counterText: '',
-                      suffix: Text('s', style: textTheme.bodySmall),
-                    ),
-                    onTap: () {
-                      restTimeController.selection = TextSelection(
-                        baseOffset: 0,
-                        extentOffset: restTimeController.text.length,
-                      );
-                    },
-                    onChanged: (value) {
-                      final parsed = int.tryParse(value);
-                      if (parsed != null && parsed != exercise.restTime) {
-                        widget.onUpdateRestTime(parsed);
-                      }
-                    },
-                  ),
-                ),
-              ],
+              ),
+              onChanged: widget.onUpdateNotes,
             ),
           ],
         ),
