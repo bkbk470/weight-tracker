@@ -396,6 +396,9 @@ class _AppNavigatorState extends State<AppNavigator> {
       });
 
       // Navigate to active-workout after loading data
+      // Set autoStartWorkout flag so the workout screen knows to resume the workout
+      autoStartWorkout = true;
+
       // Only navigate if we're not already on the active-workout screen
       print('➡️  AppNavigator: Navigating to active-workout (currentScreen: $currentScreen)');
       if (currentScreen != 'active-workout') {

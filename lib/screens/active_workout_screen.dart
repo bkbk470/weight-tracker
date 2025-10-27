@@ -460,6 +460,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
   }
 
   void startWorkout() {
+    print('▶️  ActiveWorkout: Starting workout - ${widget.workoutName}');
     setState(() => isWorkoutActive = true);
     _timerService.start();
 
@@ -468,6 +469,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
 
     // Save the initial workout state to persistent storage
     _saveWorkoutSessionState();
+    print('✅ ActiveWorkout: Workout started and saved');
   }
 
   void minimizeWorkout() {
@@ -1673,12 +1675,14 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
 
   /// Save the current workout session state to persistent storage
   void _saveWorkoutSessionState() {
+    print('🔄 ActiveWorkout: _saveWorkoutSessionState called - isWorkoutActive: $isWorkoutActive');
     if (isWorkoutActive) {
       final serializedExercises = _serializeExercises();
       // Calculate start time based on elapsed workout time
       final elapsedSeconds = _timerService.elapsedSeconds;
       final startTime = DateTime.now().subtract(Duration(seconds: elapsedSeconds));
 
+      print('💾 ActiveWorkout: Saving workout - ${widget.workoutName}, exercises: ${serializedExercises.length}, elapsed: $elapsedSeconds');
       // Use full save to ensure all data is persisted
       WorkoutSessionService.instance.saveWorkoutSession(
         workoutName: widget.workoutName,
@@ -1686,6 +1690,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
         exercises: serializedExercises,
         startTime: startTime,
       );
+    } else {
+      print('⚠️  ActiveWorkout: Workout not active, not saving');
     }
   }
 
