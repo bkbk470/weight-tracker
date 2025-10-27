@@ -57,12 +57,14 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
     
     // Load preloaded exercises if provided
     if (widget.preloadedExercises != null) {
+      print('📥 Loading preloaded exercises: ${widget.preloadedExercises!.length} exercises');
       exercises = widget.preloadedExercises!.asMap().entries.map((entry) {
         final index = entry.key;
         final ex = entry.value;
         final dynamicSetDetails = ex['setDetails'];
         List<ExerciseSet> plannedSets;
         if (dynamicSetDetails is List && dynamicSetDetails.isNotEmpty) {
+          print('📥 Loading ${ex['name']}: ${dynamicSetDetails.length} sets from setDetails');
           plannedSets = dynamicSetDetails.map((set) {
             final weightRaw = set is Map ? set['weight'] : null;
             final repsRaw = set is Map ? set['reps'] : null;
@@ -78,6 +80,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
                 ? restRaw.toInt()
                 : int.tryParse('$restRaw') ?? (ex['restTime'] ?? 120);
             final completed = completedRaw is bool ? completedRaw : false;
+            print('  Set: weight=$weight, reps=$reps, rest=$rest, completed=$completed');
             final exerciseSet = ExerciseSet(
               weight: weight,
               reps: reps,
@@ -1495,7 +1498,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
       exercises[exerciseIndex].sets.add(newSet);
     });
 
-    // Template sync removed - will only sync when workout is completed
+    // Save workout session state after adding a set
+    _saveWorkoutSessionState();
   }
 
   void updateSet(String exerciseId, int setIndex, String field, int value) {
@@ -1510,7 +1514,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
       }
     });
 
-    // Template sync removed - will only sync when workout is completed
+    // Save workout session state after updating weight/reps
+    _saveWorkoutSessionState();
   }
 
   void completeSet(String exerciseId, int setIndex) {
@@ -1651,7 +1656,18 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
 
   /// Convert current exercise state to JSON format for persistence
   List<Map<String, dynamic>> _serializeExercises() {
-    return exercises.map((exercise) {
+    final serialized = exercises.map((exercise) {
+      final setDetails = exercise.sets.map((set) {
+        return {
+          'weight': set.weight,
+          'reps': set.reps,
+          'rest': set.plannedRestSeconds > 0 ? set.plannedRestSeconds : exercise.restTime,
+          'completed': set.completed, // Save completion state
+        };
+      }).toList();
+
+      print('📦 Serializing ${exercise.name}: ${setDetails.length} sets, completed: ${setDetails.where((s) => s['completed'] == true).length}');
+
       return {
         'name': exercise.name,
         'sets': exercise.sets.length,
@@ -1661,16 +1677,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
         'workoutExerciseId': exercise.workoutExerciseId,
         'exerciseId': exercise.supabaseExerciseId,
         'orderIndex': exercise.orderIndex,
-        'setDetails': exercise.sets.map((set) {
-          return {
-            'weight': set.weight,
-            'reps': set.reps,
-            'rest': set.plannedRestSeconds > 0 ? set.plannedRestSeconds : exercise.restTime,
-            'completed': set.completed, // Save completion state
-          };
-        }).toList(),
+        'setDetails': setDetails,
       };
     }).toList();
+
+    return serialized;
   }
 
   /// Save the current workout session state to persistent storage
@@ -1704,13 +1715,17 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
       exercises[exerciseIndex].sets.removeAt(setIndex);
     });
 
-    // Template sync removed - will only sync when workout is completed
+    // Save workout session state after removing a set
+    _saveWorkoutSessionState();
   }
 
   void removeExercise(String exerciseId) {
     setState(() {
       exercises.removeWhere((e) => e.id == exerciseId);
     });
+
+    // Save workout session state after removing an exercise
+    _saveWorkoutSessionState();
   }
 
   void skipRest() {
