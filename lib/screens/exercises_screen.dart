@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:fl_chart/fl_chart.dart';
 import '../constants/exercise_assets.dart';
 import '../services/local_storage_service.dart';
+import '../services/exercise_cache_service.dart';
 import '../services/supabase_service.dart';
 import '../utils/safe_dialog_helpers.dart';
 
@@ -47,17 +48,15 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
 
   Future<void> _loadCustomExercises() async {
     try {
-      final supabaseExercises = await SupabaseService.instance.getExercises();
-      final defaultOnly = supabaseExercises
+      // Use the cached exercise service - much faster!
+      final cachedExercises = await ExerciseCacheService.instance.getExercises();
+
+      final defaultOnly = cachedExercises
           .where((e) => (e['is_default'] ?? false) == true)
           .toList();
-      final customOnly = supabaseExercises
+      final customOnly = cachedExercises
           .where((e) => (e['is_custom'] ?? false) == true)
           .toList();
-
-      for (final exercise in supabaseExercises) {
-        await LocalStorageService.instance.saveExercise(exercise);
-      }
 
       setState(() {
         allExercises = defaultOnly
@@ -69,8 +68,9 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
             .toList();
       });
     } catch (e) {
-      print('Failed to load from Supabase (offline?): $e');
+      print('Failed to load exercises: $e');
 
+      // Fallback to local storage if cache service fails
       final localStorage = LocalStorageService.instance;
       final saved = localStorage.getAllExercises();
 
