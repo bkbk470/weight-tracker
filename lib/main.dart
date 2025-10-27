@@ -392,9 +392,9 @@ class _AppNavigatorState extends State<AppNavigator> {
         }
       });
 
-      // Only navigate if we're not already on active-workout or splash screen
-      // (splash screen will handle navigation to active-workout)
-      if (currentScreen != 'active-workout' && currentScreen != 'splash') {
+      // Navigate to active-workout if we loaded a session
+      // Allow navigation from any screen except active-workout itself
+      if (currentScreen != 'active-workout') {
         navigate('active-workout');
       }
     }
