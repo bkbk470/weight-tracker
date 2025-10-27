@@ -702,8 +702,8 @@ class _ExerciseInfoSheetState extends State<_ExerciseInfoSheet> {
 
   Future<void> _loadExerciseHistory() async {
     try {
-      // Get exercise ID from database
-      final exercises = await SupabaseService.instance.getExercises();
+      // Get exercise ID from cached exercises
+      final exercises = await ExerciseCacheService.instance.getExercises();
       final exerciseData = exercises.firstWhere(
         (e) => (e['name'] as String).toLowerCase() == widget.exercise.name.toLowerCase(),
         orElse: () => <String, dynamic>{},
