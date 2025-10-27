@@ -1317,9 +1317,11 @@ class _AddExerciseDialogState extends State<_AddExerciseDialog> {
         customExercises = exercises.map((e) {
           final name = e['name']?.toString() ?? 'Unknown';
           final category = e['category']?.toString() ?? 'Other';
+          final imageUrl = e['image_url']?.toString() ?? '';
           return {
             'name': name,
             'category': category,
+            'image_url': imageUrl,
           };
         }).toList();
         isLoadingExercises = false;
@@ -1451,27 +1453,74 @@ class _AddExerciseDialogState extends State<_AddExerciseDialog> {
                             return Card(
                               margin: const EdgeInsets.only(bottom: 8),
                               child: ListTile(
-                                leading: Icon(
-                                  Icons.fitness_center,
-                                  color: colorScheme.primary,
+                                leading: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: exercise['image_url'] != null && exercise['image_url']!.isNotEmpty
+                                      ? Image.network(
+                                          exercise['image_url']!,
+                                          width: 56,
+                                          height: 56,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) {
+                                            return Container(
+                                              width: 56,
+                                              height: 56,
+                                              color: colorScheme.surfaceVariant,
+                                              child: Icon(
+                                                Icons.fitness_center,
+                                                color: colorScheme.primary,
+                                              ),
+                                            );
+                                          },
+                                          loadingBuilder: (context, child, loadingProgress) {
+                                            if (loadingProgress == null) return child;
+                                            return Container(
+                                              width: 56,
+                                              height: 56,
+                                              color: colorScheme.surfaceVariant,
+                                              child: Center(
+                                                child: SizedBox(
+                                                  width: 24,
+                                                  height: 24,
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    value: loadingProgress.expectedTotalBytes != null
+                                                        ? loadingProgress.cumulativeBytesLoaded /
+                                                            loadingProgress.expectedTotalBytes!
+                                                        : null,
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        )
+                                      : Container(
+                                          width: 56,
+                                          height: 56,
+                                          color: colorScheme.surfaceVariant,
+                                          child: Icon(
+                                            Icons.fitness_center,
+                                            color: colorScheme.primary,
+                                          ),
+                                        ),
                                 ),
                                 title: Text(exercise['name']!),
                                 subtitle: Text(exercise['category']!),
-                            trailing: const Icon(Icons.add_circle_outline),
-                            onTap: () {
-                              widget.onAdd(
-                                WorkoutExercise(
-                                  name: exercise['name']!,
-                                  sets: List.generate(
-                                    3,
-                                    (_) => WorkoutExerciseSet(weight: 0, reps: 10, restSeconds: 90),
-                                  ),
-                                ),
-                              );
-                              Navigator.pop(context);
-                            },
-                          ),
-                        );
+                                trailing: const Icon(Icons.add_circle_outline),
+                                onTap: () {
+                                  widget.onAdd(
+                                    WorkoutExercise(
+                                      name: exercise['name']!,
+                                      sets: List.generate(
+                                        3,
+                                        (_) => WorkoutExerciseSet(weight: 0, reps: 10, restSeconds: 90),
+                                      ),
+                                    ),
+                                  );
+                                  Navigator.pop(context);
+                                },
+                              ),
+                            );
                       },
                     ),
             ),

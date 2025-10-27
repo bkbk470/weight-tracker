@@ -52,7 +52,8 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
         allExercises = exercises.map((e) => {
           'name': e['name'] as String,
           'category': e['category'] as String,
-          'icon': Icons.fitness_center, // Default icon for all exercises
+          'image_url': e['image_url'] as String?,
+          'equipment': e['equipment'] as String?,
         }).toList();
         isLoadingExercises = false;
       });
@@ -433,9 +434,56 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
                           return Card(
                             margin: const EdgeInsets.only(bottom: 12),
                             child: ListTile(
-                              leading: Icon(
-                                exercise['icon'] as IconData,
-                                color: colorScheme.primary,
+                              leading: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: exercise['image_url'] != null && (exercise['image_url'] as String).isNotEmpty
+                                    ? Image.network(
+                                        exercise['image_url'] as String,
+                                        width: 56,
+                                        height: 56,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return Container(
+                                            width: 56,
+                                            height: 56,
+                                            color: colorScheme.surfaceVariant,
+                                            child: Icon(
+                                              Icons.fitness_center,
+                                              color: colorScheme.primary,
+                                            ),
+                                          );
+                                        },
+                                        loadingBuilder: (context, child, loadingProgress) {
+                                          if (loadingProgress == null) return child;
+                                          return Container(
+                                            width: 56,
+                                            height: 56,
+                                            color: colorScheme.surfaceVariant,
+                                            child: Center(
+                                              child: SizedBox(
+                                                width: 24,
+                                                height: 24,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  value: loadingProgress.expectedTotalBytes != null
+                                                      ? loadingProgress.cumulativeBytesLoaded /
+                                                          loadingProgress.expectedTotalBytes!
+                                                      : null,
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      )
+                                    : Container(
+                                        width: 56,
+                                        height: 56,
+                                        color: colorScheme.surfaceVariant,
+                                        child: Icon(
+                                          Icons.fitness_center,
+                                          color: colorScheme.primary,
+                                        ),
+                                      ),
                               ),
                               title: Text(exercise['name'] as String),
                               subtitle: Text(
