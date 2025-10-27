@@ -1307,17 +1307,28 @@ class _AddExerciseDialogState extends State<_AddExerciseDialog> {
   void _loadCustomExercises() async {
     // Use cache service for fast loading (memory > local > remote)
     try {
+      print('🔍 [AddExercise] Starting to load exercises...');
       final exercises = await ExerciseCacheService.instance.getExercises();
+      print('✅ [AddExercise] Loaded ${exercises.length} exercises from cache');
+
+      if (!mounted) return;
 
       setState(() {
-        customExercises = exercises.map((e) => {
-          'name': e['name'] as String,
-          'category': e['category'] as String,
+        customExercises = exercises.map((e) {
+          final name = e['name']?.toString() ?? 'Unknown';
+          final category = e['category']?.toString() ?? 'Other';
+          return {
+            'name': name,
+            'category': category,
+          };
         }).toList();
         isLoadingExercises = false;
+        print('✅ [AddExercise] Set state with ${customExercises.length} exercises');
       });
-    } catch (e) {
-      print('Failed to load exercises: $e');
+    } catch (e, stackTrace) {
+      print('❌ [AddExercise] Failed to load exercises: $e');
+      print('Stack trace: $stackTrace');
+      if (!mounted) return;
       setState(() {
         isLoadingExercises = false;
       });

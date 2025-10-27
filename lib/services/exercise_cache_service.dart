@@ -21,17 +21,22 @@ class ExerciseCacheService {
 
   /// Get exercises - uses memory cache > local storage > remote fetch
   Future<List<Map<String, dynamic>>> getExercises({bool forceRefresh = false}) async {
+    print('📦 [ExerciseCache] getExercises called (forceRefresh: $forceRefresh)');
+
     // 1. Check memory cache first (instant)
     if (_memoryCache != null && !forceRefresh) {
+      print('✅ [ExerciseCache] Returning from memory cache: ${_memoryCache!.length} exercises');
       return _memoryCache!;
     }
 
     // 2. Load from local storage (fast - Hive)
     final localStorage = LocalStorageService.instance;
     final localExercises = localStorage.getAllExercises();
+    print('📁 [ExerciseCache] Local storage has: ${localExercises.length} exercises');
 
     if (localExercises.isNotEmpty && !forceRefresh) {
       _memoryCache = localExercises;
+      print('✅ [ExerciseCache] Loaded from local storage into memory');
 
       // Trigger background sync if needed (non-blocking)
       _syncInBackgroundIfNeeded();
@@ -40,19 +45,24 @@ class ExerciseCacheService {
     }
 
     // 3. Fetch from remote if no local data
+    print('🌐 [ExerciseCache] Fetching from remote (no local data)');
     return await _fetchAndCacheFromRemote();
   }
 
   /// Fetch from remote and update all caches
   Future<List<Map<String, dynamic>>> _fetchAndCacheFromRemote() async {
     try {
+      print('🌐 [ExerciseCache] Fetching from Supabase...');
       final supabaseExercises = await SupabaseService.instance.getExercises();
+      print('✅ [ExerciseCache] Received ${supabaseExercises.length} exercises from Supabase');
 
       // Save to local storage
       final localStorage = LocalStorageService.instance;
+      print('💾 [ExerciseCache] Saving ${supabaseExercises.length} exercises to local storage...');
       for (final exercise in supabaseExercises) {
         await localStorage.saveExercise(exercise);
       }
+      print('✅ [ExerciseCache] Saved to local storage');
 
       // Update memory cache
       _memoryCache = supabaseExercises;
@@ -62,11 +72,12 @@ class ExerciseCacheService {
 
       return supabaseExercises;
     } catch (e) {
-      print('Error fetching exercises from remote: $e');
+      print('❌ [ExerciseCache] Error fetching exercises from remote: $e');
 
       // Fallback to local storage
       final localStorage = LocalStorageService.instance;
       final localExercises = localStorage.getAllExercises();
+      print('📁 [ExerciseCache] Fallback: found ${localExercises.length} in local storage');
       _memoryCache = localExercises;
       return localExercises;
     }
