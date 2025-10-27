@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/supabase_service.dart';
 import '../services/local_storage_service.dart';
+import '../services/exercise_cache_service.dart';
 
 class WorkoutBuilderScreen extends StatefulWidget {
   final Function(String) onNavigate;
@@ -40,12 +41,12 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
   }
 
   void _loadAllExercises() async {
-    // Load ALL exercises from Supabase (both default and custom)
+    // Use cache service for fast loading (memory > local > remote)
     try {
-      final supabaseExercises = await SupabaseService.instance.getExercises();
+      final exercises = await ExerciseCacheService.instance.getExercises();
 
       setState(() {
-        allExercises = supabaseExercises.map((e) => {
+        allExercises = exercises.map((e) => {
           'name': e['name'] as String,
           'category': e['category'] as String,
           'icon': Icons.fitness_center, // Default icon for all exercises
@@ -53,18 +54,8 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
         isLoadingExercises = false;
       });
     } catch (e) {
-      print('Failed to load from Supabase: $e');
-
-      // Fall back to local storage
-      final localStorage = LocalStorageService.instance;
-      final saved = localStorage.getAllExercises();
-
+      print('Failed to load exercises: $e');
       setState(() {
-        allExercises = saved.map((e) => {
-          'name': e['name'] as String,
-          'category': e['category'] as String,
-          'icon': Icons.fitness_center,
-        }).toList();
         isLoadingExercises = false;
       });
     }

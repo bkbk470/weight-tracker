@@ -6,6 +6,7 @@ import '../services/workout_timer_service.dart';
 import '../services/supabase_service.dart';
 import '../services/notification_service.dart';
 import '../services/workout_session_service.dart';
+import '../services/exercise_cache_service.dart';
 import '../widgets/editable_number_field.dart';
 import '../utils/safe_dialog_helpers.dart';
 
@@ -2790,29 +2791,20 @@ class _SelectExerciseDialogState extends State<_SelectExerciseDialog> {
   }
 
   void _loadCustomExercises() async {
-    // Load ALL exercises from Supabase (both default and custom)
+    // Use cache service for fast loading (memory > local > remote)
     try {
-      final supabaseExercises = await SupabaseService.instance.getExercises();
+      final exercises = await ExerciseCacheService.instance.getExercises();
 
       setState(() {
-        customExercises = supabaseExercises.map((e) => {
+        customExercises = exercises.map((e) => {
           'name': e['name'] as String,
           'category': e['category'] as String,
         }).toList();
         isLoadingExercises = false;
       });
     } catch (e) {
-      print('Failed to load from Supabase: $e');
-
-      // Fall back to local storage
-      final localStorage = LocalStorageService.instance;
-      final saved = localStorage.getAllExercises();
-
+      print('Failed to load exercises: $e');
       setState(() {
-        customExercises = saved.map((e) => {
-          'name': e['name'] as String,
-          'category': e['category'] as String,
-        }).toList();
         isLoadingExercises = false;
       });
     }

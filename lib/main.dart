@@ -9,6 +9,7 @@ import 'services/supabase_service.dart';
 import 'services/sync_service.dart';
 import 'services/notification_service.dart';
 import 'services/workout_session_service.dart';
+import 'services/exercise_cache_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/welcome_screen.dart';
@@ -62,6 +63,9 @@ void main() async {
   // Initialize notification service and request permissions
   await NotificationService.instance.initialize();
   await NotificationService.instance.requestPermissions();
+
+  // Pre-load exercises in background (non-blocking)
+  ExerciseCacheService.instance.preloadExercises();
 
   runApp(const WeightTrackerApp());
 }
