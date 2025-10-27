@@ -1841,7 +1841,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
               setState(() {
                 exercise.notes = trimmed;
               });
-              // Template sync removed - will only sync when workout is completed
+
+              // Save workout session state after updating notes
+              _saveWorkoutSessionState();
+
               notesController.dispose();
               Navigator.pop(context);
             },
@@ -2466,7 +2469,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
 
                                                 print('🔄 Updated rest time for set ${exercise.sets.indexOf(set) + 1}: ${value}s');
                                               });
-                                              // Template sync removed - will only sync when workout is completed
+
+                                              // Save workout session state after updating rest time
+                                              _saveWorkoutSessionState();
                                             },
                                             textStyle: textTheme.bodySmall?.copyWith(
                                               fontWeight: FontWeight.bold,
