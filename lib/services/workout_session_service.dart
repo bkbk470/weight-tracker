@@ -29,6 +29,7 @@ class WorkoutSessionService {
   }) async {
     await _ensureInitialized();
 
+    print('💾 WorkoutSessionService: Saving workout session - $workoutName');
     await _prefs!.setBool(_keyWorkoutActive, true);
 
     if (workoutName != null) {
@@ -72,6 +73,7 @@ class WorkoutSessionService {
     await _ensureInitialized();
 
     final isActive = _prefs!.getBool(_keyWorkoutActive) ?? false;
+    print('📖 WorkoutSessionService: Loading workout session - isActive: $isActive');
     if (!isActive) {
       return null;
     }
@@ -111,6 +113,7 @@ class WorkoutSessionService {
   Future<void> clearWorkoutSession() async {
     await _ensureInitialized();
 
+    print('🗑️  WorkoutSessionService: Clearing workout session');
     await _prefs!.remove(_keyWorkoutActive);
     await _prefs!.remove(_keyWorkoutName);
     await _prefs!.remove(_keyWorkoutId);
