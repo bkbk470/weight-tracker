@@ -365,9 +365,11 @@ class _AppNavigatorState extends State<AppNavigator> {
   }
 
   Future<void> _loadPersistedWorkoutSession() async {
+    print('🔄 AppNavigator: Loading persisted workout session...');
     final session = await WorkoutSessionService.instance.loadWorkoutSession();
 
     if (session != null && mounted) {
+      print('✅ AppNavigator: Found active workout session');
       setState(() {
         hasActiveWorkout = true;
         _activeWorkoutName = session['workoutName'] as String?;
@@ -379,6 +381,7 @@ class _AppNavigatorState extends State<AppNavigator> {
         if (exercises != null) {
           _lastWorkoutExercises = exercises;
           _workoutExercises = List<Map<String, dynamic>>.from(exercises);
+          print('📝 AppNavigator: Loaded ${exercises.length} exercises');
         }
 
         // Restore the timer service state if we have a start time
@@ -388,11 +391,18 @@ class _AppNavigatorState extends State<AppNavigator> {
           WorkoutTimerService.instance.start();
           // Set the elapsed time based on how long ago the workout started
           activeWorkoutTime = elapsedSeconds;
+          print('⏱️  AppNavigator: Restored timer - elapsed: $elapsedSeconds seconds');
         }
       });
 
-      // Note: Navigation to active-workout is handled by SplashScreen
-      // to avoid race conditions and ensure proper startup flow
+      // Navigate to active-workout after loading data
+      // Only navigate if we're not already on the active-workout screen
+      print('➡️  AppNavigator: Navigating to active-workout (currentScreen: $currentScreen)');
+      if (currentScreen != 'active-workout') {
+        navigate('active-workout');
+      }
+    } else {
+      print('ℹ️  AppNavigator: No active workout session found');
     }
   }
 

@@ -79,19 +79,11 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
       if (user != null) {
         // User is logged in
-        // Check if there's an active workout session before navigating
-        final hasActiveWorkout = await WorkoutSessionService.instance.hasActiveWorkout();
-        print('🔍 Splash: hasActiveWorkout = $hasActiveWorkout');
-
-        if (hasActiveWorkout) {
-          // There's an active workout, go directly to it
-          print('➡️  Splash: Navigating to active-workout');
-          widget.onNavigate('active-workout');
-        } else {
-          // No active workout, go to dashboard
-          print('➡️  Splash: Navigating to dashboard');
-          widget.onNavigate('dashboard');
-        }
+        // Note: Active workout check is handled by AppNavigator._loadPersistedWorkoutSession()
+        // which will navigate to active-workout if needed.
+        // We just go to dashboard, and if there's an active workout, AppNavigator will override.
+        print('➡️  Splash: User logged in, navigating to dashboard');
+        widget.onNavigate('dashboard');
       } else {
         // Not logged in, go to login
         print('➡️  Splash: Navigating to login');
