@@ -1043,7 +1043,7 @@ class _ExerciseCardState extends State<_ExerciseCard> {
                 child: Row(
                   children: [
                     SizedBox(
-                      width: 50,
+                      width: 28,
                       child: Text(
                         '#',
                         style: textTheme.labelSmall?.copyWith(
@@ -1053,9 +1053,9 @@ class _ExerciseCardState extends State<_ExerciseCard> {
                         textAlign: TextAlign.center,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      width: 70,
+                    const SizedBox(width: 4),
+                    Expanded(
+                      flex: 3,
                       child: Text(
                         'Weight',
                         style: textTheme.labelSmall?.copyWith(
@@ -1065,9 +1065,9 @@ class _ExerciseCardState extends State<_ExerciseCard> {
                         textAlign: TextAlign.center,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      width: 60,
+                    const SizedBox(width: 4),
+                    Expanded(
+                      flex: 2,
                       child: Text(
                         'Reps',
                         style: textTheme.labelSmall?.copyWith(
@@ -1077,9 +1077,9 @@ class _ExerciseCardState extends State<_ExerciseCard> {
                         textAlign: TextAlign.center,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      width: 70,
+                    const SizedBox(width: 4),
+                    Expanded(
+                      flex: 2,
                       child: Text(
                         'Rest',
                         style: textTheme.labelSmall?.copyWith(
@@ -1089,7 +1089,7 @@ class _ExerciseCardState extends State<_ExerciseCard> {
                         textAlign: TextAlign.center,
                       ),
                     ),
-                    const Spacer(),
+                    const SizedBox(width: 40),
                   ],
                 ),
               ),
