@@ -531,18 +531,47 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
                     });
                   }
 
-                  // Show completion screen immediately
+                  // Calculate stats immediately for the completion screen
+                  final totalExercises = exercises.length;
+                  final totalSets = exercises.fold<int>(
+                    0,
+                    (sum, exercise) => sum + exercise.sets.length, // All sets now marked complete
+                  );
+                  final totalReps = exercises.fold<int>(
+                    0,
+                    (sum, exercise) => sum + exercise.sets.fold<int>(
+                      0,
+                      (repSum, set) => repSum + set.reps,
+                    ),
+                  );
+                  final totalVolume = exercises.fold<double>(
+                    0.0,
+                    (sum, exercise) => sum + exercise.sets.fold<double>(
+                      0.0,
+                      (volSum, set) => volSum + (set.weight * set.reps),
+                    ),
+                  );
+
+                  // Show completion screen immediately (before saving)
+                  _showWorkoutCompletionScreen(
+                    duration: workoutTime,
+                    totalExercises: totalExercises,
+                    totalSets: totalSets,
+                    totalReps: totalReps,
+                    totalVolume: totalVolume,
+                  );
+
+                  // Reset workout state
                   _timerService.reset();
                   widget.onWorkoutStateChanged?.call(false, 0);
 
                   // Save workout to Supabase in the background (don't await)
-                  _saveWorkoutToDatabase().then((saved) {
+                  _saveWorkoutToDatabase(skipCompletionScreen: true).then((saved) {
                     if (saved) {
                       _maybePromptSaveTemplate();
                     }
                   }).catchError((error) {
                     print('Error saving workout in background: $error');
-                    // Could show a snackbar here if needed
                   });
                 },
                 icon: const Icon(Icons.check),
@@ -586,18 +615,47 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
               onPressed: () async {
                 Navigator.pop(dialogContext);
 
-                // Show completion screen immediately
+                // Calculate stats immediately for the completion screen
+                final totalExercises = exercises.length;
+                final totalSets = exercises.fold<int>(
+                  0,
+                  (sum, exercise) => sum + exercise.sets.where((set) => set.completed).length,
+                );
+                final totalReps = exercises.fold<int>(
+                  0,
+                  (sum, exercise) => sum + exercise.sets.where((set) => set.completed).fold<int>(
+                    0,
+                    (repSum, set) => repSum + set.reps,
+                  ),
+                );
+                final totalVolume = exercises.fold<double>(
+                  0.0,
+                  (sum, exercise) => sum + exercise.sets.where((set) => set.completed).fold<double>(
+                    0.0,
+                    (volSum, set) => volSum + (set.weight * set.reps),
+                  ),
+                );
+
+                // Show completion screen immediately (before saving)
+                _showWorkoutCompletionScreen(
+                  duration: workoutTime,
+                  totalExercises: totalExercises,
+                  totalSets: totalSets,
+                  totalReps: totalReps,
+                  totalVolume: totalVolume,
+                );
+
+                // Reset workout state
                 _timerService.reset();
                 widget.onWorkoutStateChanged?.call(false, 0);
 
                 // Save workout to Supabase in the background (don't await)
-                _saveWorkoutToDatabase().then((saved) {
+                _saveWorkoutToDatabase(skipCompletionScreen: true).then((saved) {
                   if (saved) {
                     _maybePromptSaveTemplate();
                   }
                 }).catchError((error) {
                   print('Error saving workout in background: $error');
-                  // Could show a snackbar here if needed
                 });
               },
               child: const Text('Finish'),
@@ -617,7 +675,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
     }
   }
 
-  Future<bool> _saveWorkoutToDatabase() async {
+  Future<bool> _saveWorkoutToDatabase({bool skipCompletionScreen = false}) async {
     final endTime = DateTime.now();
     final startTime = endTime.subtract(Duration(seconds: workoutTime));
 
@@ -732,8 +790,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
 
       await _saveExerciseHistoryLocally(endTime);
 
-      if (mounted) {
-        // Show workout completion screen instead of just a snackbar
+      if (mounted && !skipCompletionScreen) {
+        // Show workout completion screen (unless already shown)
         _showWorkoutCompletionScreen(
           duration: workoutTime,
           totalExercises: totalExercises,
