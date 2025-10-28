@@ -32,6 +32,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
   // Load all exercises from database
   List<Map<String, dynamic>> allExercises = [];
   bool isLoadingExercises = true;
+  bool _isBottomSheetOpen = false;
 
   @override
   void initState() {
@@ -302,8 +303,12 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     }
   }
 
-  void _showAddExerciseModal() {
-    showModalBottomSheet(
+  void _showAddExerciseModal() async {
+    // Prevent multiple bottom sheets from opening
+    if (_isBottomSheetOpen) return;
+
+    _isBottomSheetOpen = true;
+    await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -316,6 +321,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
         },
       ),
     );
+    _isBottomSheetOpen = false;
   }
 
   @override
