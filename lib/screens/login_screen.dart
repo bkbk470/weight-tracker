@@ -124,9 +124,31 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> handleSocialLogin(String provider) async {
     setState(() => isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 1000));
-    setState(() => isLoading = false);
-    if (mounted) widget.onNavigate('welcome');
+
+    try {
+      bool success = false;
+
+      if (provider == 'google') {
+        success = await SupabaseService.instance.signInWithGoogle();
+      } else if (provider == 'apple') {
+        success = await SupabaseService.instance.signInWithApple();
+      }
+
+      // If OAuth was initiated successfully, wait for auth state change
+      // The auth state listener in main.dart will handle navigation
+      if (success) {
+        print('✅ OAuth flow initiated for $provider');
+        // Don't navigate yet - wait for auth callback
+      } else {
+        _showError('Failed to initiate $provider sign in');
+      }
+    } catch (e) {
+      _showError('Error signing in with $provider: ${e.toString().replaceAll('Exception: ', '')}');
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
   }
 
   @override

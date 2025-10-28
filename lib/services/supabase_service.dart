@@ -65,6 +65,34 @@ class SupabaseService {
     );
   }
 
+  // Sign in with Google
+  Future<bool> signInWithGoogle() async {
+    try {
+      final response = await client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: 'com.fittracker2025.app://login-callback',
+      );
+      return response;
+    } catch (e) {
+      print('Error signing in with Google: $e');
+      rethrow;
+    }
+  }
+
+  // Sign in with Apple
+  Future<bool> signInWithApple() async {
+    try {
+      final response = await client.auth.signInWithOAuth(
+        OAuthProvider.apple,
+        redirectTo: 'com.fittracker2025.app://login-callback',
+      );
+      return response;
+    } catch (e) {
+      print('Error signing in with Apple: $e');
+      rethrow;
+    }
+  }
+
   // Get auth state changes
   Stream<AuthState> get authStateChanges => client.auth.onAuthStateChange;
 
