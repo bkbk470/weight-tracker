@@ -36,6 +36,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
   late TextEditingController _workoutNameController;
   String _currentWorkoutName = '';
   bool _isDialogOpen = false;
+  DateTime? _lastDialogOpenTime;
 
   @override
   void initState() {
@@ -113,10 +114,15 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
   }
 
   Future<void> _showEditWorkoutNameDialog() async {
-    // Prevent multiple dialogs from opening
-    if (_isDialogOpen) return;
+    // Prevent multiple dialogs from opening with timestamp-based debounce
+    final now = DateTime.now();
+    if (_isDialogOpen || (_lastDialogOpenTime != null &&
+        now.difference(_lastDialogOpenTime!).inMilliseconds < 500)) {
+      return;
+    }
 
     _isDialogOpen = true;
+    _lastDialogOpenTime = now;
     final result = await showDialog<String>(
       context: context,
       builder: (context) {

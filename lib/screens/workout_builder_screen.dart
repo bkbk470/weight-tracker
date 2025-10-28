@@ -33,6 +33,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
   List<Map<String, dynamic>> allExercises = [];
   bool isLoadingExercises = true;
   bool _isBottomSheetOpen = false;
+  DateTime? _lastBottomSheetOpenTime;
 
   @override
   void initState() {
@@ -304,10 +305,15 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
   }
 
   void _showAddExerciseModal() async {
-    // Prevent multiple bottom sheets from opening
-    if (_isBottomSheetOpen) return;
+    // Prevent multiple bottom sheets from opening with timestamp-based debounce
+    final now = DateTime.now();
+    if (_isBottomSheetOpen || (_lastBottomSheetOpenTime != null &&
+        now.difference(_lastBottomSheetOpenTime!).inMilliseconds < 500)) {
+      return;
+    }
 
     _isBottomSheetOpen = true;
+    _lastBottomSheetOpenTime = now;
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
