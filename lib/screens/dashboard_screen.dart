@@ -893,6 +893,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 const Divider(height: 1),
+                                const SizedBox(height: 8),
                                 if (workouts.isEmpty)
                                   Padding(
                                     padding: const EdgeInsets.all(16),
@@ -1010,6 +1011,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               const Divider(height: 1),
+                              const SizedBox(height: 8),
                               ...unorganizedWorkouts.take(5).map((workout) {
                                 final workoutId = _normalizeId(workout['id']);
                                 final lastDate = workoutId != null ? _workoutLastCompletedDates[workoutId] : null;
