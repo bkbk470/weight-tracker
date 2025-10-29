@@ -520,7 +520,7 @@ class _AppNavigatorState extends State<AppNavigator> {
       // Set autostart when coming from workout detail/start
       if (screen == 'active-workout-start') {
         currentScreen = 'active-workout';
-        autoStartWorkout = true;
+        autoStartWorkout = false; // FALSE for new workouts - we want to load previous data!
         hasActiveWorkout = true;
         if (_activeWorkoutName == null || _activeWorkoutName!.isEmpty) {
           _activeWorkoutName = (_lastWorkoutName != null && _lastWorkoutName!.isNotEmpty)

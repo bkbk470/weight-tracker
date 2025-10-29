@@ -135,17 +135,19 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
       _hasLoadedPreviousData = true; // Mark as loaded to prevent future loads
     }
 
-    if (widget.autoStart) {
-      // Set workout as active immediately to prevent Quick Start flash
-      isWorkoutActive = true;
-      // Start workout timer and save state after build completes
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _timerService.start();
-        widget.onWorkoutStateChanged?.call(true, 0);
-        _saveWorkoutSessionState();
-        print('✅ ActiveWorkout: Workout auto-started and saved');
-      });
-    }
+    // Always start the workout automatically (whether new or resumed)
+    isWorkoutActive = true;
+    // Start workout timer and save state after build completes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _timerService.start();
+      widget.onWorkoutStateChanged?.call(true, 0);
+      _saveWorkoutSessionState();
+      if (widget.autoStart) {
+        print('✅ ActiveWorkout: Resumed workout started');
+      } else {
+        print('✅ ActiveWorkout: New workout started');
+      }
+    });
   }
 
   void _onTimerUpdate(int seconds) {
