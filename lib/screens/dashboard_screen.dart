@@ -113,8 +113,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _loadFoldersAndWorkouts() async {
-    setState(() => _isLoadingWorkouts = true);
+    // Load from cache first for instant display
+    final cached = LocalStorageService.instance.getCachedDashboardData();
+    if (cached != null) {
+      if (mounted) {
+        setState(() {
+          _folders = cached['folders'] as List<Map<String, dynamic>>;
+          _workoutsByFolder = cached['workoutsByFolder'] as Map<String?, List<Map<String, dynamic>>>;
+          _workoutLastCompletedDates = cached['lastCompletedDates'] as Map<String, DateTime?>;
+          _isLoadingWorkouts = false;
+        });
+      }
+    } else {
+      setState(() => _isLoadingWorkouts = true);
+    }
 
+    // Then load fresh data from Supabase in background
     try {
       // Load folders (only show favorites on dashboard)
       final rawFolders = await _supabaseService.getWorkoutFolders();
@@ -172,6 +186,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ? <String, DateTime?>{}
           : await _supabaseService.getLastWorkoutDates(allWorkoutIds);
 
+      // Cache the fresh data for next time
+      await LocalStorageService.instance.cacheDashboardData(
+        folders: folders,
+        workoutsByFolder: grouped,
+        lastCompletedDates: lastDates,
+      );
+
       if (!mounted) return;
       setState(() {
         _folders = folders;
@@ -181,12 +202,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _folders = [];
-        _workoutsByFolder = {null: []};
-        _workoutLastCompletedDates = {};
-        _isLoadingWorkouts = false;
-      });
+      // Only show empty state if we didn't have cached data
+      if (cached == null) {
+        setState(() {
+          _folders = [];
+          _workoutsByFolder = {null: []};
+          _workoutLastCompletedDates = {};
+          _isLoadingWorkouts = false;
+        });
+      }
       debugPrint('Failed to load folders and workouts: $e');
     }
   }
@@ -253,8 +277,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _loadRecentWorkouts() async {
+    // Load from cache first for instant display
+    final cached = LocalStorageService.instance.getCachedRecentWorkouts();
+    if (cached != null) {
+      if (mounted) {
+        setState(() {
+          _recentWorkoutLogs = cached;
+          _isLoadingRecentWorkouts = false;
+        });
+      }
+    }
+
+    // Then load fresh data from Supabase in background
     try {
       final logs = await _supabaseService.getWorkoutLogs(limit: 3);
+
+      // Cache the fresh data for next time
+      await LocalStorageService.instance.cacheRecentWorkouts(logs);
+
       if (!mounted) return;
       setState(() {
         _recentWorkoutLogs = logs;
@@ -262,10 +302,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _recentWorkoutLogs = [];
-        _isLoadingRecentWorkouts = false;
-      });
+      // Only show empty state if we didn't have cached data
+      if (cached == null) {
+        setState(() {
+          _recentWorkoutLogs = [];
+          _isLoadingRecentWorkouts = false;
+        });
+      }
       debugPrint('Failed to load recent workouts: $e');
     }
   }

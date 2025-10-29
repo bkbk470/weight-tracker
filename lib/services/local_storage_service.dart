@@ -184,6 +184,78 @@ class LocalStorageService {
     return profile != null ? Map<String, dynamic>.from(profile as Map) : null;
   }
 
+  // ==================== DASHBOARD CACHE ====================
+
+  // Cache dashboard data for faster loading
+  Future<void> cacheDashboardData({
+    required List<Map<String, dynamic>> folders,
+    required Map<String?, List<Map<String, dynamic>>> workoutsByFolder,
+    required Map<String, DateTime?> lastCompletedDates,
+  }) async {
+    final box = Hive.box(_userBox);
+    await box.put('dashboard_cache', {
+      'folders': folders,
+      'workoutsByFolder': workoutsByFolder.map((key, value) => MapEntry(key?.toString() ?? 'null', value)),
+      'lastCompletedDates': lastCompletedDates.map((key, value) => MapEntry(key, value?.toIso8601String())),
+      'cachedAt': DateTime.now().toIso8601String(),
+    });
+  }
+
+  // Get cached dashboard data
+  Map<String, dynamic>? getCachedDashboardData() {
+    final box = Hive.box(_userBox);
+    final cached = box.get('dashboard_cache');
+    if (cached == null) return null;
+
+    final data = Map<String, dynamic>.from(cached as Map);
+
+    // Parse back the data structures
+    final folders = (data['folders'] as List?)?.map((e) => Map<String, dynamic>.from(e as Map)).toList() ?? [];
+
+    final workoutsByFolderRaw = data['workoutsByFolder'] as Map?;
+    final workoutsByFolder = <String?, List<Map<String, dynamic>>>{};
+    if (workoutsByFolderRaw != null) {
+      workoutsByFolderRaw.forEach((key, value) {
+        final folderKey = key == 'null' ? null : key.toString();
+        workoutsByFolder[folderKey] = (value as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      });
+    }
+
+    final lastCompletedDatesRaw = data['lastCompletedDates'] as Map?;
+    final lastCompletedDates = <String, DateTime?>{};
+    if (lastCompletedDatesRaw != null) {
+      lastCompletedDatesRaw.forEach((key, value) {
+        lastCompletedDates[key.toString()] = value != null ? DateTime.parse(value as String) : null;
+      });
+    }
+
+    return {
+      'folders': folders,
+      'workoutsByFolder': workoutsByFolder,
+      'lastCompletedDates': lastCompletedDates,
+      'cachedAt': data['cachedAt'],
+    };
+  }
+
+  // Cache recent workouts
+  Future<void> cacheRecentWorkouts(List<Map<String, dynamic>> workouts) async {
+    final box = Hive.box(_userBox);
+    await box.put('recent_workouts_cache', {
+      'workouts': workouts,
+      'cachedAt': DateTime.now().toIso8601String(),
+    });
+  }
+
+  // Get cached recent workouts
+  List<Map<String, dynamic>>? getCachedRecentWorkouts() {
+    final box = Hive.box(_userBox);
+    final cached = box.get('recent_workouts_cache');
+    if (cached == null) return null;
+
+    final data = Map<String, dynamic>.from(cached as Map);
+    return (data['workouts'] as List?)?.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
   // ==================== SETTINGS ====================
 
   // Save setting
