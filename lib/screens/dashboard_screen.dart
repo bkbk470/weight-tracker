@@ -830,7 +830,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       splashColor: Colors.transparent,
                       highlightColor: Colors.transparent,
                       child: ListTile(
-                        contentPadding: const EdgeInsets.all(16),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                         leading: Container(
                           width: 48,
                           height: 48,
@@ -975,7 +975,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     splashColor: Colors.transparent,
                     highlightColor: Colors.transparent,
                     child: ListTile(
-                      contentPadding: const EdgeInsets.all(16),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       leading: Container(
                         width: 48,
                         height: 48,
