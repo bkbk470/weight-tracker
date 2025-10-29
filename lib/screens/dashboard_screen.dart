@@ -892,7 +892,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ? AnimatedOpacity(
                               duration: const Duration(milliseconds: 250),
                               opacity: isExpanded ? 1.0 : 0.0,
-                              curve: Curves.easeIn,
+                              curve: Curves.linear,
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -1013,7 +1013,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ? AnimatedOpacity(
                             duration: const Duration(milliseconds: 250),
                             opacity: isMyWorkoutsExpanded ? 1.0 : 0.0,
-                            curve: Curves.easeIn,
+                            curve: Curves.linear,
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                             children: [
