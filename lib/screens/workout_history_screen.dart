@@ -294,97 +294,270 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
                           }
                           
                           return Card(
-                            margin: EdgeInsets.zero,
+                            margin: const EdgeInsets.only(bottom: 12),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(12),
-                              onTap: () {
-                                // TODO: Navigate to workout log detail
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 48,
-                                      height: 48,
-                                      decoration: BoxDecoration(
-                                        color: colorScheme.primaryContainer,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Icon(
-                                        Icons.fitness_center,
-                                        size: 24,
-                                        color: colorScheme.onPrimaryContainer,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            workout['workout_name'] ?? 'Workout',
-                                            style: textTheme.titleMedium?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                Icons.access_time,
-                                                size: 14,
-                                                color: colorScheme.onSurfaceVariant,
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                _formatDuration(workout['duration_seconds']),
-                                                style: textTheme.bodySmall?.copyWith(
-                                                  color: colorScheme.onSurfaceVariant,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 12),
-                                              Icon(
-                                                Icons.calendar_today,
-                                                size: 14,
-                                                color: colorScheme.onSurfaceVariant,
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Flexible(
-                                                child: Text(
-                                                  _formatDate(workout['start_time']),
-                                                  style: textTheme.bodySmall?.copyWith(
-                                                    color: colorScheme.onSurfaceVariant,
-                                                  ),
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Icon(
-                                      Icons.chevron_right,
-                                      color: colorScheme.onSurfaceVariant,
-                                    ),
-                                  ],
+                            child: ExpansionTile(
+                              tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              childrenPadding: EdgeInsets.zero,
+                              leading: Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.fitness_center,
+                                  size: 24,
+                                  color: colorScheme.onPrimaryContainer,
                                 ),
                               ),
+                              title: Text(
+                                workout['workout_name'] ?? 'Workout',
+                                style: textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.access_time,
+                                        size: 14,
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        _formatDate(workout['start_time']),
+                                        style: textTheme.bodySmall?.copyWith(
+                                          color: colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.timer,
+                                        size: 14,
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Duration: ${_formatDuration(workout['duration_seconds'])}',
+                                        style: textTheme.bodySmall?.copyWith(
+                                          color: colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Icon(
+                                        Icons.numbers,
+                                        size: 14,
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${rawSets.length} sets',
+                                        style: textTheme.bodySmall?.copyWith(
+                                          color: colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              children: [
+                                if (rawSets.isEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Text(
+                                      'No sets recorded',
+                                      style: textTheme.bodyMedium?.copyWith(
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Exercise Sets',
+                                          style: textTheme.titleSmall?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        ...exerciseOrder.map((groupKey) {
+                                          final exerciseName =
+                                              exerciseNames[groupKey] ?? 'Exercise';
+                                          final exerciseSets = setsByExercise[groupKey] ?? [];
+
+                                          return Container(
+                                            margin: const EdgeInsets.only(bottom: 16),
+                                            padding: const EdgeInsets.all(16),
+                                            decoration: BoxDecoration(
+                                              color: colorScheme.surfaceVariant.withOpacity(0.25),
+                                              borderRadius: BorderRadius.circular(16),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      exerciseName,
+                                                      style: textTheme.titleMedium?.copyWith(
+                                                        fontWeight: FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                    const Spacer(),
+                                                    Text(
+                                                      '${exerciseSets.length} set${exerciseSets.length == 1 ? '' : 's'}',
+                                                      style: textTheme.bodySmall?.copyWith(
+                                                        color: colorScheme.onSurfaceVariant,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 12),
+                                                Column(
+                                                  children: [
+                                                    for (var i = 0;
+                                                        i < exerciseSets.length;
+                                                        i++)
+                                                      Padding(
+                                                        padding: EdgeInsets.only(
+                                                          bottom: i == exerciseSets.length - 1
+                                                              ? 0
+                                                              : 10,
+                                                        ),
+                                                        child: Container(
+                                                          padding: const EdgeInsets.all(12),
+                                                          decoration: BoxDecoration(
+                                                            color: colorScheme.surfaceVariant
+                                                                .withOpacity(0.35),
+                                                            borderRadius:
+                                                                BorderRadius.circular(12),
+                                                          ),
+                                                          child: Builder(
+                                                            builder: (_) {
+                                                              final set = exerciseSets[i];
+                                                              final setNumber =
+                                                                  (set['set_number'] is num)
+                                                                      ? (set['set_number'] as num)
+                                                                          .toInt()
+                                                                      : int.tryParse(
+                                                                              '${set['set_number'] ?? ''}') ??
+                                                                          i + 1;
+                                                              final weight = set['weight_lbs'];
+                                                              final reps = set['reps'];
+                                                              final weightDisplay = weight is num
+                                                                  ? (weight % 1 == 0
+                                                                      ? weight
+                                                                          .toStringAsFixed(0)
+                                                                      : weight
+                                                                          .toStringAsFixed(1))
+                                                                  : (weight?.toString() ?? '0');
+                                                              final repsDisplay = reps is num
+                                                                  ? reps.toInt().toString()
+                                                                  : (reps?.toString() ?? '0');
+                                                              final notes =
+                                                                  (set['notes'] as String?)
+                                                                      ?.trim();
+                                                              return Row(
+                                                                children: [
+                                                                  Container(
+                                                                    width: 40,
+                                                                    height: 40,
+                                                                    decoration: BoxDecoration(
+                                                                      color: colorScheme
+                                                                          .secondaryContainer,
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(8),
+                                                                    ),
+                                                                    child: Center(
+                                                                      child: Text(
+                                                                        '$setNumber',
+                                                                        style: textTheme.labelLarge
+                                                                            ?.copyWith(
+                                                                          color: colorScheme
+                                                                              .onSecondaryContainer,
+                                                                          fontWeight:
+                                                                              FontWeight.bold,
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                  const SizedBox(width: 12),
+                                                                  Expanded(
+                                                                    child: Column(
+                                                                      crossAxisAlignment:
+                                                                          CrossAxisAlignment.start,
+                                                                      children: [
+                                                                        Text(
+                                                                          '$weightDisplay lbs × $repsDisplay reps',
+                                                                          style: textTheme
+                                                                              .bodyMedium
+                                                                              ?.copyWith(
+                                                                            fontWeight:
+                                                                                FontWeight.w500,
+                                                                          ),
+                                                                        ),
+                                                                        if (notes != null &&
+                                                                            notes.isNotEmpty)
+                                                                          Padding(
+                                                                            padding:
+                                                                                const EdgeInsets
+                                                                                    .only(
+                                                                              top: 4,
+                                                                            ),
+                                                                            child: Text(
+                                                                              notes,
+                                                                              style: textTheme
+                                                                                  .bodySmall
+                                                                                  ?.copyWith(
+                                                                                color: colorScheme
+                                                                                    .onSurfaceVariant,
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                      ],
+                                                                    ),
+                                                                  ),
+                                                                  if (set['completed'] == true)
+                                                                    Icon(
+                                                                      Icons.check_circle,
+                                                                      color:
+                                                                          colorScheme.secondary,
+                                                                      size: 20,
+                                                                    ),
+                                                                ],
+                                                              );
+                                                            },
+                                                          ),
+                                                        ),
+                                                      ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ],
+                                    ),
+                                  ),
+                              ],
                             ),
                           );
-                        },
-                      ).toList(),
-                    );
-                  }
-
-                  return const SizedBox.shrink();
                         },
                       ),
                     ),
