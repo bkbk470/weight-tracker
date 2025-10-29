@@ -652,10 +652,23 @@ class SupabaseService {
         ''')
         .eq('user_id', currentUserId!)
         .order('order_index', ascending: true)
-        .order('created_at', ascending: false)
-        .order('order_index', ascending: true, foreignTable: 'workout_exercises');
+        .order('created_at', ascending: false);
 
-    return List<Map<String, dynamic>>.from(response);
+    final workouts = List<Map<String, dynamic>>.from(response);
+
+    // Sort workout_exercises by order_index for each workout
+    for (final workout in workouts) {
+      if (workout['workout_exercises'] != null) {
+        final exercises = workout['workout_exercises'] as List;
+        exercises.sort((a, b) {
+          final aOrder = (a['order_index'] as int?) ?? 0;
+          final bOrder = (b['order_index'] as int?) ?? 0;
+          return aOrder.compareTo(bOrder);
+        });
+      }
+    }
+
+    return workouts;
   }
 
   // Update workout order
@@ -809,10 +822,17 @@ class SupabaseService {
               *,
               exercise:exercises (*)
             )
-          ''')
-          .eq('id', workoutId)
-          .order('order_index', ascending: true, foreignTable: 'workout_exercises')
-          .maybeSingle();
+          ''').eq('id', workoutId).maybeSingle();
+
+      // Sort the workout_exercises by order_index
+      if (response != null && response['workout_exercises'] != null) {
+        final exercises = response['workout_exercises'] as List;
+        exercises.sort((a, b) {
+          final aOrder = (a['order_index'] as int?) ?? 0;
+          final bOrder = (b['order_index'] as int?) ?? 0;
+          return aOrder.compareTo(bOrder);
+        });
+      }
 
       return response;
     } catch (e) {
