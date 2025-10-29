@@ -128,6 +128,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
     if (!_hasLoadedPreviousData && !widget.autoStart) {
       _hasLoadedPreviousData = true;
       print('📊 Loading previous exercise data from history (new workout)');
+      print('📊 Exercises: ${exercises.map((e) => '${e.name} (ID: ${e.supabaseExerciseId ?? "NULL"})').join(', ')}');
       Future.microtask(() => _loadPreviousExerciseData());
     } else if (widget.autoStart) {
       print('⏩ Skipping historical data load (resuming active workout)');
@@ -326,8 +327,14 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
       }
       return;
     }
+    print('🔍 Loading previous data for: ${exercise.name}');
+    print('🔍 Current exercise.supabaseExerciseId: ${exercise.supabaseExerciseId}');
     final ensured = await _ensureWorkoutExerciseMetadata(exercise, orderIndex, createIfMissing: false);
-    if (!ensured || exercise.supabaseExerciseId == null) return;
+    print('🔍 After ensure metadata - ensured: $ensured, supabaseExerciseId: ${exercise.supabaseExerciseId}');
+    if (!ensured || exercise.supabaseExerciseId == null) {
+      print('⚠️  Cannot load previous data - exercise ID not found for ${exercise.name}');
+      return;
+    }
 
     try {
       final records = await SupabaseService.instance.getLatestExerciseSetsForExercise(
@@ -1088,22 +1095,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
                         textStyle: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    OutlinedButton.icon(
-                      onPressed: () {
-                        // Clear workout state BEFORE navigating
-                        _timerService.reset();
-                        widget.onWorkoutStateChanged?.call(false, 0);
-                        Navigator.of(sheetContext).pop('progress');
-                        widget.onNavigate('progress');
-                      },
-                      icon: Icon(Icons.insights, color: colorScheme.primary),
-                      label: Text('View Progress', style: TextStyle(color: colorScheme.primary)),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        side: BorderSide(color: colorScheme.primary),
                       ),
                     ),
                   ],
