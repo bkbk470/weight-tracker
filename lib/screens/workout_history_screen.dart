@@ -299,7 +299,7 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: ExpansionTile(
-                              tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                               childrenPadding: EdgeInsets.zero,
                               leading: Container(
                                 width: 48,
