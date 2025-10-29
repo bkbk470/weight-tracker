@@ -1477,17 +1477,16 @@ class _PlanSection extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: textTheme.titleLarge?.copyWith(
+                          style: textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: colorScheme.onSurface,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          description ?? '$workoutCount exercise${workoutCount != 1 ? 's' : ''} • ${lastWorkoutTime ?? 'Never completed'}',
-                          style: textTheme.bodyMedium?.copyWith(
+                          description ?? '$workoutCount workout${workoutCount != 1 ? 's' : ''}',
+                          style: textTheme.bodySmall?.copyWith(
                             color: colorScheme.onSurfaceVariant,
                           ),
                           maxLines: 1,
