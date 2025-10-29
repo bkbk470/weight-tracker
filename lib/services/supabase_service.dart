@@ -652,7 +652,8 @@ class SupabaseService {
         ''')
         .eq('user_id', currentUserId!)
         .order('order_index', ascending: true)
-        .order('created_at', ascending: false);
+        .order('created_at', ascending: false)
+        .order('order_index', ascending: true, foreignTable: 'workout_exercises');
 
     return List<Map<String, dynamic>>.from(response);
   }
@@ -808,7 +809,10 @@ class SupabaseService {
               *,
               exercise:exercises (*)
             )
-          ''').eq('id', workoutId).maybeSingle();
+          ''')
+          .eq('id', workoutId)
+          .order('order_index', ascending: true, foreignTable: 'workout_exercises')
+          .maybeSingle();
 
       return response;
     } catch (e) {
