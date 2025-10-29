@@ -901,12 +901,6 @@ class _AppNavigatorState extends State<AppNavigator> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: colorScheme.secondaryContainer,
-                  border: Border(
-                    top: BorderSide(
-                      color: colorScheme.secondary.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
                 ),
                 child: Row(
                   children: [
