@@ -116,10 +116,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() => _isLoadingWorkouts = true);
 
     try {
-      // Load folders
+      // Load folders (only show favorites on dashboard)
       final rawFolders = await _supabaseService.getWorkoutFolders();
       final folders = rawFolders
-          .where((folder) => folder['id'] != null)
+          .where((folder) => folder['id'] != null && folder['is_favorite'] == true)
           .map((folder) {
             final normalized = Map<String, dynamic>.from(folder);
             normalized['id'] = folder['id'].toString();
