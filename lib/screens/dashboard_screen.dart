@@ -1015,31 +1015,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ...unorganizedWorkouts.take(5).map((workout) {
                                 final workoutId = _normalizeId(workout['id']);
                                 final lastDate = workoutId != null ? _workoutLastCompletedDates[workoutId] : null;
-                                final isLastItem = unorganizedWorkouts.take(5).toList().last == workout;
 
-                                return Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    _MyWorkoutTile(
-                                      workout: workout,
-                                      lastCompleted: _formatLastCompleted(lastDate),
-                                      hasBeenCompleted: lastDate != null,
-                                      colorScheme: colorScheme,
-                                      textTheme: textTheme,
-                                      isInFolder: true,
-                                      onTap: () => widget.onNavigate('workout-detail', {
-                                        'workout': workout,
-                                      }),
-                                    ),
-                                    if (!isLastItem)
-                                      Divider(
-                                        height: 1,
-                                        thickness: 1,
-                                        indent: 56,
-                                        endIndent: 16,
-                                        color: colorScheme.outlineVariant.withOpacity(0.5),
-                                      ),
-                                  ],
+                                return _CompactPlanWorkoutTile(
+                                  workout: workout,
+                                  lastCompleted: _formatLastCompleted(lastDate),
+                                  hasBeenCompleted: lastDate != null,
+                                  colorScheme: colorScheme,
+                                  textTheme: textTheme,
+                                  onTap: () => widget.onNavigate('workout-detail', {
+                                    'workout': workout,
+                                  }),
                                 );
                               }),
                               if (unorganizedWorkouts.length > 5)
