@@ -829,32 +829,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       },
                       splashColor: Colors.transparent,
                       highlightColor: Colors.transparent,
-                      child: SizedBox(
-                        height: 72, // Fixed height to prevent layout issues during drag
-                        child: Row(
+                      child: ListTile(
+                        leading: Icon(Icons.folder, color: color, size: 28),
+                        title: Text(
+                          (folder['name'] as String?) ?? 'Workout Plan',
+                          style: textTheme.titleMedium,
+                        ),
+                        subtitle: Text(
+                          '${workouts.length} workout${workouts.length != 1 ? 's' : ''}',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            const SizedBox(width: 16),
-                            Icon(Icons.folder, color: color, size: 28),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    (folder['name'] as String?) ?? 'Workout Plan',
-                                    style: textTheme.titleMedium,
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '${workouts.length} workout${workouts.length != 1 ? 's' : ''}',
-                                    style: textTheme.bodySmall?.copyWith(
-                                      color: colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
                             // Drag handle - only this triggers reordering
                             if (folderId != null)
                               ReorderableDragStartListener(
@@ -872,16 +861,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 color: colorScheme.onSurfaceVariant.withOpacity(0.3),
                               ),
                             const SizedBox(width: 8),
-                            SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: AnimatedRotation(
-                                turns: isExpanded ? 0.5 : 0,
-                                duration: const Duration(milliseconds: 200),
-                                child: const Icon(Icons.expand_more, size: 24),
-                              ),
+                            AnimatedRotation(
+                              turns: isExpanded ? 0.5 : 0,
+                              duration: const Duration(milliseconds: 200),
+                              child: const Icon(Icons.expand_more, size: 24),
                             ),
-                            const SizedBox(width: 16),
                           ],
                         ),
                       ),
