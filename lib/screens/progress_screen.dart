@@ -86,7 +86,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                   crossAxisCount: 2,
                   mainAxisSpacing: 16,
                   crossAxisSpacing: 16,
-                  childAspectRatio: 1.3,
+                  childAspectRatio: 1.4,
                   children: [
                     _StatCard(
                       label: 'Total Workouts',
@@ -438,7 +438,7 @@ class _StatCard extends StatelessWidget {
           children: [
             Text(
               value,
-              style: textTheme.headlineSmall?.copyWith(
+              style: textTheme.headlineMedium?.copyWith(
                 color: colorScheme.primary,
               ),
             ),
