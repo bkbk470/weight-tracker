@@ -295,22 +295,27 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
                           
                           return Card(
                             margin: const EdgeInsets.only(bottom: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             child: ExpansionTile(
                               leading: Container(
-                                padding: const EdgeInsets.all(12),
+                                width: 48,
+                                height: 48,
                                 decoration: BoxDecoration(
                                   color: colorScheme.primaryContainer,
-                                  shape: BoxShape.circle,
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Icon(
                                   Icons.fitness_center,
+                                  size: 24,
                                   color: colorScheme.onPrimaryContainer,
                                 ),
                               ),
                               title: Text(
                                 workout['workout_name'] ?? 'Workout',
                                 style: textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                               subtitle: Column(
