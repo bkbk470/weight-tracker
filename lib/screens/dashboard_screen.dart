@@ -830,8 +830,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       splashColor: Colors.transparent,
                       highlightColor: Colors.transparent,
                       child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        leading: Icon(Icons.folder, color: color, size: 28),
+                        contentPadding: const EdgeInsets.all(16),
+                        leading: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(Icons.folder, color: color, size: 24),
+                        ),
                         title: Text(
                           (folder['name'] as String?) ?? 'Workout Plan',
                           style: textTheme.titleMedium,
@@ -967,8 +975,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     splashColor: Colors.transparent,
                     highlightColor: Colors.transparent,
                     child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      leading: const Icon(Icons.folder_open, size: 28),
+                      contentPadding: const EdgeInsets.all(16),
+                      leading: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: colorScheme.secondaryContainer,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.folder_open,
+                          color: colorScheme.onSecondaryContainer,
+                          size: 24,
+                        ),
+                      ),
                       title: Text(
                         'My Workouts',
                         style: textTheme.titleMedium,
