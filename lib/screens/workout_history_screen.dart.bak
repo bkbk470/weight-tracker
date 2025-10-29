@@ -385,8 +385,6 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
                   }
 
                   return const SizedBox.shrink();
-                        },
-                      ),
                     ),
     );
   }
