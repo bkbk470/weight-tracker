@@ -43,6 +43,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
   DateTime? _restStartTime; // Track when rest started
   int? _restDuration; // Track total rest duration in seconds
   bool _hasLoadedPreviousData = false; // Flag to prevent repeated data loading
+  bool _isShowingExerciseInfo = false; // Flag to prevent multiple exercise info dialogs
 
   List<Exercise> exercises = [];
 
@@ -1771,6 +1772,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
   }
 
   void _showExerciseInfo(BuildContext context, Exercise exercise) async {
+    // Prevent multiple simultaneous opens
+    if (_isShowingExerciseInfo) return;
+    _isShowingExerciseInfo = true;
+
     // Try to fetch full exercise details from Supabase
     try {
       final exercises = await SupabaseService.instance.getExercises();
@@ -1779,10 +1784,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
         orElse: () => <String, dynamic>{},
       );
 
-      if (!mounted) return;
+      if (!mounted) {
+        _isShowingExerciseInfo = false;
+        return;
+      }
 
       FocusManager.instance.primaryFocus?.unfocus();
-      showSafeModalBottomSheet(
+      await showSafeModalBottomSheet(
         context: context,
         isScrollControlled: true,
         isDismissible: true, // Allow closing by tapping outside
@@ -1793,12 +1801,16 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
           exerciseData: exerciseData,
         ),
       );
+      _isShowingExerciseInfo = false;
     } catch (e) {
       print('Error loading exercise info: $e');
       // Show basic info if fetch fails
-      if (!mounted) return;
+      if (!mounted) {
+        _isShowingExerciseInfo = false;
+        return;
+      }
       FocusManager.instance.primaryFocus?.unfocus();
-      showSafeModalBottomSheet(
+      await showSafeModalBottomSheet(
         context: context,
         isScrollControlled: true,
         isDismissible: true, // Allow closing by tapping outside
@@ -1809,6 +1821,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
           exerciseData: {},
         ),
       );
+      _isShowingExerciseInfo = false;
     }
   }
 
