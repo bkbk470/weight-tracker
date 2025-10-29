@@ -807,9 +807,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               final color = _getColorFromString(folder['color'] as String?);
 
               final cardContent = Padding(
+                key: ValueKey(folderId ?? 'plan-$index'),
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Card(
-                  key: ValueKey(folderId ?? 'plan-$index'),
                   margin: EdgeInsets.zero,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
