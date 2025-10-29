@@ -68,6 +68,12 @@ class WorkoutTimerService with WidgetsBindingObserver {
     reset();
   }
 
+  // Set elapsed seconds (for restoring from saved state)
+  void setElapsedSeconds(int seconds) {
+    _elapsedSeconds = seconds;
+    _notifyListeners();
+  }
+
   // Add listener for UI updates
   void addListener(Function(int) listener) {
     _listeners.add(listener);

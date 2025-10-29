@@ -389,8 +389,9 @@ class _AppNavigatorState extends State<AppNavigator> {
         final startTime = session['startTime'] as DateTime?;
         if (startTime != null) {
           final elapsedSeconds = DateTime.now().difference(startTime).inSeconds;
+          // Set the elapsed time BEFORE starting the timer
+          WorkoutTimerService.instance.setElapsedSeconds(elapsedSeconds);
           WorkoutTimerService.instance.start();
-          // Set the elapsed time based on how long ago the workout started
           activeWorkoutTime = elapsedSeconds;
           print('⏱️  AppNavigator: Restored timer - elapsed: $elapsedSeconds seconds');
         }
