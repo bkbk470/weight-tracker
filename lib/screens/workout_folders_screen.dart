@@ -1526,6 +1526,8 @@ class _PlanSection extends StatelessWidget {
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
                             ),
+                          if (onToggleFavorite != null)
+                            const SizedBox(width: 8),
                           if (onEditPlan != null)
                             IconButton(
                               icon: Icon(
@@ -1537,6 +1539,8 @@ class _PlanSection extends StatelessWidget {
                               padding: const EdgeInsets.all(4),
                               constraints: const BoxConstraints(),
                             ),
+                          if (onEditPlan != null)
+                            const SizedBox(width: 8),
                           if (onDeletePlan != null)
                             IconButton(
                               icon: Icon(
