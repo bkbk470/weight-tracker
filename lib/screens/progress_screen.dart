@@ -380,14 +380,6 @@ class _ProgressScreenState extends State<ProgressScreen> {
                   colorScheme: colorScheme,
                   textTheme: textTheme,
                 ),
-                const SizedBox(height: 32),
-
-                // View Exercise Details
-                OutlinedButton.icon(
-                  onPressed: () => widget.onNavigate('exercise-detail'),
-                  icon: const Icon(Icons.bar_chart),
-                  label: const Text('View Exercise Details'),
-                ),
                 const SizedBox(height: 100),
               ]),
             ),
