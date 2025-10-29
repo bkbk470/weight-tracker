@@ -873,6 +873,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     AnimatedSize(
                       duration: const Duration(milliseconds: 300),
                       curve: Curves.easeInOut,
+                      alignment: Alignment.topCenter,
                       child: isExpanded
                           ? Column(
                               mainAxisSize: MainAxisSize.min,
@@ -981,6 +982,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   AnimatedSize(
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeInOut,
+                    alignment: Alignment.topCenter,
                     child: isMyWorkoutsExpanded
                         ? Column(
                             mainAxisSize: MainAxisSize.min,
