@@ -675,17 +675,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           style: textTheme.titleLarge,
                         ),
                         Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             TextButton.icon(
                               onPressed: _showCreatePlanDialog,
                               icon: const Icon(Icons.create_new_folder, size: 18),
                               label: const Text('New Plan'),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 4),
                             TextButton.icon(
                               onPressed: () => widget.onNavigate('workout-folders'),
                               icon: const Icon(Icons.folder, size: 18),
                               label: const Text('Manage'),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
                             ),
                           ],
                         ),
@@ -832,16 +843,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       splashColor: Colors.transparent,
                       highlightColor: Colors.transparent,
                       child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                        leading: Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: color.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(Icons.folder, color: color, size: 24),
-                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        leading: Icon(Icons.folder, color: color, size: 32),
                         title: Text(
                           (folder['name'] as String?) ?? 'Workout Plan',
                           style: textTheme.titleMedium,
@@ -979,19 +982,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     splashColor: Colors.transparent,
                     highlightColor: Colors.transparent,
                     child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                      leading: Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: colorScheme.secondaryContainer,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          Icons.folder_open,
-                          color: colorScheme.onSecondaryContainer,
-                          size: 24,
-                        ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      leading: Icon(
+                        Icons.folder_open,
+                        color: colorScheme.primary,
+                        size: 32,
                       ),
                       title: Text(
                         'My Workouts',
