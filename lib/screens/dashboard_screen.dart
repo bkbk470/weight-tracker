@@ -663,7 +663,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               // Content
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     // Workout Plans Header
