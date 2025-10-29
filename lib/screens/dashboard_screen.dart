@@ -806,12 +806,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               final isExpanded = folderId != null && _expandedFolderIds.contains(folderId);
               final color = _getColorFromString(folder['color'] as String?);
 
-              final cardContent = Card(
-                key: ValueKey(folderId ?? 'plan-$index'),
-                margin: const EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+              final cardContent = Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Card(
+                  key: ValueKey(folderId ?? 'plan-$index'),
+                  margin: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 clipBehavior: Clip.antiAlias,
                 child: Column(
                   children: [
@@ -941,6 +943,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ],
                 ),
+                ),
               );
 
               return cardContent;
@@ -959,6 +962,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             final unorganizedWorkouts = _workoutsByFolder[null] ?? const <Map<String, dynamic>>[];
             final isMyWorkoutsExpanded = _expandedFolderIds.contains('my_workouts');
             return Card(
+              margin: EdgeInsets.zero,
               child: Column(
                 children: [
                   InkWell(
