@@ -889,13 +889,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       curve: Curves.easeInOut,
                       alignment: Alignment.topCenter,
                       child: isExpanded
-                          ? AnimatedOpacity(
-                              duration: const Duration(milliseconds: 250),
-                              opacity: isExpanded ? 1.0 : 0.0,
-                              curve: Curves.easeIn,
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
+                          ? Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
                                 const Divider(height: 1),
                                 if (workouts.isEmpty)
                                   Padding(
@@ -945,7 +941,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     onTap: () => widget.onNavigate('workout-folders'),
                                   ),
                               ],
-                              ),
                             )
                           : const SizedBox.shrink(),
                     ),
@@ -1010,12 +1005,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     curve: Curves.easeInOut,
                     alignment: Alignment.topCenter,
                     child: isMyWorkoutsExpanded
-                        ? AnimatedOpacity(
-                            duration: const Duration(milliseconds: 250),
-                            opacity: isMyWorkoutsExpanded ? 1.0 : 0.0,
-                            curve: Curves.easeIn,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
+                        ? Column(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               const Divider(height: 1),
                               ...unorganizedWorkouts.take(5).map((workout) {
@@ -1060,7 +1051,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   onTap: () => widget.onNavigate('workout-folders'),
                                 ),
                             ],
-                            ),
                           )
                         : const SizedBox.shrink(),
                   ),
