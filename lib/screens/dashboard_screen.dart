@@ -843,7 +843,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       splashColor: Colors.transparent,
                       highlightColor: Colors.transparent,
                       child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                         leading: Icon(Icons.folder, color: color, size: 32),
                         title: Text(
                           (folder['name'] as String?) ?? 'Workout Plan',
@@ -982,7 +982,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     splashColor: Colors.transparent,
                     highlightColor: Colors.transparent,
                     child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                       leading: Icon(
                         Icons.folder_open,
                         color: colorScheme.primary,
