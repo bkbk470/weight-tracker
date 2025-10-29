@@ -940,6 +940,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     ),
                                     onTap: () => widget.onNavigate('workout-folders'),
                                   ),
+                                const SizedBox(height: 8),
                               ],
                             )
                           : const SizedBox.shrink(),
@@ -1050,6 +1051,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   ),
                                   onTap: () => widget.onNavigate('workout-folders'),
                                 ),
+                              const SizedBox(height: 8),
                             ],
                           )
                         : const SizedBox.shrink(),
