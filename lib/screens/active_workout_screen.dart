@@ -336,6 +336,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
       );
       if (!mounted) return;
       if (records.isEmpty) {
+        print('⚠️  No previous records found for ${exercise.name} (exerciseId: ${exercise.supabaseExerciseId})');
         setState(() {
           exercise.previousDate = null;
           for (final set in exercise.sets) {
@@ -357,6 +358,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
       }
 
       print('📊 Loading ${records.length} previous sets for ${exercise.name}');
+      print('📊 Exercise ID: ${exercise.supabaseExerciseId}');
+      print('📊 Records found: ${records.map((r) => 'Set ${r['set_number']}: ${r['weight_lbs']}lbs x ${r['reps']} reps').join(', ')}');
       final createdAt = records.first['created_at'] as String?;
       setState(() {
         exercise.previousDate = createdAt != null ? DateTime.tryParse(createdAt) : exercise.previousDate;
@@ -367,6 +370,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
             final weightValue = record['weight_lbs'];
             final previousWeight = weightValue is num ? weightValue.toDouble() : double.tryParse(weightValue?.toString() ?? '');
             set.previousWeight = previousWeight;
+            print('✅ Set ${i+1}: Setting previousWeight = $previousWeight');
 
             // Auto-fill weight with previous weight if current weight is 0
             if (set.weight == 0 && previousWeight != null && previousWeight > 0) {
