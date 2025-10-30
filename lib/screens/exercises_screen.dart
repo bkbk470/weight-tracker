@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
 import 'package:fl_chart/fl_chart.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../constants/exercise_assets.dart';
 import '../services/local_storage_service.dart';
 import '../services/exercise_cache_service.dart';
@@ -522,12 +523,16 @@ class _ExerciseCard extends StatelessWidget {
             .getSignedUrlForStoragePath(exercise.imageUrl),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            return Image.network(
-              snapshot.data!,
-              gaplessPlayback: true,
+            return CachedNetworkImage(
+              imageUrl: snapshot.data!,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
+              placeholder: (context, url) => const Center(
+                child: CircularProgressIndicator(strokeWidth: 1.5),
+              ),
+              errorWidget: (context, url, error) =>
                   _fallbackIcon(colorScheme, _getCategoryIcon()),
+              memCacheWidth: 100, // Optimize memory usage
+              maxWidthDiskCache: 200, // Optimize disk cache size
             );
           }
           if (snapshot.hasError) {
@@ -539,12 +544,16 @@ class _ExerciseCard extends StatelessWidget {
       );
     }
 
-    return Image.network(
-      exercise.imageUrl,
-      gaplessPlayback: true,
+    return CachedNetworkImage(
+      imageUrl: exercise.imageUrl,
       fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) =>
+      placeholder: (context, url) => const Center(
+        child: CircularProgressIndicator(strokeWidth: 1.5),
+      ),
+      errorWidget: (context, url, error) =>
           _fallbackIcon(colorScheme, _getCategoryIcon()),
+      memCacheWidth: 100, // Optimize memory usage for list view
+      maxWidthDiskCache: 200, // Optimize disk cache size for thumbnails
     );
   }
 
@@ -867,19 +876,25 @@ class _ExerciseInfoSheetState extends State<_ExerciseInfoSheet> {
         future: SupabaseService.instance.getSignedUrlForStoragePath(imageUrl),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            return Image.network(
-              snapshot.data!,
+            return CachedNetworkImage(
+              imageUrl: snapshot.data!,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: colorScheme.surfaceVariant,
-                  child: Icon(
-                    Icons.fitness_center,
-                    size: 64,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                );
-              },
+              placeholder: (context, url) => Container(
+                color: colorScheme.surfaceVariant,
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+              errorWidget: (context, url, error) => Container(
+                color: colorScheme.surfaceVariant,
+                child: Icon(
+                  Icons.fitness_center,
+                  size: 64,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              memCacheHeight: 600, // Higher quality for detail view
+              maxHeightDiskCache: 800,
             );
           }
           if (snapshot.hasError) {
@@ -903,33 +918,25 @@ class _ExerciseInfoSheetState extends State<_ExerciseInfoSheet> {
     }
 
     // Otherwise use the URL directly
-    return Image.network(
-      imageUrl,
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
       fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          color: colorScheme.surfaceVariant,
-          child: Icon(
-            Icons.fitness_center,
-            size: 64,
-            color: colorScheme.onSurfaceVariant,
-          ),
-        );
-      },
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) return child;
-        return Container(
-          color: colorScheme.surfaceVariant,
-          child: Center(
-            child: CircularProgressIndicator(
-              value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded /
-                      loadingProgress.expectedTotalBytes!
-                  : null,
-            ),
-          ),
-        );
-      },
+      placeholder: (context, url) => Container(
+        color: colorScheme.surfaceVariant,
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      ),
+      errorWidget: (context, url, error) => Container(
+        color: colorScheme.surfaceVariant,
+        child: Icon(
+          Icons.fitness_center,
+          size: 64,
+          color: colorScheme.onSurfaceVariant,
+        ),
+      ),
+      memCacheHeight: 600, // Higher quality for detail view
+      maxHeightDiskCache: 800,
     );
   }
 
