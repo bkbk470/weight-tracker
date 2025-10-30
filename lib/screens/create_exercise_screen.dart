@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../constants/exercise_assets.dart';
 import '../services/local_storage_service.dart';
 import '../services/supabase_service.dart';
+import '../services/exercise_cache_service.dart';
 
 class CreateExerciseScreen extends StatefulWidget {
   final Function(String)? onNavigate;
@@ -96,6 +97,9 @@ class _CreateExerciseScreenState extends State<CreateExerciseScreen> {
         // If Supabase fails (offline), it's ok - local storage has it
         print('Supabase save failed (offline?): $e');
       }
+
+      // PERFORMANCE FIX: Clear exercise cache so new exercise appears immediately
+      await ExerciseCacheService.instance.clearCache();
 
       if (!mounted) return;
 
