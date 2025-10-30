@@ -430,6 +430,26 @@ class _AppNavigatorState extends State<AppNavigator> {
       return;
     }
 
+    // BUG FIX: When navigating TO active-workout, reload session data from SharedPreferences
+    // to ensure we have the latest changes (weight, reps, notes, etc.)
+    if (screen == 'active-workout' && currentScreen != 'active-workout' && hasActiveWorkout) {
+      print('🔄 Reloading workout session before navigating to active-workout');
+      WorkoutSessionService.instance.loadWorkoutSession().then((session) {
+        if (session != null && mounted) {
+          final exercises = session['exercises'] as List<Map<String, dynamic>>?;
+          if (exercises != null) {
+            setState(() {
+              _lastWorkoutExercises = List<Map<String, dynamic>>.from(exercises);
+              _workoutExercises = List<Map<String, dynamic>>.from(exercises);
+              // Invalidate cached screen so it's recreated with fresh data
+              _activeWorkoutScreen = null;
+              print('✅ Reloaded ${exercises.length} exercises from session');
+            });
+          }
+        }
+      });
+    }
+
     // If navigating to active-workout while already on it, don't rebuild
     if (screen == 'active-workout' && currentScreen == 'active-workout') {
       return;
@@ -648,46 +668,31 @@ class _AppNavigatorState extends State<AppNavigator> {
           initialTab: initialTab,
         );
       case 'active-workout':
-        // PERFORMANCE FIX: Always reload session data to ensure we have the latest state
-        // This fixes the bug where changes made during workout weren't persisting when navigating away and back
-        if (_activeWorkoutScreen != null && hasActiveWorkout) {
-          // Reload session data to get the latest changes from SharedPreferences
-          Future.microtask(() async {
-            final session = await WorkoutSessionService.instance.loadWorkoutSession();
-            if (session != null && mounted) {
-              final exercises = session['exercises'] as List<Map<String, dynamic>>?;
-              if (exercises != null) {
-                setState(() {
-                  _lastWorkoutExercises = List<Map<String, dynamic>>.from(exercises);
-                  _workoutExercises = List<Map<String, dynamic>>.from(exercises);
-                });
-                // Invalidate the cached screen so it's recreated with fresh data
-                _activeWorkoutScreen = null;
-              }
-            }
-          });
-          return _activeWorkoutScreen!;
-        }
+        // BUG FIX: Check if we need to recreate the screen with fresh data
+        // When navigating back to active workout, we reload the session in navigate()
+        // which sets _activeWorkoutScreen = null to force recreation with latest data
 
-        // When restoring a workout session, use the exercises and workout data
-        final exercisesToUse = _workoutExercises ?? _lastWorkoutExercises;
-        final workoutIdToUse = _activeWorkoutId ?? _lastWorkoutId;
-        final workoutNameToUse = _activeWorkoutName ?? _lastWorkoutName;
+        if (_activeWorkoutScreen == null || !hasActiveWorkout) {
+          // When restoring a workout session, use the exercises and workout data
+          final exercisesToUse = _workoutExercises ?? _lastWorkoutExercises;
+          final workoutIdToUse = _activeWorkoutId ?? _lastWorkoutId;
+          final workoutNameToUse = _activeWorkoutName ?? _lastWorkoutName;
 
-        _activeWorkoutScreen = WorkoutScreen(
-          key: const ValueKey('active-workout-screen'), // Add key to preserve state
-          onNavigate: (screen) => navigate(screen, context),
-          autoStart: autoStartWorkout,
-          workoutName: workoutNameToUse,
-          workoutId: workoutIdToUse,
-          onWorkoutStateChanged: setActiveWorkout,
-          preloadedExercises: exercisesToUse,
-        );
+          _activeWorkoutScreen = WorkoutScreen(
+            key: const ValueKey('active-workout-screen'), // Stable key for performance
+            onNavigate: (screen) => navigate(screen, context),
+            autoStart: autoStartWorkout,
+            workoutName: workoutNameToUse,
+            workoutId: workoutIdToUse,
+            onWorkoutStateChanged: setActiveWorkout,
+            preloadedExercises: exercisesToUse,
+          );
 
-        // Only clear if not restoring from a persisted session
-        if (!hasActiveWorkout) {
-          _workoutExercises = null;
-          _activeWorkoutId = null;
+          // Only clear if not restoring from a persisted session
+          if (!hasActiveWorkout) {
+            _workoutExercises = null;
+            _activeWorkoutId = null;
+          }
         }
 
         return _activeWorkoutScreen!;
