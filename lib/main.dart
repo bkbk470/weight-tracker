@@ -688,6 +688,15 @@ class _AppNavigatorState extends State<AppNavigator> {
                   _workoutExercises = exercisesToUse;
                   _lastWorkoutExercises = List<Map<String, dynamic>>.from(exercises);
                   print('✅ Loaded ${exercises.length} exercises from session for active workout screen');
+
+                  // Log first exercise's first set weight for debugging
+                  if (exercises.isNotEmpty) {
+                    final firstEx = exercises[0];
+                    final setDetails = firstEx['setDetails'];
+                    if (setDetails is List && setDetails.isNotEmpty) {
+                      print('   First exercise "${firstEx['name']}" first set weight: ${setDetails[0]['weight']}');
+                    }
+                  }
                 }
               }
 
@@ -696,8 +705,13 @@ class _AppNavigatorState extends State<AppNavigator> {
               final workoutIdToUse = _activeWorkoutId ?? _lastWorkoutId;
               final workoutNameToUse = _activeWorkoutName ?? _lastWorkoutName;
 
+              // BUG FIX: Use a unique key based on timestamp to force widget recreation
+              // This ensures initState() runs again with the fresh preloadedExercises
+              final uniqueKey = ValueKey('active-workout-${DateTime.now().millisecondsSinceEpoch}');
+              print('🔧 Creating new WorkoutScreen with key: $uniqueKey');
+
               _activeWorkoutScreen = WorkoutScreen(
-                key: const ValueKey('active-workout-screen'),
+                key: uniqueKey,
                 onNavigate: (screen) => navigate(screen, context),
                 autoStart: autoStartWorkout,
                 workoutName: workoutNameToUse,
@@ -721,8 +735,9 @@ class _AppNavigatorState extends State<AppNavigator> {
         final workoutIdToUse = _activeWorkoutId ?? _lastWorkoutId;
         final workoutNameToUse = _activeWorkoutName ?? _lastWorkoutName;
 
+        final uniqueKey = ValueKey('active-workout-new-${DateTime.now().millisecondsSinceEpoch}');
         _activeWorkoutScreen = WorkoutScreen(
-          key: const ValueKey('active-workout-screen'),
+          key: uniqueKey,
           onNavigate: (screen) => navigate(screen, context),
           autoStart: autoStartWorkout,
           workoutName: workoutNameToUse,
