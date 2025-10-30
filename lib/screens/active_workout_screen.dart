@@ -1521,8 +1521,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
     setState(() {
       if (field == 'weight') {
         exercises[exerciseIndex].sets[setIndex].weight = value;
+        print('💪 Updated weight: ${exercises[exerciseIndex].name} set ${setIndex + 1} = $value lbs');
       } else {
         exercises[exerciseIndex].sets[setIndex].reps = value;
+        print('🔢 Updated reps: ${exercises[exerciseIndex].name} set ${setIndex + 1} = $value reps');
       }
     });
 
@@ -1679,6 +1681,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
       }).toList();
 
       print('📦 Serializing ${exercise.name}: ${setDetails.length} sets, completed: ${setDetails.where((s) => s['completed'] == true).length}');
+      if (setDetails.isNotEmpty) {
+        print('   First set: weight=${setDetails[0]['weight']}, reps=${setDetails[0]['reps']}, completed=${setDetails[0]['completed']}');
+      }
 
       return {
         'name': exercise.name,
