@@ -787,7 +787,7 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
         actions: [
           if (folders.isNotEmpty)
             IconButton(
-              icon: Icon(isReordering ? Icons.check : Icons.drag_handle),
+              icon: Icon(isReordering ? Icons.check : Icons.menu),
               onPressed: () {
                 setState(() {
                   isReordering = !isReordering;
@@ -799,6 +799,7 @@ class _WorkoutFoldersScreenState extends State<WorkoutFoldersScreen> {
               },
               tooltip: isReordering ? 'Done Reordering' : 'Reorder Plans',
             ),
+          const SizedBox(width: 16),
           IconButton(
             icon: const Icon(Icons.create_new_folder),
             onPressed: _showCreatePlanDialog,

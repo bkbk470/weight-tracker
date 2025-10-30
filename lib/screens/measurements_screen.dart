@@ -346,21 +346,74 @@ class _MeasurementsScreenState extends State<MeasurementsScreen> {
   }
 
   Future<void> _loadMeasurements() async {
-    setState(() {
-      _isLoading = true;
-      _loadError = null;
-    });
+    // Load from cache first for instant display
+    final cached = _localStorage.getCachedMeasurementsData();
+    if (cached != null && cached['data'] != null) {
+      try {
+        final cachedData = cached['data'] as Map;
+        final tempData = <String, _MeasurementInfo>{};
 
+        for (final entry in cachedData.entries) {
+          final key = entry.key as String;
+          final value = entry.value as Map;
+
+          final latestMap = value['latest'] as Map?;
+          final historyList = value['history'] as List? ?? [];
+
+          tempData[key] = _MeasurementInfo(
+            latest: latestMap != null ? _recordFromMap(latestMap) : null,
+            history: historyList.map((m) => _recordFromMap(m as Map)).toList(),
+          );
+        }
+
+        if (mounted) {
+          setState(() {
+            _measurementData
+              ..clear()
+              ..addAll(tempData);
+            _lastUpdated = _computeLastUpdated(_measurementData);
+            _isLoading = false;
+          });
+        }
+      } catch (e) {
+        debugPrint('Error loading cached measurements: $e');
+        setState(() {
+          _isLoading = true;
+          _loadError = null;
+        });
+      }
+    } else {
+      setState(() {
+        _isLoading = true;
+        _loadError = null;
+      });
+    }
+
+    // Then load fresh data from Supabase in background (in parallel!)
     try {
-      final tempData = <String, _MeasurementInfo>{};
+      // OPTIMIZED: Load all measurements in parallel instead of sequentially
+      final futures = _definitions.map((def) => _fetchRecordsForDefinition(def)).toList();
+      final allRecords = await Future.wait(futures);
 
-      for (final def in _definitions) {
-        final records = await _fetchRecordsForDefinition(def);
+      final tempData = <String, _MeasurementInfo>{};
+      for (int i = 0; i < _definitions.length; i++) {
+        final def = _definitions[i];
+        final records = allRecords[i];
         tempData[def.typeKey] = _MeasurementInfo(
           latest: records.isNotEmpty ? records.first : null,
           history: records,
         );
       }
+
+      // Cache the fresh data for next time
+      final cacheData = <String, dynamic>{};
+      for (final entry in tempData.entries) {
+        cacheData[entry.key] = {
+          'latest': entry.value.latest != null ? _recordToMap(entry.value.latest!) : null,
+          'history': entry.value.history.map((r) => _recordToMap(r)).toList(),
+        };
+      }
+      await _localStorage.cacheMeasurementsData(cacheData);
 
       if (!mounted) return;
 
@@ -373,10 +426,14 @@ class _MeasurementsScreenState extends State<MeasurementsScreen> {
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _loadError = e.toString();
-        _isLoading = false;
-      });
+      // Only show error if we didn't have cached data
+      if (cached == null) {
+        setState(() {
+          _loadError = e.toString();
+          _isLoading = false;
+        });
+      }
+      debugPrint('Error loading fresh measurements: $e');
     }
   }
 
@@ -519,6 +576,16 @@ class _MeasurementsScreenState extends State<MeasurementsScreen> {
         _lastUpdated = _computeLastUpdated(_measurementData);
       });
 
+      // Update cache with new measurement
+      final cacheData = <String, dynamic>{};
+      for (final entry in _measurementData.entries) {
+        cacheData[entry.key] = {
+          'latest': entry.value.latest != null ? _recordToMap(entry.value.latest!) : null,
+          'history': entry.value.history.map((r) => _recordToMap(r)).toList(),
+        };
+      }
+      _localStorage.cacheMeasurementsData(cacheData);
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('${def.label} updated to ${_formatValue(value, def.decimals)} $unit'),
@@ -593,6 +660,30 @@ class _MeasurementsScreenState extends State<MeasurementsScreen> {
       unit: (data['unit'] ?? def.unit).toString(),
       notes: data['notes']?.toString(),
       synced: syncStatus == 'synced',
+    );
+  }
+
+  // Helper method to convert a record to a map for caching
+  Map<String, dynamic> _recordToMap(_MeasurementRecord record) {
+    return {
+      'id': record.id,
+      'value': record.value,
+      'date': record.date.toIso8601String(),
+      'unit': record.unit,
+      'notes': record.notes,
+      'synced': record.synced,
+    };
+  }
+
+  // Helper method to convert a map back to a record from cache
+  _MeasurementRecord _recordFromMap(Map data) {
+    return _MeasurementRecord(
+      id: data['id'] as String,
+      value: (data['value'] as num).toDouble(),
+      date: DateTime.parse(data['date'] as String),
+      unit: data['unit'] as String,
+      notes: data['notes'] as String?,
+      synced: data['synced'] as bool? ?? true,
     );
   }
 
