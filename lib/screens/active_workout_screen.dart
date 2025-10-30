@@ -509,13 +509,17 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
   }
 
   void endWorkout() {
+    print('🏁 endWorkout() called');
     final hasIncompleteSets = exercises.any((exercise) =>
         exercise.sets.any((set) => !set.completed));
+    print('🏁 hasIncompleteSets: $hasIncompleteSets, exercises: ${exercises.length}');
 
     void showFinishDialog({required bool warnIncomplete}) {
+      print('🏁 showFinishDialog called, warnIncomplete: $warnIncomplete');
       // Unfocus before showing dialog
       FocusManager.instance.primaryFocus?.unfocus();
-      
+
+      print('🏁 About to show dialog with showSafeDialog');
       showSafeDialog(
         context: context,
         builder: (dialogContext) => AlertDialog(

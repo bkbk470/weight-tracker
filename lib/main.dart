@@ -658,9 +658,12 @@ class _AppNavigatorState extends State<AppNavigator> {
           initialTab: initialTab,
         );
       case 'active-workout':
+        print('📍 getScreen: active-workout, hasActiveWorkout=$hasActiveWorkout, _needsSessionReload=$_needsSessionReload, _activeWorkoutScreen=${_activeWorkoutScreen != null}');
         // BUG FIX: Reload session data when navigating back to active workout
         // This ensures we have the latest changes (weight, reps, notes, etc.)
         if (hasActiveWorkout && _needsSessionReload) {
+          print('  → Taking reload path (FutureBuilder)');
+
           // Create future if not cached
           _cachedSessionFuture ??= WorkoutSessionService.instance.loadWorkoutSession();
 
@@ -731,10 +734,12 @@ class _AppNavigatorState extends State<AppNavigator> {
 
         // Return cached screen if we don't need to reload
         if (hasActiveWorkout && _activeWorkoutScreen != null) {
+          print('  → Returning cached workout screen');
           return _activeWorkoutScreen!;
         }
 
         // No active workout - create new one
+        print('  → Creating new workout screen (no active workout or no cached screen)');
         final exercisesToUse = _workoutExercises ?? _lastWorkoutExercises;
         final workoutIdToUse = _activeWorkoutId ?? _lastWorkoutId;
         final workoutNameToUse = _activeWorkoutName ?? _lastWorkoutName;
