@@ -74,23 +74,13 @@ class WorkoutTimerService with ChangeNotifier, WidgetsBindingObserver {
     _notifyListeners();
   }
 
-  // Legacy listener methods for backwards compatibility
-  void addListener(Function(int) listener) {
-    if (listener is VoidCallback) {
-      // If it's a VoidCallback, use the proper ChangeNotifier method
-      super.addListener(listener);
-    } else {
-      // Legacy listener
-      _legacyListeners.add(listener);
-    }
+  // Legacy listener methods for backwards compatibility (renamed to avoid conflict with ChangeNotifier)
+  void addTimerListener(Function(int) listener) {
+    _legacyListeners.add(listener);
   }
 
-  void removeListener(Function(int) listener) {
-    if (listener is VoidCallback) {
-      super.removeListener(listener);
-    } else {
-      _legacyListeners.remove(listener);
-    }
+  void removeTimerListener(Function(int) listener) {
+    _legacyListeners.remove(listener);
   }
 
   // Notify all listeners (both ChangeNotifier and legacy)
@@ -134,9 +124,11 @@ class WorkoutTimerService with ChangeNotifier, WidgetsBindingObserver {
   }
 
   // Dispose
+  @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
-    _listeners.clear();
+    _legacyListeners.clear();
+    super.dispose();
   }
 }

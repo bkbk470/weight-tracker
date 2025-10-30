@@ -99,7 +99,7 @@ class _CreateExerciseScreenState extends State<CreateExerciseScreen> {
       }
 
       // PERFORMANCE FIX: Clear exercise cache so new exercise appears immediately
-      await ExerciseCacheService.instance.clearCache();
+      ExerciseCacheService.instance.clearCache();
 
       if (!mounted) return;
 

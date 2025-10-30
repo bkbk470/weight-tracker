@@ -363,7 +363,7 @@ class _AppNavigatorState extends State<AppNavigator> {
 
   @override
   void dispose() {
-    _bannerUpdateTimer?.cancel();
+    // Timer removed - using ListenableBuilder instead for performance
     super.dispose();
   }
 

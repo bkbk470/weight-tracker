@@ -53,9 +53,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    
+
     // Set up timer listener
-    _timerService.addListener(_onTimerUpdate);
+    _timerService.addTimerListener(_onTimerUpdate);
     workoutTime = _timerService.elapsedSeconds;
     
     // Load preloaded exercises if provided
@@ -183,7 +183,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _timerService.removeListener(_onTimerUpdate);
+    _timerService.removeTimerListener(_onTimerUpdate);
     restTimerInstance?.cancel();
     super.dispose();
   }
