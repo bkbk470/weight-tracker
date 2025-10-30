@@ -516,22 +516,28 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
 
     void showFinishDialog({required bool warnIncomplete}) {
       print('🏁 showFinishDialog called, warnIncomplete: $warnIncomplete');
+      print('🏁 widget.workoutName: "${widget.workoutName}", widget.workoutId: ${widget.workoutId}');
+      print('🏁 context mounted: $mounted, isWorkoutActive: $isWorkoutActive');
+
       // Unfocus before showing dialog
       FocusManager.instance.primaryFocus?.unfocus();
 
       print('🏁 About to show dialog with showSafeDialog');
-      showSafeDialog(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: Text(warnIncomplete ? 'Unfinished Sets' : 'Finish Workout?'),
-          content: Text(
-            warnIncomplete
-                ? 'Some sets are not marked complete. What would you like to do?'
-                : 'Great work! Ready to finish this workout?',
-          ),
-          actionsAlignment: warnIncomplete ? MainAxisAlignment.center : null,
-          actionsPadding: warnIncomplete ? const EdgeInsets.fromLTRB(24, 0, 24, 16) : null,
-          actions: warnIncomplete ? [
+      try {
+        showSafeDialog(
+          context: context,
+          builder: (dialogContext) {
+            print('🏁 Dialog builder called');
+            return AlertDialog(
+              title: Text(warnIncomplete ? 'Unfinished Sets' : 'Finish Workout?'),
+              content: Text(
+                warnIncomplete
+                    ? 'Some sets are not marked complete. What would you like to do?'
+                    : 'Great work! Ready to finish this workout?',
+              ),
+              actionsAlignment: warnIncomplete ? MainAxisAlignment.center : null,
+              actionsPadding: warnIncomplete ? const EdgeInsets.fromLTRB(24, 0, 24, 16) : null,
+              actions: warnIncomplete ? [
             // Keep Working - Primary action
             SizedBox(
               width: double.infinity,
@@ -697,9 +703,15 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
               },
               child: const Text('Finish'),
             ),
-          ],
-        ),
-      );
+              ],
+            );
+          },
+        );
+        print('🏁 showSafeDialog completed');
+      } catch (e, stackTrace) {
+        print('🏁 ERROR showing dialog: $e');
+        print('🏁 Stack trace: $stackTrace');
+      }
     }
 
     _timerService.pause();
@@ -1707,8 +1719,12 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
 
   /// Save the current workout session state to persistent storage
   void _saveWorkoutSessionState() {
-    print('🔄 ActiveWorkout: _saveWorkoutSessionState called - isWorkoutActive: $isWorkoutActive');
+    print('🔄 ActiveWorkout: _saveWorkoutSessionState called - isWorkoutActive: $isWorkoutActive, workoutName: "${widget.workoutName}"');
     if (isWorkoutActive) {
+      if (widget.workoutName == null || widget.workoutName!.isEmpty) {
+        print('⚠️  ActiveWorkout: Workout name is null/empty, cannot save session properly');
+      }
+
       final serializedExercises = _serializeExercises();
       // Calculate start time based on elapsed workout time
       final elapsedSeconds = _timerService.elapsedSeconds;
@@ -1717,7 +1733,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
       print('💾 ActiveWorkout: Saving workout - ${widget.workoutName}, exercises: ${serializedExercises.length}, elapsed: $elapsedSeconds');
       // Use full save to ensure all data is persisted
       WorkoutSessionService.instance.saveWorkoutSession(
-        workoutName: widget.workoutName,
+        workoutName: widget.workoutName ?? 'Workout',
         workoutId: widget.workoutId,
         exercises: serializedExercises,
         startTime: startTime,
