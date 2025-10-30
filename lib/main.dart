@@ -356,6 +356,7 @@ class _AppNavigatorState extends State<AppNavigator> {
   Map<String, dynamic>? _selectedExercise;
   Future<Map<String, dynamic>?>? _cachedSessionFuture; // Cache session reload future
   bool _needsSessionReload = false; // Track if we need to reload session
+  int _workoutScreenKeyVersion = 0; // Version counter for workout screen key
 
   @override
   void initState() {
@@ -687,6 +688,8 @@ class _AppNavigatorState extends State<AppNavigator> {
                   // Update the stored exercises for next time
                   _workoutExercises = exercisesToUse;
                   _lastWorkoutExercises = List<Map<String, dynamic>>.from(exercises);
+                  // Increment version to force widget recreation with fresh data
+                  _workoutScreenKeyVersion++;
                   print('✅ Loaded ${exercises.length} exercises from session for active workout screen');
 
                   // Log first exercise's first set weight for debugging
@@ -705,9 +708,10 @@ class _AppNavigatorState extends State<AppNavigator> {
               final workoutIdToUse = _activeWorkoutId ?? _lastWorkoutId;
               final workoutNameToUse = _activeWorkoutName ?? _lastWorkoutName;
 
-              // BUG FIX: Use a unique key based on timestamp to force widget recreation
-              // This ensures initState() runs again with the fresh preloadedExercises
-              final uniqueKey = ValueKey('active-workout-${DateTime.now().millisecondsSinceEpoch}');
+              // BUG FIX: Use a version-based key to force widget recreation only when data actually changes
+              // This ensures initState() runs again with the fresh preloadedExercises, but doesn't
+              // recreate the widget on every build (which would break dialogs and other state)
+              final uniqueKey = ValueKey('active-workout-v$_workoutScreenKeyVersion');
               print('🔧 Creating new WorkoutScreen with key: $uniqueKey');
 
               _activeWorkoutScreen = WorkoutScreen(
@@ -735,7 +739,9 @@ class _AppNavigatorState extends State<AppNavigator> {
         final workoutIdToUse = _activeWorkoutId ?? _lastWorkoutId;
         final workoutNameToUse = _activeWorkoutName ?? _lastWorkoutName;
 
-        final uniqueKey = ValueKey('active-workout-new-${DateTime.now().millisecondsSinceEpoch}');
+        // Increment version for new workout
+        _workoutScreenKeyVersion++;
+        final uniqueKey = ValueKey('active-workout-v$_workoutScreenKeyVersion');
         _activeWorkoutScreen = WorkoutScreen(
           key: uniqueKey,
           onNavigate: (screen) => navigate(screen, context),
