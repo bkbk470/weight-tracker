@@ -648,8 +648,24 @@ class _AppNavigatorState extends State<AppNavigator> {
           initialTab: initialTab,
         );
       case 'active-workout':
-        // Return existing workout screen if it exists, otherwise create new one
+        // PERFORMANCE FIX: Always reload session data to ensure we have the latest state
+        // This fixes the bug where changes made during workout weren't persisting when navigating away and back
         if (_activeWorkoutScreen != null && hasActiveWorkout) {
+          // Reload session data to get the latest changes from SharedPreferences
+          Future.microtask(() async {
+            final session = await WorkoutSessionService.instance.loadWorkoutSession();
+            if (session != null && mounted) {
+              final exercises = session['exercises'] as List<Map<String, dynamic>>?;
+              if (exercises != null) {
+                setState(() {
+                  _lastWorkoutExercises = List<Map<String, dynamic>>.from(exercises);
+                  _workoutExercises = List<Map<String, dynamic>>.from(exercises);
+                });
+                // Invalidate the cached screen so it's recreated with fresh data
+                _activeWorkoutScreen = null;
+              }
+            }
+          });
           return _activeWorkoutScreen!;
         }
 
