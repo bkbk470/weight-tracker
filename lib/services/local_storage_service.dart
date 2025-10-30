@@ -256,6 +256,26 @@ class LocalStorageService {
     return (data['workouts'] as List?)?.map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 
+  // ==================== MEASUREMENTS CACHE ====================
+
+  // Cache all measurements data
+  Future<void> cacheMeasurementsData(Map<String, dynamic> measurementData) async {
+    final box = Hive.box(_measurementsBox);
+    await box.put('measurements_cache', {
+      'data': measurementData,
+      'cachedAt': DateTime.now().toIso8601String(),
+    });
+  }
+
+  // Get cached measurements data
+  Map<String, dynamic>? getCachedMeasurementsData() {
+    final box = Hive.box(_measurementsBox);
+    final cached = box.get('measurements_cache');
+    if (cached == null) return null;
+
+    return Map<String, dynamic>.from(cached as Map);
+  }
+
   // ==================== SETTINGS ====================
 
   // Save setting
