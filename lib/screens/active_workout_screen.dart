@@ -7,7 +7,6 @@ import '../services/supabase_service.dart';
 import '../services/notification_service.dart';
 import '../services/workout_session_service.dart';
 import '../services/exercise_cache_service.dart';
-import '../services/workout_data_service.dart';
 import '../widgets/editable_number_field.dart';
 import '../utils/safe_dialog_helpers.dart';
 
@@ -36,7 +35,6 @@ class WorkoutScreen extends StatefulWidget {
 class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserver {
   bool isWorkoutActive = false;
   final WorkoutTimerService _timerService = WorkoutTimerService.instance;
-  final WorkoutDataService _workoutDataService = WorkoutDataService();
   int workoutTime = 0;
   int restTimer = 0;
   int maxRestTime = 0;
@@ -262,20 +260,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
     if (!mounted) return;
     if (SupabaseService.instance.currentUserId == null) return;
 
-    // PERFORMANCE FIX: Use batch loading instead of N+1 individual queries
-    // This loads all exercise previous data in a single API call (10x faster!)
-    try {
-      await _workoutDataService.loadPreviousDataBatch(exercises);
-      if (mounted) {
-        setState(() {}); // Refresh UI with loaded data
-      }
-    } catch (e) {
-      print('Error loading previous exercise data batch: $e');
-      // Fallback to individual loading if batch fails
-      for (var i = 0; i < exercises.length; i++) {
-        unawaited(_loadPreviousForExercise(exercises[i], i));
-      }
-    }
+    // PERFORMANCE FIX: Load all exercises in parallel instead of sequentially
+    // This is much faster than loading one-by-one
+    final futures = exercises.asMap().entries.map((entry) {
+      return _loadPreviousForExercise(entry.value, entry.key);
+    }).toList();
+
+    await Future.wait(futures);
   }
 
   Future<bool> _ensureWorkoutExerciseMetadata(Exercise exercise, int orderIndex, {bool createIfMissing = false}) async {
