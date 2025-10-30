@@ -342,6 +342,8 @@ class _AppNavigatorState extends State<AppNavigator> {
   WorkoutDetailScreen? _cachedWorkoutDetailScreen;
   Map<String, dynamic>? _cachedWorkoutDetailData;
   // Removed _bannerUpdateTimer (performance fix - using ListenableBuilder instead)
+  Future<Map<String, dynamic>?>? _cachedWorkoutFuture;
+  String? _cachedWorkoutFutureId;
   List<Map<String, dynamic>>? _workoutExercises;
   String? _activeWorkoutId;
   String? _activeWorkoutName;
@@ -715,8 +717,16 @@ class _AppNavigatorState extends State<AppNavigator> {
 
         // Refetch workout from database to get latest set_details
         if (workout != null && workout['id'] != null) {
+          final workoutId = workout['id'] as String;
+
+          // PERFORMANCE FIX: Cache the Future to prevent duplicate API calls
+          if (_cachedWorkoutFutureId != workoutId) {
+            _cachedWorkoutFuture = SupabaseService.instance.getWorkout(workoutId);
+            _cachedWorkoutFutureId = workoutId;
+          }
+
           return FutureBuilder<Map<String, dynamic>?>(
-            future: SupabaseService.instance.getWorkout(workout['id'] as String),
+            future: _cachedWorkoutFuture!,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
