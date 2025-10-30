@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/widgets.dart';
 
-class WorkoutTimerService with WidgetsBindingObserver {
+class WorkoutTimerService with ChangeNotifier, WidgetsBindingObserver {
   static final WorkoutTimerService _instance = WorkoutTimerService._internal();
   static WorkoutTimerService get instance => _instance;
 
@@ -15,9 +15,9 @@ class WorkoutTimerService with WidgetsBindingObserver {
   DateTime? _startTime;
   DateTime? _pauseTime;
   bool _wasRunningBeforePause = false;
-  
-  // Callbacks for UI updates
-  final List<Function(int)> _listeners = [];
+
+  // Legacy callbacks for backwards compatibility (deprecated - use ChangeNotifier instead)
+  final List<Function(int)> _legacyListeners = [];
 
   // Getters
   bool get isRunning => _isRunning;
@@ -74,19 +74,32 @@ class WorkoutTimerService with WidgetsBindingObserver {
     _notifyListeners();
   }
 
-  // Add listener for UI updates
+  // Legacy listener methods for backwards compatibility
   void addListener(Function(int) listener) {
-    _listeners.add(listener);
+    if (listener is VoidCallback) {
+      // If it's a VoidCallback, use the proper ChangeNotifier method
+      super.addListener(listener);
+    } else {
+      // Legacy listener
+      _legacyListeners.add(listener);
+    }
   }
 
-  // Remove listener
   void removeListener(Function(int) listener) {
-    _listeners.remove(listener);
+    if (listener is VoidCallback) {
+      super.removeListener(listener);
+    } else {
+      _legacyListeners.remove(listener);
+    }
   }
 
-  // Notify all listeners
+  // Notify all listeners (both ChangeNotifier and legacy)
   void _notifyListeners() {
-    for (var listener in _listeners) {
+    // Notify ChangeNotifier listeners (for AnimatedBuilder, ValueListenableBuilder, etc.)
+    notifyListeners();
+
+    // Notify legacy listeners for backwards compatibility
+    for (var listener in _legacyListeners) {
       listener(_elapsedSeconds);
     }
   }

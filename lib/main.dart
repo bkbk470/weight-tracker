@@ -341,7 +341,7 @@ class _AppNavigatorState extends State<AppNavigator> {
   WorkoutScreen? _activeWorkoutScreen;
   WorkoutDetailScreen? _cachedWorkoutDetailScreen;
   Map<String, dynamic>? _cachedWorkoutDetailData;
-  Timer? _bannerUpdateTimer;
+  // Removed _bannerUpdateTimer (performance fix - using ListenableBuilder instead)
   List<Map<String, dynamic>>? _workoutExercises;
   String? _activeWorkoutId;
   String? _activeWorkoutName;
@@ -601,27 +601,17 @@ class _AppNavigatorState extends State<AppNavigator> {
       // Clear the workout screen when workout ends
       if (!active) {
         _activeWorkoutScreen = null;
-        _bannerUpdateTimer?.cancel();
-        _bannerUpdateTimer = null;
         _workoutExercises = null;
         _activeWorkoutId = null;
         _activeWorkoutName = null;
         _selectedWorkout = null;
         // Clear persisted workout session
         WorkoutSessionService.instance.clearWorkoutSession();
-      } else if (_bannerUpdateTimer == null) {
-        // Start a timer to update the banner every second
-        _bannerUpdateTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-          if (mounted && hasActiveWorkout) {
-            setState(() {
-              activeWorkoutTime = WorkoutTimerService.instance.elapsedSeconds;
-            });
-          } else {
-            timer.cancel();
-          }
-        });
+      } else {
+        // PERFORMANCE FIX: Removed timer that was causing full screen rebuilds every second
+        // Now using ListenableBuilder in the banner widget instead
+
         // Save workout session when it starts
-        // Calculate start time based on current elapsed time
         final elapsedSeconds = WorkoutTimerService.instance.elapsedSeconds;
         final startTime = DateTime.now().subtract(Duration(seconds: elapsedSeconds));
         WorkoutSessionService.instance.saveWorkoutSession(
@@ -933,11 +923,18 @@ class _AppNavigatorState extends State<AppNavigator> {
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
-                          Text(
-                            _formatTime(activeWorkoutTime),
-                            style: textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSecondaryContainer,
-                            ),
+                          // PERFORMANCE FIX: Use ListenableBuilder to only rebuild timer text
+                          // instead of rebuilding entire AppNavigator widget every second
+                          ListenableBuilder(
+                            listenable: WorkoutTimerService.instance,
+                            builder: (context, child) {
+                              return Text(
+                                _formatTime(WorkoutTimerService.instance.elapsedSeconds),
+                                style: textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSecondaryContainer,
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),
