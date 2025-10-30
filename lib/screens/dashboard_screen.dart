@@ -470,79 +470,138 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return;
     }
 
-    showSafeDialog(
+    showSafeModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Add Workout to $planName'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: availableWorkouts.length,
-            itemBuilder: (context, index) {
-                  final workout = availableWorkouts[index];
-                  final workoutId = _normalizeId(workout['id']);
-                  final exercises = workout['workout_exercises'] as List? ?? [];
-              
-              return ListTile(
-                leading: Icon(
-                  Icons.fitness_center,
-                  color: Theme.of(context).colorScheme.primary,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        final colorScheme = Theme.of(context).colorScheme;
+        final textTheme = Theme.of(context).textTheme;
+
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.75,
+          ),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag handle
+              Padding(
+                padding: const EdgeInsets.only(top: 12, bottom: 8),
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-                title: Text((workout['name'] as String?) ?? 'Workout'),
-                subtitle: Text('${exercises.length} exercises'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.add_circle_outline),
-                  onPressed: workoutId == null
-                      ? null
-                      : () async {
-                    try {
-                      await _supabaseService.addWorkoutToPlan(
-                        workoutId,
-                        planId,
-                      );
-                      
-                      Navigator.pop(context);
-                      _loadFoldersAndWorkouts();
-                      
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Added "${workout['name']}" to plan'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      }
-                    } catch (e) {
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Error: $e'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    }
+              ),
+              // Title
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+                child: Text(
+                  'Add Workout to $planName',
+                  style: textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              // Workout list
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: availableWorkouts.length,
+                  itemBuilder: (context, index) {
+                    final workout = availableWorkouts[index];
+                    final workoutId = _normalizeId(workout['id']);
+                    final exercises = workout['workout_exercises'] as List? ?? [];
+
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.fitness_center,
+                          color: colorScheme.primary,
+                        ),
+                        title: Text((workout['name'] as String?) ?? 'Workout'),
+                        subtitle: Text('${exercises.length} exercises'),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.add_circle_outline),
+                          onPressed: workoutId == null
+                              ? null
+                              : () async {
+                            try {
+                              await _supabaseService.addWorkoutToPlan(
+                                workoutId,
+                                planId,
+                              );
+
+                              Navigator.pop(sheetContext);
+                              _loadFoldersAndWorkouts();
+
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Added "${workout['name']}" to plan'),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error: $e'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                        ),
+                      ),
+                    );
                   },
                 ),
-              );
-            },
+              ),
+              // Bottom buttons
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(sheetContext),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () {
+                          Navigator.pop(sheetContext);
+                          widget.onNavigate('workout-builder');
+                        },
+                        child: const Text('Create New'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: MediaQuery.of(context).padding.bottom),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              widget.onNavigate('workout-builder');
-            },
-            child: const Text('Create New'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
